@@ -3,7 +3,9 @@
 #' Get Shared Borders Between EUs and Bordering Countries
 #'
 #' This function identifies shared borders between epidemiological units (EUs) and neighboring countries.
-#' It accounts for small discrepancies in border alignments and adjusts accordingly.
+#' It accounts for small discrepancies in border alignments and adjusts accordingly using an
+#' algorithm that loops over all overlapping and divergent polygons. This can take some
+#' time to run.
 #'
 #' Converts sf objects to crs 6933 and uses s2. However, output remains WGS84.
 #'
@@ -182,6 +184,7 @@ get_shared_borders <- function(epi_units, eu_id_col, bordering_countries, bc_id_
   out
 }
 
+#' @export
 #' @importFrom shiny HTML
 calc_border_eu_risk <- function(epi_units, borders) {
    epi_units_border_risk <- epi_units |>
@@ -222,6 +225,7 @@ calc_border_eu_risk <- function(epi_units, borders) {
   epi_units_border_risk
 }
 
+#' @export
 #' @importFrom shiny HTML
 label_borders <- function(borders, epi_units, emission_risk) {
   border_risks <- borders |>

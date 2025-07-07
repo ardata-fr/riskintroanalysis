@@ -2,12 +2,12 @@
 #'
 #' @description
 #' This function calculates the overall emission risk score (`emission_risk`) for a set of countries
-#' based on four domains:
+#' based on four domains (each one counts for a certain number of points towards the risk of introduction out of 12 by default) :
 #'
-#' - **Epidemiological status**: Time since the last outbreak (`sc_epistatus`).
-#' - **Surveillance measures**: Effectiveness of implemented surveillance strategies (`sc_survmeasures`).
-#' - **Control measures**: Effectiveness of disease control measures (`sc_control`).
-#' - **Animal commerce movements**: Risk from commerce and movement of animals (`sc_commerce`).
+#' - **Epidemiological status** (3/12):  Time since the last outbreak (`sc_epistatus`).
+#' - **Surveillance measures** (2/12): Effectiveness of implemented surveillance strategies (`sc_survmeasures`).
+#' - **Control measures** (3/12): Effectiveness of disease control measures (`sc_control`).
+#' - **Animal commerce movements** (4/12): Risk from commerce and movement of animals (`sc_commerce`).
 #'
 #' Intermediate scores for each domain are calculated internally:
 #'
@@ -43,6 +43,7 @@
 #' - The overall emission risk score (`emission_risk`).
 #'
 #' @family emission_risk_calculation
+#' @export
 get_weighted_emission_risk <- function(
     dat, weights) {
   # Refer to data-raw/emission-risk-defaults.R

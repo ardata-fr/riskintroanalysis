@@ -1,21 +1,33 @@
 Package: riskintroanalysis
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
+Title: Analysis Methods for Managing Animal Disease Introduction Risk
+Version: 0.1.1.001
 Authors@R: c(
-    person(
-      "Jane", "Doe",
-      email = "jane@example.com",
-      role = c("aut", "cre")
-    )
+    person("Eli", "Daniels", , "eli.daniels@ardata.fr", role = c("aut", "cre")),
+    person("David", "Gohel", , "david.gohel@ardata.fr", role = "aut"),
+    person("ArData", role = "ctr"),
+    person("CIRAD", role = "cph")
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: The riskintroanalysis R package provides functions to analyse the
+    risk of introduction of animal diseases within a geographic area.
+License: MIT + file LICENSE
+Depends:
+    R (>= 4.4.0),
+    ggplot2 (>= 3.5.2)
+Imports:
+    rlang,
+    cli,
+    dplyr,
+    stringr,
+    tidyr,
+    sf,
+    s2
+Suggests: 
+    testthat (>= 3.0.0),
+    knitr
 Encoding: UTF-8
 LazyData: true
+Language: en
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Suggests: 
-    testthat (>= 3.0.0)
 Config/testthat/edition: 3

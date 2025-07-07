@@ -24,11 +24,14 @@ remotes::install_github("riskintroanalysis")
 ## Dev notes!!
 
 Functions required:
-  
-  1. Calculate Risk of Introduction score from emission risk factors.
-  2. Functions for validation dataset
-  3. Functions for easily tidying datasets so they are valid
-  4. Functions to go through each analysis (listed below) using validated datasets
+
+1.  Calculate Risk of Introduction score from emission risk factors.
+2.  Functions for validation dataset
+3.  Functions for easily tidying datasets so they are valid
+4.  Functions to go through each analysis (listed below) using validated
+    datasets
+
+See analysis examples to develop.
 
 ## Analysis
 
@@ -82,8 +85,59 @@ governorates.
 
 ## Border length method:
 
+Work in progress
+
 ``` r
 # library(riskintroanalysis)
+library(sf)
+library(dplyr)
+
+emission_risk <- riskintro:::emission_risk_factor_defaults
+
+url <- "~/TUNISIA-EXAMPLE-01/Mobilite_animale/ANIMAL_MOBILITY.csv"
+erf <- riskintro:::emission_risk_factor_defaults
+tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") |> 
+  select(
+    eu_id = fid,
+    eu_name = shapeName,
+    geometry = geometry
+  )
+
+# riskintrodata
+world <- riskintro:::countries_sf_lowres
+
+er <- filter(erf, disease == "Anthrax")
+er <- get_weighted_emission_risk(erf, riskintro:::emission_risk_weights)
+er_world <- left_join(
+  x = world, y = er, 
+  by = c("ISO3" = "iso3")
+)
+
+neighbours <- right_join(
+  x = world, 
+  y = riskintro:::neighbours_table, 
+  by = c(ISO3 = "country_id")
+) |> 
+  filter(ISO3 == "TUN")
+
+
+# Run function to get shared borders
+shared_borders <- get_shared_borders(
+  epi_units = tun,
+  eu_id_col = "eu_id",
+  bordering_countries = neighbours,
+  bc_id_col = "BC_ID"
+)
+
+# Print output
+print(shared_borders)
+
+# Visualize using a simple plot
+plot(st_geometry(epi_units), col = "lightblue", border = "blue", main = "Shared Borders")
+plot(st_geometry(bordering_countries), col = "pink", border = "red", add = TRUE)
+plot(st_geometry(shared_borders), col = "black", lwd = 2, add = TRUE)
+
+
 ```
 
 ## Entry point method:
@@ -94,23 +148,33 @@ governorates.
 
 ## Animal mobility method:
 
+Considerations: 1. fix exports, need to export as much as possible. 1.
+add “countries” package as dep and re-export country_name 1. Provide
+tools to tidy data for analysis and validate datasets at the start of
+each function. 1. Do we continue to include lealfet labels in output? 1.
+create plot.generics for each output to a basic plot or leaflet? 1
+Combine calc_animal_mobility_point_risk and calc_animal_mobility_eu_risk
+into one function?
+
 ``` r
 library(tidyverse)
 library(sf)
 library(riskintro)
 library(countries)
 
-latlng_to_sf <- riskintro:::latlng_to_sf
 emission_risk <- riskintro:::emission_risk_factor_defaults
-
 
 url <- "~/TUNISIA-EXAMPLE-01/Mobilite_animale/ANIMAL_MOBILITY.csv"
 erf <- riskintro:::emission_risk_factor_defaults
-tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") 
+tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") |> 
+  select(
+    eu_id = fid,
+    eu_name = shapeName,
+    geometry = geometry
+  )
 
 erf <- filter(erf, disease == "Anthrax")
 erf <- get_weighted_emission_risk(erf, riskintro:::emission_risk_weights)
-
 
 animal_mobility <- read_csv2(
   url,
@@ -143,12 +207,20 @@ animal_mobility <- animal_mobility |>
          d_iso3 = countries::country_name(x = d_country, to = "ISO3"),
          .before = 1)
 
-  calc_animal_mobility_point_risk(
+analysis_point <- calc_animal_mobility_point_risk(
   animal_mobility = animal_mobility, 
   emission_risk = erf, 
   country_iso3 = "TUN"
     )
-  
+
+analysis_output <- calc_animal_mobility_eu_risk(
+  animal_mobility_points = analysis_point, 
+  epi_units = tun, 
+  method = "mean"
+  )
+
+# plot data ...
+
 ```
 
 ## Road accessibility method:

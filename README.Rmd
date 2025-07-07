@@ -28,6 +28,18 @@ You can install the development version of riskintroanalysis like so:
 remotes::install_github("riskintroanalysis")
 ```
 
+
+## Dev notes!!
+
+Functions required:
+  
+  1. Calculate Risk of Introduction score from emission risk factors.
+  2. Functions for validation dataset
+  3. Functions for easily tidying datasets so they are valid
+  4. Functions to go through each analysis (listed below) using validated datasets
+
+See analysis examples to develop.
+
 ## Analysis
 
 The package provides functions for certain risk of introduction analysis, but requires external data to be provided. The functions are inteded to be flexible, but each analytical method requires the corresponding data.
@@ -51,21 +63,141 @@ These two datasets are compared against each other through the following analyse
 
 # Example 1: Tunisia
 
+## Core datasets
+
+### Emission Risk Factors:
+
+Emission risk factors are used to create an overall emission risk value that is 
+associated with the possible spread of a disease from that country. It is made up
+of multiple scores which are weighted.
+
+Here, we create two entries in the emission risk table for Algeria and Libya. The 
+absence of government oversight in each area represents an increased risk of emission.
+Therefore a 1 means there is additional risk associated with this score, and a 0
+means no additional risk.
+
+```{r}
+
+library(dplyr)
+library(riskintroanalysis)
+
+algeria <- riskintrodata::erf_row(
+  iso3 = "DZA",
+  country = "Algeria",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = 0,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 1,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("30/06/2023"),
+  commerce_illegal = 0L,
+  commerce_legal = 0L
+)
+
+libya <- riskintrodata::erf_row(
+  iso3 = "LBY",
+  country = "Libya",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = TRUE,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 0,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("30/06/2019"),
+  commerce_illegal = 0L,
+  commerce_legal = 1
+)
+
+wahis_erf <- riskintrodata::get_wahis_erf(
+    disease = "Avian infectious laryngotracheitis",
+    animal_category = "Domestic",
+    species = "Birds"
+  )
+
+emission_risk_factors <- dplyr::bind_rows(
+  algeria, 
+  libya,
+  wahis_erf
+  )
+
+weights <- riskintrodata::emission_risk_weights
+
+emission_risk_table <- get_weighted_emission_risk(emission_risk_factors, weights)
+
+hist(emission_risk_table$emission_risk)
+```
+
+
+It is also useful to join the world_sf geospatial dataset to emission risk for later.
+
+```{r}
+
+world <- riskintrodata::world_sf
+
+emission_risk_sf <- left_join(
+  x = world, y = emission_risk_table, 
+  by = c("iso3" = "iso3")
+)
+
+plot(select(emission_risk_sf, emission_risk))
+
+```
+
+
+### Area of interest (epidemiological units)
+
+Epidemiological units (or epi units for short) is the term used for geographical areas of interests for analysing understand the risk of introduction. This data has no defaults and needs to be 
+provided by the user, however packages like `geodata` can be used to get them. For this example, a shapefile containing the administrative boundaries of Tunisia exists in the `riskintrodata` package for demonstration purposes.
+
+The Tunisia epidemiological units dataset will be essential to the following analysis methods.
+
+```{r}
+tun_files <-
+  list.files(
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "epi_units"
+    ),
+    full.names = TRUE
+  )
+names(tun_files) <- tools::file_ext(tun_files)
+tun <- sf::read_sf(tun_files[["shp"]])
+plot(sf::st_geometry(tun))
+```
+
+
+
+## Analysis
+
+The 4 methods of analysis provided by the package are detailed below:
+
 This an example of analysing the risk of introduction for Tunisian governorates.
 
-## Border length method:
+### Border length method:
 
-Working in progress
-
-```{r, echo = FALSE}
-# library(riskintroanalysis)
+```{r}
+library(riskintroanalysis)
 library(sf)
 library(dplyr)
 
-emission_risk <- riskintro:::emission_risk_factor_defaults
+emission_risk_table
 
 url <- "~/TUNISIA-EXAMPLE-01/Mobilite_animale/ANIMAL_MOBILITY.csv"
-erf <- riskintro:::emission_risk_factor_defaults
 tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") |> 
   select(
     eu_id = fid,
@@ -73,53 +205,59 @@ tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") |>
     geometry = geometry
   )
 
-# riskintrodata
-world <- riskintro:::countries_sf_lowres
+tun_neighbours <- riskintro:::neighbours_table |> 
+  filter(country_id == "TUN")
 
-er <- filter(erf, disease == "Anthrax")
-er <- get_weighted_emission_risk(erf, riskintro:::emission_risk_weights)
-er_world <- left_join(
-  x = world, y = er, 
-  by = c("ISO3" = "iso3")
-)
-
-neighbours <- right_join(
-  x = world, 
-  y = riskintro:::neighbours_table, 
-  by = c(ISO3 = "country_id")
-) |> 
-  filter(ISO3 == "TUN")
-
+bordering_countries <- world |> 
+  filter(iso3 %in% tun_neighbours$neighbour_id)
 
 # Run function to get shared borders
 shared_borders <- get_shared_borders(
   epi_units = tun,
   eu_id_col = "eu_id",
-  bordering_countries = neighbours,
-  bc_id_col = "BC_ID"
+  bordering_countries = bordering_countries,
+  bc_id_col = "iso3"
 )
 
-# Print output
-print(shared_borders)
+ggplot() +
+  geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5) +
+  geom_sf(data = tun, fill = "lightblue", colour = "blue", alpha = 0.5) +
+  geom_sf(data = shared_borders, colour = "black") +
+  geom_sf_label(data = shared_borders, aes(label = round(border_length)), size = 1.5) +
+  coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE) + 
+  labs(
+    title = "Output from get_shared_borders() function "
+  )
 
-# Visualize using a simple plot
-plot(st_geometry(epi_units), col = "lightblue", border = "blue", main = "Shared Borders")
-plot(st_geometry(bordering_countries), col = "pink", border = "red", add = TRUE)
-plot(st_geometry(shared_borders), col = "black", lwd = 2, add = TRUE)
+```
+The main purpose of the function is to correct misaligned borders, as can be seen in
+the overlaps and divergent borders. The epi units data is used as the "true" border, as
+geospatial data from different sources are rarely well aligned.
 
+A border length has been calculated for each epi unit that a foreign country. 
+For most of these areas, the risk of introduction will simply equal the emission risk
+of the neighbouring country, with the exception of Tunisia's southern most governorate. 
+Which will have an emission risk weighed by the border lengths or each neighbour.
+
+```{r}
+
+calc_border_eu_risk(epi_units = tun, borders = shared_borders)
 
 
 ```
 
-## Entry point method:
+
+
+### Entry point method:
 
 ```{r}
 # library(riskintroanalysis)
 
 
+
 ```
 
-## Animal mobility method:
+### Animal mobility method:
 
 Considerations:
   1. fix exports, need to export as much as possible.
@@ -135,8 +273,6 @@ library(tidyverse)
 library(sf)
 library(riskintro)
 library(countries)
-
-emission_risk <- riskintro:::emission_risk_factor_defaults
 
 url <- "~/TUNISIA-EXAMPLE-01/Mobilite_animale/ANIMAL_MOBILITY.csv"
 erf <- riskintro:::emission_risk_factor_defaults
@@ -193,12 +329,13 @@ analysis_output <- calc_animal_mobility_eu_risk(
   method = "mean"
   )
 
-# plot data ...
-
+ggplot() +
+  geom_sf(data = analysis_output, aes(geometry = geometry)) +
+  geom_sf(data = analysis_point)
 
 ```
 
-## Road accessibility method:
+### Road accessibility method:
 
 ```{r}
 # library(riskintroanalysis)
