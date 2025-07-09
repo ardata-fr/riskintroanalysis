@@ -44,16 +44,18 @@
 #'
 #' @family emission_risk_calculation
 #' @export
-get_weighted_emission_risk <- function(
-    dat, weights) {
+calc_weighted_emission_risk <- function(
+    emission_risk_factors,
+    weights = get_erf_weights()
+    ) {
   # Refer to data-raw/emission-risk-defaults.R
   risk_factor_cols <- names(weights)
 
-  if (any(!risk_factor_cols %in% colnames(dat))) {
+  if (any(!risk_factor_cols %in% colnames(emission_risk_factors))) {
     stop("Weight names should be the names of the `dat` column names")
   }
 
-  weighted_emission_risk <- dat |>
+  weighted_emission_risk <- emission_risk_factors |>
     # Weighted risk factors ----
     mutate(
       across(
@@ -93,7 +95,17 @@ get_weighted_emission_risk <- function(
       c("iso3", "country", "disease", "animal_category", "species","data_source",
         "sc_survmeasures", "sc_control", "sc_commerce", "sc_epistatus", "emission_risk"
       )))
+
   weighted_emission_risk
+}
+
+
+#' Get Default Emission Risk Weights
+#' @return named list of emission risk weights [riskintrodata::emission_risk_weights]
+#' @export
+#' @importFrom dplyr filter
+get_erf_weights <- function() {
+  riskintrodata::emission_risk_weights
 }
 
 #' @title Calculate epidemiological status risk score (`sc_epistatus`)

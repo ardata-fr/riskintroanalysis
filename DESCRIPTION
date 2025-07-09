@@ -15,11 +15,13 @@ Depends:
     R (>= 4.4.0),
     ggplot2 (>= 3.5.2)
 Imports:
+    riskintrodata,
     rlang,
     cli,
     dplyr,
     stringr,
     tidyr,
+    purrr,
     sf,
     s2
 Suggests: 

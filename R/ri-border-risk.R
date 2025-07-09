@@ -19,7 +19,7 @@
 #'
 #' @export
 #' @example examples/border-risk.R
-get_shared_borders <- function(epi_units, eu_id_col, bordering_countries, bc_id_col) {
+calc_shared_border_lengths <- function(epi_units, eu_id_col, bordering_countries, bc_id_col) {
   sf_use_s2(TRUE)
 
   out_list <- list()
@@ -61,7 +61,7 @@ get_shared_borders <- function(epi_units, eu_id_col, bordering_countries, bc_id_
 
     # Remove the largest polygon which is the whole world poly so that we have
     # Only the gaps between the BC and EU
-     empty_poly <- empty_poly_world |>
+    empty_poly <- empty_poly_world |>
       st_as_sf() |>
       st_cast("POLYGON") |>
       mutate(
@@ -184,14 +184,37 @@ get_shared_borders <- function(epi_units, eu_id_col, bordering_countries, bc_id_
   out
 }
 
+#' Calculate weighted border risk
+#'
+#' Calculate weighted border risk from required datasets.
+#'
+#' Calculates the risk of introduction for each epi unit based on the risk of
+#' emission of neighbouring countries. The score is weighted based on the length of
+#' shared borders.
+#'
+#' @param epi_units epidemiological units dataset
+#' @param shared_borders shared borders dataset as outputted by [calc_shared_border_lengths()]
+#' @param emission_risk emission risk dataset,
+#' @param ... empty
+#' @param add_html_lables default FALSE, used for leaflet tooltips in the Shiny app.
+#'
 #' @export
-#' @importFrom shiny HTML
-calc_border_eu_risk <- function(epi_units, borders) {
-   epi_units_border_risk <- epi_units |>
+calc_weighted_border_risk <- function(
+    epi_units,
+    shared_borders,
+    emission_risk,
+    ...,
+    add_html_lables = FALSE
+) {
+  check_dots_empty()
+
+  borders <- label_borders(borders = shared_borders, epi_units = tun, emission_risk = emission_risk_table)
+
+  epi_units_border_risk <- epi_units |>
     mutate(eu_id = as.character(.data$eu_id)) |>
     left_join(st_drop_geometry(borders), by = "eu_id") |>
     group_by(across(all_of("eu_id"))) |>
-     summarise_quiet(
+    summarise_quiet(
       eu_name = first(.data$eu_name),
       eu_id = first(.data$eu_id),
       borders = first(.data$border_length),
@@ -222,8 +245,13 @@ calc_border_eu_risk <- function(epi_units, borders) {
         ) |> map(HTML)
     ) |>
     select(-all_of("sources_label"))
+
+  if (!add_html_lables) {
+    epi_units_border_risk <- select(epi_units_border_risk, -all_of("risk_sources_label"))
+  }
   epi_units_border_risk
 }
+
 
 #' @export
 #' @importFrom shiny HTML
@@ -231,7 +259,7 @@ label_borders <- function(borders, epi_units, emission_risk) {
   border_risks <- borders |>
     left_join(emission_risk, by = c("bc_id" = "iso3")) |>
     left_join(epi_units |> st_drop_geometry() |> mutate(eu_id = as.character(.data[["eu_id"]])),
-      by = "eu_id"
+              by = "eu_id"
     ) |>
     mutate(
       border_risk = .data$emission_risk * .data$weight,
@@ -246,6 +274,7 @@ label_borders <- function(borders, epi_units, emission_risk) {
     select(-all_of("eu_name"))
   border_risks
 }
+
 
 # Leaflet ---------------------------------------------------------------
 
@@ -297,7 +326,7 @@ updateBorderRisk <- function(ll, dat, borders) {
           "Low [3, 6)",
           "Negligable [0, 3)",
           "No information"
-          ),
+        ),
         colors = pal12(c(11, 8, 3, 1, NA))
       ),
       title = "Frontier risk",
