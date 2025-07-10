@@ -208,7 +208,11 @@ calc_weighted_border_risk <- function(
 ) {
   check_dots_empty()
 
-  borders <- label_borders(borders = shared_borders, epi_units = tun, emission_risk = emission_risk_table)
+  borders <- label_borders(
+    borders = shared_borders,
+    epi_units = epi_units,
+    emission_risk = emission_risk
+    )
 
   epi_units_border_risk <- epi_units |>
     mutate(eu_id = as.character(.data$eu_id)) |>

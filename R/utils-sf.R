@@ -1,15 +1,20 @@
+
+#' @importFrom sf st_union
 st_union_quiet <- function(...) {
   suppressWarnings(suppressMessages(st_union(...)))
 }
 
+#' @importFrom dplyr summarise
 summarise_quiet <- function(...) {
   suppressWarnings(suppressMessages(summarise(...)))
 }
 
+#' @importFrom sf st_join
 st_join_quiet <- function(...) {
   suppressWarnings(suppressMessages(st_join(...)))
 }
 
+#' @importFrom sf st_intersection
 st_intersection_quiet <- function(...){
   suppressWarnings(suppressMessages(st_intersection(...)))
 }
@@ -23,7 +28,7 @@ safe_stat <- function(..., FUN = max, NA_value = NA_real_) {
   }
 }
 
-
+#' @importFrom sf st_union
 is_valid_bounding_box <- function(x) {
   if (!isTruthy(x)) return(FALSE)
   if (!all(sapply(x, is.finite))) return(FALSE)

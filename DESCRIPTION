@@ -23,7 +23,13 @@ Imports:
     tidyr,
     purrr,
     sf,
-    s2
+    s2,
+    ggnewscale,
+    leaflet,
+    glue,
+    legendry,
+    shiny,
+    tibble
 Suggests: 
     testthat (>= 3.0.0),
     knitr

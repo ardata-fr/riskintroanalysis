@@ -169,8 +169,6 @@ provided by the user, however packages like `geodata` can be used to get them. F
 The Tunisia epidemiological units dataset will be essential to the following analysis methods.
 
 ```{r}
-library(sf)
-
 # Example with raw sf files, previously downloaded with geodata::gadm()
 tunisia_raw <- read_sf(system.file(
   package = "riskintrodata",
@@ -181,9 +179,7 @@ tunisia_raw <- read_sf(system.file(
 tunisia <- apply_mapping(
   tunisia_raw,
   mapping = mapping_epi_units(
-    eu_id = NULL,
     eu_name = "NAME_2",
-    user_id = NULL,
     geometry = "geom"
   ),
   validate = TRUE
@@ -191,8 +187,8 @@ tunisia <- apply_mapping(
 
 plot(sf::st_geometry(tunisia))
 ```
-
-
+What's left after using `apply_mapping()` is the required "epi_units" dataset that
+is compatible with the rest of the analysis going forward.
 
 ## Analysis
 
@@ -219,31 +215,7 @@ country with the longer border.
 The analysis method starts with finding shared borders between epi units and bordering countries, which requires an algoithm align borders.
 
 ```{r}
-library(riskintroanalysis)
-library(sf)
-library(dplyr)
-
-emission_risk_table
-
-tun_files <-
-  list.files(
-    system.file(
-      package = "riskintrodata",
-      "samples",
-      "tunisia",
-      "animal_mobility"
-    ),
-    full.names = TRUE
-  )
-
-tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") |> 
-  select(
-    eu_id = fid,
-    eu_name = shapeName,
-    geometry = geometry
-  )
-
-tun_neighbours <- riskintro:::neighbours_table |> 
+tun_neighbours <- riskintrodata::neighbours_table |> 
   filter(country_id == "TUN")
 
 bordering_countries <- world |> 
@@ -251,7 +223,7 @@ bordering_countries <- world |>
 
 # Run function to get shared borders
 shared_borders <- calc_shared_border_lengths(
-  epi_units = tun,
+  epi_units = tunisia,
   eu_id_col = "eu_id",
   bordering_countries = bordering_countries,
   bc_id_col = "iso3"
@@ -259,7 +231,7 @@ shared_borders <- calc_shared_border_lengths(
 
 ggplot() +
   geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5) +
-  geom_sf(data = tun, fill = "lightblue", colour = "blue", alpha = 0.5) +
+  geom_sf(data = tunisia, fill = "lightblue", colour = "blue", alpha = 0.5) +
   geom_sf(data = shared_borders, colour = "black") +
   geom_sf_label(data = shared_borders, aes(label = round(border_length)), size = 1.5) +
   coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE) + 
@@ -278,7 +250,7 @@ of the neighbouring country, with the exception of Tunisia's southern most gover
 
 ```{r}
 eu_border_risk_intro <- calc_weighted_border_risk(
-  epi_units = tun, 
+  epi_units = tunisia, 
   shared_borders = shared_borders,
   emission_risk = emission_risk_table
   )
@@ -295,7 +267,7 @@ plot(select(eu_border_risk_intro, border_risk) |>
 
 ```{r}
 library(riskintroanalysis)
-library(riskintrodata)
+library(dplyr)
 
 entry_points_fp <-
   list.files(
@@ -323,13 +295,27 @@ entry_points <- apply_mapping(
   validate = TRUE
 )
 
-calc_entry_point_intro_risk(
-  entry_points = entry_points |> select(-sources) |> distinct(), 
-  entry_point_sources =  entry_points |> select(entry_points)
+results <- calc_entry_point_intro_risk(
+  entry_points = entry_points,
+  epi_units = tunisia,
+  emission_risk = emission_risk_table
 )
+points_entry_point_intro_risk <- results$points
+epi_units_entry_point_intro_risk <- results$epi_units
 
-
-
+ggplot() +
+  geom_sf(data = epi_units_entry_point_intro_risk,
+          aes(fill = entry_points_risk)) +
+  scale_fill_continuous(
+    type = "viridis", 
+    na.value="white",
+    trans = 'reverse'
+    ) +
+  geom_sf(
+    data = points_entry_point_intro_risk,
+    size = 1, alpha = 0.5,
+    aes(color = as.factor(round(emission_risk)))
+    )
 ```
 
 ### Animal mobility method:
@@ -344,69 +330,44 @@ Considerations:
   1 Combine calc_animal_mobility_point_risk and calc_animal_mobility_eu_risk into one function?
 
 ```{r}
-library(tidyverse)
-library(sf)
-library(riskintro)
-library(countries)
+library(riskintroanalysis)
+animal_mobility_fp <- system.file(package = "riskintrodata", "samples", "tunisia", "animal_mobility", "ANIMAL_MOBILITY_raw.csv")
 
-url <- "~/TUNISIA-EXAMPLE-01/Mobilite_animale/ANIMAL_MOBILITY.csv"
-erf <- riskintro:::emission_risk_factor_defaults
-tun <- sf::read_sf("~/TUNISIA-EXAMPLE-01/UniteEPI_ADM/TUN_ADM2.shp") |> 
-  select(
-    eu_id = fid,
-    eu_name = shapeName,
-    geometry = geometry
+animal_mobility_raw <- readr::read_csv(animal_mobility_fp)
+
+animal_mobility <- apply_mapping(
+  animal_mobility_raw,
+  mapping = mapping_animal_mobility(
+    o_name = "ORIGIN_NAME",
+    o_lng = "ORIGIN_LONGITUDE_X",
+    o_lat = "ORIGIN_LATITUDE_Y",
+    d_name = "DESTINATION_NAME",
+    d_lng = "DESTINATION_LONGITUDE_X",
+    d_lat = "DESTINATION_LATITUDE_Y",
+    quantity = "HEADCOUNT"
   )
-
-erf <- filter(erf, disease == "Anthrax")
-erf <- get_weighted_emission_risk(erf, riskintro:::emission_risk_weights)
-
-animal_mobility <- read_csv2(
-  url,
-  col_types = cols(
-    ORIGIN_NAME = col_character(),
-    ORIGIN_COUNTRY = col_character(),
-    ORIGIN_LONGITUDE_X = col_character(),
-    ORIGIN_LATITUDE_Y = col_number(),
-    DESTINATION_NAME = col_character(),
-    DESTINATION_COUNTRY = col_character(),
-    DESTINATION_LONGITUDE_X = col_character(),
-    DESTINATION_LATITUDE_Y = col_number(),
-    HEADCOUNT = col_double()
-  ))
-
-colnames(animal_mobility) <- c(
-  "o_name",
-  "o_country",
-  "o_lng",
-  "o_lat",
-  "d_name",
-  "d_country",
-  "d_lng",
-  "d_lat",
-  "quantity"
 )
-
-animal_mobility <- animal_mobility |> 
-  mutate(o_iso3 = countries::country_name(x = o_country, to = "ISO3"),
-         d_iso3 = countries::country_name(x = d_country, to = "ISO3"),
-         .before = 1)
 
 analysis_point <- calc_animal_mobility_point_risk(
   animal_mobility = animal_mobility, 
-  emission_risk = erf, 
+  emission_risk = emission_risk_table, 
   country_iso3 = "TUN"
     )
 
 analysis_output <- calc_animal_mobility_eu_risk(
   animal_mobility_points = analysis_point, 
-  epi_units = tun, 
+  epi_units = tunisia, 
   method = "mean"
   )
 
 ggplot() +
-  geom_sf(data = analysis_output, aes(geometry = geometry)) +
-  geom_sf(data = analysis_point)
+  geom_sf(data = analysis_output, aes(geometry = geometry, fill = animal_movement_risk)) +
+    scale_fill_continuous(
+    type = "viridis", 
+    na.value="white",
+    trans = 'reverse'
+    ) +
+  geom_sf(data = analysis_point, color = "red", size = 1.5)
 
 ```
 

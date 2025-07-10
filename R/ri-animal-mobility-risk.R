@@ -1,6 +1,3 @@
-# Method -----------------------------------------------------------------------
-# TODO: Examples
-
 #' Animal mobility destination point risk
 #'
 #' Calculate the emission risk associated with each animal mobility flow that enters
@@ -13,7 +10,9 @@
 #' @param country_iso3 the iso3 code for the country in which the study EUs are situated.
 #'
 #' @returns A dataframe of aggregated and weighted risk for each pointin the study EUs.
-#' @noRd
+#' @export
+#' @importFrom dplyr distinct first filter select all_of
+#' @importFrom sf st_as_sf
 calc_animal_mobility_point_risk <- function(
     animal_mobility,
     emission_risk,
@@ -78,7 +77,7 @@ calc_animal_mobility_point_risk <- function(
 #' @param method the aggregation method to use
 #'
 #' @returns the study EUs with associated introduction risk caluclated from point emission risk
-#' @noRd
+#' @export
 calc_animal_mobility_eu_risk <- function(animal_mobility_points, epi_units, method) {
   method_func <- switch(method,
     "mean" = mean,
@@ -86,7 +85,7 @@ calc_animal_mobility_eu_risk <- function(animal_mobility_points, epi_units, meth
     "min" = min
   )
 
-  # Spatial oin with epi_units
+  # Spatial join with epi_units
   epi_units_risk <- st_join_quiet(epi_units, animal_mobility_points, join = st_intersects)
 
   # Aggregation here needs to be up to use input

@@ -2,11 +2,21 @@
 
 #' @export
 #' @importFrom stats na.omit
+#' @importFrom sf st_drop_geometry
+#' @importFrom dplyr select left_join filter bind_rows
 calc_entry_point_intro_risk <- function(
     entry_points,
-    entry_point_sources,
-    emission_risk,
-    epi_units) {
+    epi_units,
+    emission_risk
+    ) {
+
+  entry_point_sources <- entry_points |>
+    select(all_of(c("point_id", "sources"))) |>
+    st_drop_geometry()
+  entry_points <- entry_points |>
+    select(-all_of("sources")) |>
+    distinct(.data[["point_id"]], .keep_all = TRUE)
+
 
   # EPS and EM should never have geometries anyway, but there is a recurring bug
   # that may be caused here.
@@ -16,7 +26,7 @@ calc_entry_point_intro_risk <- function(
   source_emission_risk <-
     left_join(
       entry_point_sources, emission_risk,
-      by = c("source" = "iso3"),
+      by = c("sources" = "iso3"),
       na_matches = "never",
       relationship = "many-to-one"
     )
@@ -31,7 +41,11 @@ calc_entry_point_intro_risk <- function(
 
   if(!inherits(points_emission_risk, "sf")) {
     points_emission_risk <-
-      st_as_sf(points_emission_risk, coords = c("lng", "lat"), crs = st_crs(epi_units))
+      st_as_sf(
+        points_emission_risk,
+        coords = c("lng", "lat"),
+        crs = st_crs(epi_units)
+      )
   }
 
   # Find in which polygon is each point
@@ -82,7 +96,11 @@ calc_entry_point_intro_risk <- function(
       .groups = "drop"
     )
 
-  risk_per_eu
+
+  list(
+    points = points_emission_risk,
+    epi_units = risk_per_eu
+  )
 }
 
 
