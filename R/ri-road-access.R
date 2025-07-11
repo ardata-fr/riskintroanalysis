@@ -5,20 +5,34 @@
 #'
 #' Takes the mean of raster values in an area, ignoring any missing values.
 #'
-#' @param p polygon data, usually epidemiologcal units (EU).
-#' @param r raster data to take the aggregate of each polygon in `p`.
-#' @param new_col name of new column containing aggregated raster data
+#' @param epi_units polygon data, usually epidemiologcal units (EU).
+#' @param raster raster data to take the aggregate of each polygon in `p`.
+#' @param risk_name name of new column containing aggregated raster values
+#' @param aggregate_fun function to use to aggregate raster values over
+#' epi units area, default is `mean`.
 #'
 #' @return returns the polygon data (sf) with a new column containing the
 #' aggregated values from the raster data for each polygon.
 #' @importFrom stats median
-augment_epi_units_from_raster <- function(
-    p, r, new_col = "risk") {
+#' @importFrom sf as_Spatial
+#' @importFrom terra vect zonal
+#' @export
+augment_epi_units_with_raster <- function(
+    epi_units,
+    raster,
+    risk_name = "raster_risk",
+    aggregate_fun = c("mean", "max", "min", "sum")
+    ) {
+  aggregate_fun <- match.arg(aggregate_fun)
+  p <- epi_units
+  r <- raster
+
+  r <- terra::crop(r, p, mask = TRUE)
 
   p_splat <- as_Spatial(p)
   p_splat <- vect(p_splat)
-  aggs <- zonal(r, p_splat, fun = "mean", na.rm=TRUE)[[1]]
-  p[[new_col]] <- aggs
+  aggs <- zonal(r, p_splat, fun = aggregate_fun, na.rm=TRUE)[[1]]
+  p[[risk_name]] <- aggs
   p
 }
 

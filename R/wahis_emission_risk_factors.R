@@ -14,6 +14,7 @@
 #' @return the emission risk factorts dataset as documented here [riskintrodata::wahis_emission_risk_factors]
 #' @export
 #' @importFrom dplyr filter
+#' @importFrom riskintrodata validate_table_content
 get_wahis_erf <- function(
     disease = character(),
     species = character(),
@@ -46,6 +47,8 @@ get_wahis_erf <- function(
   x <- riskintrodata::wahis_emission_risk_factors |>
     dplyr::filter(!!!filters)
 
+  x <- validate_table_content(x, "emission_risk_factors")
+  x <- validate_table_content_cli_msg(x)
   x
 }
 

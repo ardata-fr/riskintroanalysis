@@ -1,16 +1,3 @@
-# .my_theme <-
-#   theme_minimal(base_family  = "Liberation Sans", base_size = 18) +
-#   theme(
-#   plot.background = element_rect(fill = "transparent", color = "transparent"),
-#   panel.background = element_rect(fill = "transparent", color = "transparent"),
-#   plot.title = element_text(family  = "Liberation Sans", size = 16, face = "bold", hjust = 0.5),
-#   plot.subtitle = element_text(family  = "Liberation Sans", size = 14, face = "bold", hjust = 0.5),
-#   legend.title = element_text(family  = "Liberation Sans", size = 12, face = "bold", hjust = 0),
-#   legend.margin = margin(4, 4, 4, 4, unit = "pt"),
-#   legend.text = element_text(family  = "Liberation Sans", size = 9)
-# )
-
-
 #' Scaling range transformation function (re-scaling)
 #'
 #' This function supports multiple scaling methods to transform risk values from
@@ -43,7 +30,6 @@
 #' @param new_col string, The name of the new scaled column, defaults to `{method}_scaled_{risk_col}`.
 #' If set to `NA` the scaled column will replace the existing column.
 #' @return A dataset with new column containing  numeric vector of scaled values in the range \[0, 100\].
-#' @noRd
 #' @examples
 #' # rescale_risk -----
 #' @example examples/rescale_risk.R
@@ -120,8 +106,7 @@ rescale_risk <- function(
 #' @noRd
 #' @examples
 #' x <- (0:500)/100
-#' plot(x, sigmoid(x), type = 'l')
-#' sigmoid(1:5)
+#' plot(x, sigmoid_1_100(x), type = 'l')
 #' @importFrom stats plogis
 #' @rdname sigmoid
 #' @noRd

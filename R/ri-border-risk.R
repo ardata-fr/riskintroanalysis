@@ -222,7 +222,7 @@ calc_weighted_border_risk <- function(
       eu_name = first(.data$eu_name),
       eu_id = first(.data$eu_id),
       borders = first(.data$border_length),
-      border_risk = mean(.data[["border_risk"]], na.rm = TRUE),
+      border_risk = sum(.data[["border_risk"]], na.rm = TRUE),
       sources_label = paste0(
         "<li>",
         "<strong>", .data$country, "</strong>", " (", fmt_num(.data$border_length), "km)", "<br>",
@@ -253,7 +253,11 @@ calc_weighted_border_risk <- function(
   if (!add_html_lables) {
     epi_units_border_risk <- select(epi_units_border_risk, -all_of("risk_sources_label"))
   }
-  epi_units_border_risk
+
+  list(
+    borders = borders,
+    epi_units = epi_units_border_risk
+  )
 }
 
 

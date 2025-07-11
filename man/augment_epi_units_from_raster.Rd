@@ -4,14 +4,22 @@
 \alias{augment_epi_units_from_raster}
 \title{Aggregate raster values over polygon areas}
 \usage{
-augment_epi_units_from_raster(p, r, new_col = "risk")
+augment_epi_units_from_raster(
+  epi_units,
+  raster,
+  risk_name = "raster_risk",
+  aggregate_fun = c("mean", "max", "min", "sum")
+)
 }
 \arguments{
-\item{p}{polygon data, usually epidemiologcal units (EU).}
+\item{epi_units}{polygon data, usually epidemiologcal units (EU).}
 
-\item{r}{raster data to take the aggregate of each polygon in \code{p}.}
+\item{raster}{raster data to take the aggregate of each polygon in \code{p}.}
 
-\item{new_col}{name of new column containing aggregated raster data}
+\item{risk_name}{name of new column containing aggregated raster values}
+
+\item{aggregate_fun}{function to use to aggregate raster values over
+epi units area, default is \code{mean}.}
 }
 \value{
 returns the polygon data (sf) with a new column containing the
