@@ -36,9 +36,11 @@ vector, names will be used as the \code{names_to} arg, giving new names to resca
 high becomes low. Similar to the \code{"complementary"} value of method, but can be
 added to quadratic.}
 
-\item{names_prefix}{string, prefix \code{col} names to have new names for scaled columns.}
+\item{names_prefix}{string, prefix \code{cols} names to have new names for scaled columns.}
 
 \item{names_to}{string vector, provide new name for rescaled columns.}
+
+\item{keep_cols}{default TRUE, whether to keep \code{cols} columns after rescaling is done.}
 }
 \value{
 A dataset with new column containing  numeric vector of scaled values in the range [0, 100].

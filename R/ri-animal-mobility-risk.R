@@ -1,3 +1,25 @@
+
+#' @title Calculate animal mobility risk
+#'
+#' @description
+#' Calculate the risk of introduction associated with legal international animal
+#' commerce entering epidemiological units.
+#'
+#' The animal mobility dataset contains a single legal animal commerce route per
+#' row. Each row has the starting points and arrival point. Emission risk is
+#' weighted by quantity if provided.
+#'
+#' Once each arrival point has an averaged emission risk based on the emission score
+#' from each source country the `method` argument is used to aggregate that further,
+#' giving a risk of introduction for each epidemiological unit.
+#'
+#' @param animal_mobility animal moblity dataset as formatted and validated by
+#' [apply_mapping()] and [mapping_animal_mobility()]
+#' @param emission_risk emission risk dataset from [calc_emission_risk]
+#' @param country_iso3 ISO3 code for epidemiological units country, used to get international flows.
+#' @param epi_units epidemiological units dataset
+#' @param method aggregation method for eu risk
+#'
 #' @export
 calc_animal_mobility_risk <- function(
     animal_mobility,
