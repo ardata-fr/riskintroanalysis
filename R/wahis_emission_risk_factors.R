@@ -117,7 +117,7 @@ get_wahis_erf <- function(
 #'   zoning = 1,
 #'   official_vaccination = 0,
 #'   last_outbreak_end_date = "2020-05-01",
-#'   commerce_illegal = 3,
+#'   commerce_illegal = 1,
 #'   commerce_legal = 1
 #' )
 #'
@@ -144,6 +144,9 @@ erf_row <- function(
     commerce_legal = 0L,
     data_source = paste0("User ", Sys.info()[["user"]], " - ", Sys.Date())
 ){
+
+
+
   x <- tibble::tibble(
     iso3 = iso3,
     country = country,
@@ -159,11 +162,7 @@ erf_row <- function(
     selective_killing_and_disposal = if_numeric_to_int(selective_killing_and_disposal),
     zoning = if_numeric_to_int(zoning),
     official_vaccination = if_numeric_to_int(official_vaccination),
-    last_outbreak_end_date = if_else(
-      !inherits(last_outbreak_end_date, "Date"),
-      as.Date(last_outbreak_end_date),
-      last_outbreak_end_date
-    ),
+    last_outbreak_end_date = if_not_date(last_outbreak_end_date),
     commerce_illegal = if_numeric_to_int(commerce_illegal),
     commerce_legal = if_numeric_to_int(commerce_legal),
     data_source = data_source
@@ -178,4 +177,12 @@ erf_row <- function(
 
 if_numeric_to_int <- function(x){
   ifelse(class(x) %in% c("numeric", "logical") , as.integer(x), x)
+}
+
+if_not_date <- function(x) {
+  if (!inherits(x, "Date")) {
+    as.Date(x)
+  } else {
+    x
+  }
 }

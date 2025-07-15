@@ -106,7 +106,7 @@ erf_row(
   zoning = 1,
   official_vaccination = 0,
   last_outbreak_end_date = "2020-05-01",
-  commerce_illegal = 3,
+  commerce_illegal = 1,
   commerce_legal = 1
 )
 

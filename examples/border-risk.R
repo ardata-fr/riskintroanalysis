@@ -27,7 +27,7 @@ bordering_countries <- st_as_sf(
 )
 
 # Run function to get shared borders
-shared_borders <- get_shared_borders(
+shared_borders <- calc_border_lengths(
   epi_units = epi_units,
   eu_id_col = "EU_ID",
   bordering_countries = bordering_countries,
