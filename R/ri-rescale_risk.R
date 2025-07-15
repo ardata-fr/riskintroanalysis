@@ -33,6 +33,7 @@
 #' @examples
 #' # rescale_risk -----
 #' @example examples/rescale_risk.R
+#' @export
 rescale_risk <- function(
     dataset,
     risk_col,

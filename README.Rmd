@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 The riskintroanalysis R package provides functions to analyse the risk of introduction of animal diseases within a geographic area. It is intended to be useful as a stand-alone package, but also to integrate directly into the riskintro Rshiny app. The motivation behind these projects is to easily conduct geospatial risk analysis using existing data from WAHIS (World Animal Health Information System).
 
-## Installation
+# Installation
 
 You can install the development version of riskintroanalysis like so:
 
@@ -29,7 +29,7 @@ remotes::install_github("riskintroanalysis")
 ```
 
 
-## Dev notes!!
+# Dev notes!!
 
 Functions required:
   
@@ -40,7 +40,7 @@ Functions required:
 
 See analysis examples to develop.
 
-## Analysis
+# Analysis
 
 The package provides functions for certain risk of introduction analysis, but requires external data to be provided. The functions are inteded to be flexible, but each analytical method requires the corresponding data.
 
@@ -63,7 +63,24 @@ These two datasets are compared against each other through the following analyse
 
 # Example 1: Tunisia
 
+`riskintroanalysis` is intended to be used alongside `sf` geospatial data manipulation, 
+`dplyr` for general data manipulation, and `terra` for raster data.
+
+```{r include=FALSE}
+library(sf)
+library(dplyr)
+```
+
+```{r echo=FALSE}
+library(sf)
+library(dplyr)
+```
+
+
 ## Core datasets
+
+The two core datasets are emission risk factors and epidemiological units. The
+first is used in three out of four analysis methods, the second is used in all of them.
 
 ### Emission Risk Factors:
 
@@ -147,7 +164,6 @@ hist(
 It is also useful to join the world_sf geospatial dataset to emission risk for later.
 
 ```{r}
-
 world <- riskintrodata::world_sf
 
 emission_risk_sf <- dplyr::left_join(
@@ -161,7 +177,7 @@ plot(select(emission_risk_sf, emission_risk),
 ```
 
 
-### Area of interest (epidemiological units)
+### Epidemiological Units
 
 Epidemiological units (or epi units for short) is the term used for geographical areas of interests for analysing understand the risk of introduction. This data has no defaults and needs to be 
 provided by the user, however packages like `geodata` can be used to get them. For this example, a shapefile containing the administrative boundaries of Tunisia exists in the `riskintrodata` package for demonstration purposes.
@@ -196,6 +212,7 @@ is compatible with the rest of the analysis going forward.
 The 4 methods of analysis provided by the package are detailed below:
 
 This an example of analysing the risk of introduction for Tunisian governorates.
+Based off of the core datasets
 
 ### Risk of introduction through land borders:
 
@@ -242,7 +259,7 @@ ggplot() +
 
 ```
 The main purpose of the function is to correct misaligned borders, as can be seen in
-the overlaps and divergent borders. The epi units data is used as the "true" border, as
+the overlaps and divergent borders. The epidemiological units data is used as the "true" border as
 geospatial data from different sources are rarely well aligned.
 
 A border length has been calculated for each epi unit that a foreign country. 
@@ -256,21 +273,19 @@ border_risk_results <- calc_weighted_border_risk(
   emission_risk = emission_risk_table
   )
 
-
-
 ggplot() +
   geom_sf(
     data = border_risk_results$epi_units, 
     aes(fill = border_risk),
     alpha = 0.5
   ) +
-  scale_color_viridis_c(limits = c(0, 5)) +
+  scale_color_viridis_c(limits = c(0, 12), direction = -1) +
   geom_sf(
     data = border_risk_results$borders,
     aes(color = border_risk),
     linewidth =  2
   ) +
-  scale_fill_viridis_c(limits = c(0, 5)) +
+  scale_fill_viridis_c(limits = c(0, 12), direction = -1) +
   geom_sf_label(
     data = border_risk_results$border,
     aes(label = round(border_risk, 2)),
@@ -285,11 +300,6 @@ ggplot() +
     aes(label = paste(eu_name, "\n", round(border_risk, 2))),
     size = 5/.pt, fill = "lightblue", alpha = 0.6
   )
-            
-
-plot(select(eu_border_risk_intro, border_risk) |> 
-       mutate(border_risk = as.factor(round(border_risk, 1))), 
-     main = "Weighted risk of introduction useing border method")
 
 ```
 
@@ -338,13 +348,13 @@ ggplot() +
   geom_sf(data = epi_units_entry_point_intro_risk,
           aes(fill = entry_points_risk),
           alpha = 0.6) +
-  scale_fill_viridis_c(limits = c(0, 5)) +
+  scale_fill_viridis_c(limits = c(0, 12), direction = -1) +
   geom_sf(
     data = points_entry_point_intro_risk,
     size = 1.5, shape = 21,
     aes(fill = emission_risk)
     ) +
-    scale_color_viridis_c(limits = c(0, 5))
+    scale_color_viridis_c(limits = c(0, 12), direction = -1)
 ```
 
 All epi units containing an entry point (with an associated weighted emission risk) now have a risk of introduction based on the points within its area.
@@ -392,10 +402,16 @@ analysis_output <- calc_animal_mobility_eu_risk(
   )
 
 ggplot() +
-  geom_sf(data = analysis_output, aes(geometry = geometry, fill = animal_movement_risk)) +
- scale_fill_viridis_c(limits = c(0, 5))+
-  geom_sf(data = analysis_point, color = "black", size = 1.5, shape = 21,
-          aes(fill = emission_risk_weighted ))
+  geom_sf(
+    data = analysis_output,
+    aes(geometry = geometry, fill = animal_movement_risk)
+  ) +
+  scale_fill_viridis_c(limits = c(0, 12), direction = -1)+
+  geom_sf(
+    data = analysis_point, 
+    color = "black", size = 1.5, shape = 21,
+    aes(fill = emission_risk_weighted )
+  )
 
 ```
 
@@ -432,11 +448,11 @@ The output shows the road access risk associated with each area.
 
 ## Risk rescaling
 
-Once all the analysis methods have given a result, we need to be able to compare them. Notably, road access risk is not on the same 0 to 12 scale as the other three analyese. You might also want to add your own risk scores using other methods.
+Once all the analysis methods have given a result, we need to be able to compare them. Notably, road access risk is not on the same 0 to 12 scale as the other three analyses. You might also want to add your own risk scores using other methods.
 
 To make sure we can compare across risks, riskintro proposes the `rescale_risk` function, whose primary purpose is to normalise risk scores to a range between 0 and 100. Its secondary role is to transform the risk distribution using quadratic, exponential or sigmoid functions (and inverse versions of these). Other options include reversing the scaling as well. 
 
-A linear transformation looks like this: 
+A linear transformation looks like the following. This uses the maximum value of `road_access_risk` as the top of the range, whereas it could be better to take the global maximum in the raster if you are intending to comparing across countries later.
 
 ```{r}
 rescaled <- rescale_risk(
@@ -474,10 +490,15 @@ Once all the risk methods have been compiled and scaled similarly, it can be han
 ```{r}
 
 summary_table <- tunisia |> 
-  left_join(st_drop_geometry(rescaled), by = c("eu_id", "eu_name")) |> 
-  left_join(st_drop_geometry(epi_units_entry_point_intro_risk), 
-            by = c("eu_id", "eu_name"))
-
+  left_join(
+    st_drop_geometry(rescaled), 
+    by = c("eu_id", "eu_name")
+  ) |> 
+  left_join(
+    st_drop_geometry(epi_units_entry_point_intro_risk), 
+    by = c("eu_id", "eu_name")
+  )
+summary_table
 ```
 
 
