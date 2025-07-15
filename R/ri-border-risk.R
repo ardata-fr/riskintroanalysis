@@ -19,7 +19,7 @@
 #'
 #' @export
 #' @example examples/border-risk.R
-calc_shared_border_lengths <- function(epi_units, eu_id_col, bordering_countries, bc_id_col) {
+calc_border_lengths <- function(epi_units, eu_id_col, bordering_countries, bc_id_col) {
   sf_use_s2(TRUE)
 
   out_list <- list()
@@ -199,7 +199,7 @@ calc_shared_border_lengths <- function(epi_units, eu_id_col, bordering_countries
 #' @param add_html_lables default FALSE, used for leaflet tooltips in the Shiny app.
 #'
 #' @export
-calc_weighted_border_risk <- function(
+calc_border_risk <- function(
     epi_units,
     shared_borders,
     emission_risk,

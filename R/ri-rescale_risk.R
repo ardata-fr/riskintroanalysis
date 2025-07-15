@@ -34,27 +34,42 @@
 #' # rescale_risk -----
 #' @example examples/rescale_risk.R
 #' @export
-rescale_risk <- function(
-    dataset,
-    risk_col,
+rescale_risk_scores <- function(
+    data,
+    cols,
     method = c("linear", "quadratic", "exponential", "sigmoid"),
     inverse = FALSE,
     from,
     to = c(0, 100),
-    new_col = NULL
+    names_prefix = NULL,
+    names_to = NULL,
+    keep_cols = FALSE
     ) {
 
-
-  stopifnot(
-    'risk_col not found in dataset' = risk_col %in% names(dataset),
-    'inverse should be TRUE or FALSE' = inverse %in% c(TRUE, FALSE)
+  cli_abort_if_not(
+    "{.arg  data} should be a data.frame or tibble" = "data.frame" %in% class(data),
+    "{.arg inverse} should be TRUE or FALSE" = inverse %in% c(TRUE, FALSE),
+    "{.arg from} should have be a vector of length 2" = length(from) == 2,
+    "{.arg to} should have be a vector of length 2" = length(from) == 2
   )
 
-  method <- match.arg(method)
-
-  if (is.null(new_col)) {
-    new_col <- paste0(method, "_scaled_", risk_col)
+  missing_cols <- cols[!cols %in% colnames(data)]
+  if (length(missing_cols) >1) {
+    cli::cli_abort("These {.arg  cols} not found in data: {quote_and_collapse(missing_cols, quote_char = '\"')}")
   }
+
+  if (rlang::is_named(cols) && !is.null(names_to)){
+    cli::cli_abort(
+      "When {.arg cols} is a named list, {.arg names_to} should not be provided."
+    )
+  }
+
+  new_cols <- names_to %||% names(cols) %||% cols
+  new_cols <- paste0(names_prefix, new_cols)
+
+  method <- match.arg(method)
+  dataset <- data
+
 
   old_min <- from[[1]] # existing min
   old_max <- from[[2]]
@@ -83,12 +98,18 @@ rescale_risk <- function(
     )
   }
 
-  dat <- data.frame(x = dataset[[risk_col]])
-  dat$normalised <- (dat$x - old_min) / (old_max - old_min)
-  dat$transformed <- transformation(dat$normalised)
-  dat$rescaled <- dat$transformed * (new_max - new_min) + new_min
 
-  dataset[[new_col]] <- dat$rescaled
+  for (i in seq_along(cols)){
+    dat <- data.frame(x = dataset[[cols[[i]]]])
+    dat$normalised <- (dat$x - old_min) / (old_max - old_min)
+    dat$transformed <- transformation(dat$normalised)
+    dat$rescaled <- dat$transformed * (new_max - new_min) + new_min
+    dataset[[new_cols[[i]]]] <- dat$rescaled
+  }
+
+  if (!keep_cols) {
+    dataset <- dataset |> dplyr::select(-all_of(cols))
+  }
   dataset
 }
 

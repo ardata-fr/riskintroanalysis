@@ -240,7 +240,7 @@ bordering_countries <- world |>
   filter(iso3 %in% tun_neighbours$neighbour_id)
 
 # Run function to get shared borders
-shared_borders <- calc_shared_border_lengths(
+shared_borders <- calc_border_lengths(
   epi_units = tunisia,
   eu_id_col = "eu_id",
   bordering_countries = bordering_countries,
@@ -267,7 +267,7 @@ For most of these areas, the risk of introduction will simply equal the emission
 of the neighbouring country, with the exception of Tunisia's southern most governorate. Which will have an emission risk weighed by the border lengths or each neighbour.
 
 ```{r}
-border_risk_results <- calc_weighted_border_risk(
+border_risk_results <- calc_border_risk(
   epi_units = tunisia, 
   shared_borders = shared_borders,
   emission_risk = emission_risk_table
@@ -336,11 +336,12 @@ entry_points <- apply_mapping(
   validate = TRUE
 )
 
-results <- calc_entry_point_intro_risk(
+results <- calc_entry_point_risk(
   entry_points = entry_points,
   epi_units = tunisia,
   emission_risk = emission_risk_table
 )
+# extract_points() au lieu de $points
 points_entry_point_intro_risk <- results$points
 epi_units_entry_point_intro_risk <- results$epi_units
 
@@ -497,8 +498,41 @@ summary_table <- tunisia |>
   left_join(
     st_drop_geometry(epi_units_entry_point_intro_risk), 
     by = c("eu_id", "eu_name")
+  ) |> 
+  left_join(
+    st_drop_geometry(border_risk_results$epi_units), 
+    by = c("eu_id", "eu_name")
+  ) |> 
+  left_join(
+    st_drop_geometry(analysis_output), 
+    by = c("eu_id", "eu_name")
+  ) |> 
+  select(
+    eu_id, eu_name,
+    ri_road_access = scaled_road_access_risk,
+    ri_entry_points = entry_points_risk,
+    ri_border_risk = border_risk,
+    ri_animal_movement = animal_movement_risk
+  ) |>
+  rescale_risk(
+    cols = c("ri_road_access", "ri_entry_points", "ri_border_risk", "ri_animal_movement"), 
+    method = "linear", 
+    from = c(0, 12),
+    names_prefix = "RISK__",
+    names_to = c("RA", "EP", "BRDR", "AM"), 
+    keep_cols = FALSE
   )
-summary_table
+
+risk_cols <- grepv(pattern = "ri_", x = colnames(summary_table))
+
+combined_risk_table <- summary_table |> 
+  summarise_risk_scores(risk_cols  = risk_cols, method = "mean")
+
+ggplot() +
+  geom_sf(
+    data = combined_risk_table,
+    aes(fill = overall_risk)
+    )
 ```
 
 

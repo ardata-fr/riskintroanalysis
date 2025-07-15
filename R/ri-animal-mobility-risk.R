@@ -1,3 +1,29 @@
+
+calc_animal_mobility_risk <- function(
+    animal_mobility,
+    emission_risk,
+    country_iso3,
+    epi_units,
+    method
+){
+
+  points <- calc_animal_mobility_point_risk(
+    animal_mobility = animal_mobility,
+    emission_risk = emission_risk,
+    country_iso3 = country_iso3
+  )
+
+  eu <- calc_animal_mobility_eu_risk(
+    epi_units = epi_units,
+    method = method
+  )
+
+  list(
+    points = points,
+    epi_units = epi_units
+  )
+}
+
 #' Animal mobility destination point risk
 #'
 #' Calculate the emission risk associated with each animal mobility flow that enters
@@ -16,7 +42,8 @@
 calc_animal_mobility_point_risk <- function(
     animal_mobility,
     emission_risk,
-    country_iso3) {
+    country_iso3
+    ) {
 
   inflow <- animal_mobility |>
     # Keep only the flows into Epiunit country.
@@ -78,7 +105,11 @@ calc_animal_mobility_point_risk <- function(
 #'
 #' @returns the study EUs with associated introduction risk caluclated from point emission risk
 #' @export
-calc_animal_mobility_eu_risk <- function(animal_mobility_points, epi_units, method) {
+calc_animal_mobility_eu_risk <- function(
+    animal_mobility_points,
+    epi_units,
+    method
+    ) {
   method_func <- switch(method,
     "mean" = mean,
     "max" = max,

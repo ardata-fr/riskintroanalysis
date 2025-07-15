@@ -17,3 +17,17 @@ name_is_valid <- function(string) {
   if (is.null(string)) return(FALSE)
   gsub("[^[:alpha:] ]", "", string) == string
 }
+
+cli_abort_if_not <- function(..., .call = .envir, .envir = parent.frame(), .frame = .envir) {
+  for (i in seq_len(...length())) {
+    if (!all(...elt(i))) {
+      cli::cli_abort(
+        ...names()[i],
+        .call = .call,
+        .envir = .envir,
+        .frame = .frame
+      )
+    }
+  }
+  invisible(NULL)
+}

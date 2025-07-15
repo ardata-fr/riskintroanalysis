@@ -4,7 +4,7 @@
 #' @importFrom stats na.omit
 #' @importFrom sf st_drop_geometry
 #' @importFrom dplyr select left_join filter bind_rows
-calc_entry_point_intro_risk <- function(
+calc_entry_point_risk <- function(
     entry_points,
     epi_units,
     emission_risk

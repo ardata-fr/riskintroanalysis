@@ -37,6 +37,24 @@ overall_risk <- function(epi_units, risk_table, method){
   out
 }
 
+
+summarise_risk_scores <- function(risk_table, risk_cols, method = c("mean", "max", "min")){
+
+  method <- match.arg(method)
+  method_func <- switch(
+    method,
+    "mean" = function(x) safe_stat(x, FUN = mean, NA_value = NA_real_),
+    "max" = function(x) safe_stat(x, FUN = max, NA_value = NA_real_),
+    "min" = function(x) safe_stat(x, FUN = min, NA_value = NA_real_)
+  )
+
+  out <- risk_table |>
+    rowwise() |>
+    mutate(overall_risk = method_func(c_across(risk_cols))) |>
+    ungroup()
+  out
+}
+
 # Visualisation --------------------------------------------------------------
 #' @importFrom stringr str_to_sentence
 updateRiskSummaryLeaflet <- function(ll, dat){
