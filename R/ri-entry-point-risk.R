@@ -1,5 +1,33 @@
-# Method functions -------------------------------------------------------------
-
+#' @title Calculate entry point risk
+#' @description
+#' Calculating the entry point risk associated with each epidemiological unit.
+#'
+#' The first step is calculating the points dataset: each
+#' point located within an epidemiological unit is linked to one or more source countries from
+#' which animals enter into the epidemiological unit. For each point the emission
+#' risk of the source countries is averaged. This provides an average emission risk score
+#' for each point.
+#'
+#' The second step is creating the epidemiologcal units introduction risk dataset by
+#' joining th points dataset with epidemiological units and
+#' finding the average emission risk score for each entry points within each
+#' area. This gives a risk of introduction for each epidemiological unit.
+#'
+#' @param entry_points The entry points dataset as formatted and validated by [apply_mapping()] and
+#' [mapping_entry_points()]. This should be an `sf` object containing points and emission risks.
+#' @param epi_units The epidemiological units dataset as formatted and validated by [apply_mapping()] and
+#' [mapping_epi_units()]. This should be an `sf` object with polygons.
+#' @param emission_risk The emission risk dataset as returned by the [calc_emission_risk()]
+#' function.
+#'
+#' @return returns a list of class `ri_analysis` containing two datasets:
+#'
+#' 1.   Points (name: `points`) dataset contains the aggregated emission risk score for each
+#' entry point.
+#' 2.   Epidemiological units (name: `epi_units`) dataset containing the weighted
+#' average of each of points' emission risk scores within its area, this is the
+#' risk of introduction by entry points.
+#'
 #' @export
 #' @importFrom stats na.omit
 #' @importFrom sf st_drop_geometry
@@ -96,11 +124,12 @@ calc_entry_point_risk <- function(
       .groups = "drop"
     )
 
-
-  list(
+  x <- list(
     points = points_emission_risk,
     epi_units = risk_per_eu
   )
+  class(x) <- "ri_analysis"
+  x
 }
 
 

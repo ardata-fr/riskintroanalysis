@@ -18,8 +18,9 @@
 #' \deqn{f(x) = \frac{100}{1 + \exp(-10 \cdot (\frac{x}{12} - 0.5))}}
 #'
 #'
-#' @param dataset dataset to add scaled risk column to.
-#' @param risk_col Column containing numeric vector of risk values in the range \[0, 12\].
+#' @param data dataset to add scaled risk column to.
+#' @param cols Column containing numeric vector of risk values in the range \[0, 12\] OR a named
+#' vector, names will be used as the `names_to` arg, giving new names to rescaled columns.
 #' @param from existing range of possible values for `risk_col` that will be converted to
 #' @param to new range of possible values for `risk_col`, by default it is 0 to 100.
 #' @param method The scaling method to apply. Options are `"linear"`, `"quadratic"`,
@@ -27,8 +28,10 @@
 #' @param inverse boolean to inverse the risk values, i.e. low becomes high, and
 #' high becomes low. Similar to the `"complementary"` value of method, but can be
 #' added to quadratic.
-#' @param new_col string, The name of the new scaled column, defaults to `{method}_scaled_{risk_col}`.
-#' If set to `NA` the scaled column will replace the existing column.
+#' @param names_prefix string, prefix `cols` names to have new names for scaled columns.
+#' @param names_to string vector, provide new name for rescaled columns.
+#' @param keep_cols default TRUE, whether to keep `cols` columns after rescaling is done.
+#' @param ... keep empty
 #' @return A dataset with new column containing  numeric vector of scaled values in the range \[0, 100\].
 #' @examples
 #' # rescale_risk -----
@@ -37,15 +40,17 @@
 rescale_risk_scores <- function(
     data,
     cols,
-    method = c("linear", "quadratic", "exponential", "sigmoid"),
-    inverse = FALSE,
+    ...,
     from,
     to = c(0, 100),
+    method = c("linear", "quadratic", "exponential", "sigmoid"),
+    inverse = FALSE,
     names_prefix = NULL,
     names_to = NULL,
-    keep_cols = FALSE
+    keep_cols = TRUE
     ) {
 
+  check_dots_empty()
   cli_abort_if_not(
     "{.arg  data} should be a data.frame or tibble" = "data.frame" %in% class(data),
     "{.arg inverse} should be TRUE or FALSE" = inverse %in% c(TRUE, FALSE),
@@ -57,11 +62,11 @@ rescale_risk_scores <- function(
   if (length(missing_cols) >1) {
     cli::cli_abort("These {.arg  cols} not found in data: {quote_and_collapse(missing_cols, quote_char = '\"')}")
   }
-
   if (rlang::is_named(cols) && !is.null(names_to)){
-    cli::cli_abort(
-      "When {.arg cols} is a named list, {.arg names_to} should not be provided."
-    )
+    cli::cli_abort("When {.arg cols} is a named list, {.arg names_to} should not be provided.")
+  }
+  if (!is.null(names_to) && length(names_to) != length(cols)) {
+    cli::cli_abort("{.arg names_to} must be the same length as {.arg cols}.")
   }
 
   new_cols <- names_to %||% names(cols) %||% cols

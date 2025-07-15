@@ -1,15 +1,15 @@
-# Method -----------------------------------------------------------------------
-
-#' Get Shared Borders Between EUs and Bordering Countries
+#' @title Get Shared Borders Between EUs and Bordering Countries
 #'
-#' This function identifies shared borders between epidemiological units (EUs) and neighboring countries.
+#' @description
+#' This function identifies shared borders between epidemiological units (EUs) and neighbouring countries.
 #' It accounts for small discrepancies in border alignments and adjusts accordingly using an
-#' algorithm that loops over all overlapping and divergent polygons. This can take some
-#' time to run.
+#' algorithm that loops over all overlapping and divergent polygons.
 #'
-#' Converts sf objects to crs 6933 and uses s2. However, output remains WGS84.
+#' This can take some time to run.
 #'
-#' @param epi_units An `sf` object containing the epidemiological units.
+#' Distances are calculated using projection crs 6933 and uses s2. However, output remains WGS84.
+#'
+#' @param epi_units An `sf` object containing the epidemiological units. Should containg only polygons.
 #' @param eu_id_col A string specifying the column name in `epi_units` that identifies each EU.
 #' @param bordering_countries An `sf` object containing the bordering countries.
 #' @param bc_id_col A string specifying the column name in `bordering_countries` that identifies each country.
@@ -19,7 +19,12 @@
 #'
 #' @export
 #' @example examples/border-risk.R
-calc_border_lengths <- function(epi_units, eu_id_col, bordering_countries, bc_id_col) {
+calc_border_lengths <- function(
+    epi_units,
+    eu_id_col,
+    bordering_countries,
+    bc_id_col
+    ) {
   sf_use_s2(TRUE)
 
   out_list <- list()
@@ -186,9 +191,7 @@ calc_border_lengths <- function(epi_units, eu_id_col, bordering_countries, bc_id
 
 #' Calculate weighted border risk
 #'
-#' Calculate weighted border risk from required datasets.
-#'
-#' Calculates the risk of introduction for each epi unit based on the risk of
+#' Calculates the risk of introduction for each epidemiological unit based on the risk of
 #' emission of neighbouring countries. The score is weighted based on the length of
 #' shared borders.
 #'
@@ -260,8 +263,6 @@ calc_border_risk <- function(
   )
 }
 
-
-#' @export
 #' @importFrom shiny HTML
 label_borders <- function(borders, epi_units, emission_risk) {
   border_risks <- borders |>

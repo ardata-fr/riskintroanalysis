@@ -37,7 +37,8 @@ overall_risk <- function(epi_units, risk_table, method){
   out
 }
 
-
+#' @export
+#' @importFrom dplyr rowwise mutate c_across ungroup
 summarise_risk_scores <- function(risk_table, risk_cols, method = c("mean", "max", "min")){
 
   method <- match.arg(method)
@@ -49,6 +50,7 @@ summarise_risk_scores <- function(risk_table, risk_cols, method = c("mean", "max
   )
 
   out <- risk_table |>
+    mutate(across( all_of(risk_cols), function(x) if_else(is.nan(x), 0, x))) |>
     rowwise() |>
     mutate(overall_risk = method_func(c_across(risk_cols))) |>
     ungroup()

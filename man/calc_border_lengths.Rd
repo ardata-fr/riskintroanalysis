@@ -7,7 +7,7 @@
 calc_border_lengths(epi_units, eu_id_col, bordering_countries, bc_id_col)
 }
 \arguments{
-\item{epi_units}{An \code{sf} object containing the epidemiological units.}
+\item{epi_units}{An \code{sf} object containing the epidemiological units. Should containg only polygons.}
 
 \item{eu_id_col}{A string specifying the column name in \code{epi_units} that identifies each EU.}
 
@@ -20,13 +20,13 @@ An \code{sf} object containing shared borders between EUs and bordering countrie
 with calculated border lengths and weights.
 }
 \description{
-This function identifies shared borders between epidemiological units (EUs) and neighboring countries.
+This function identifies shared borders between epidemiological units (EUs) and neighbouring countries.
 It accounts for small discrepancies in border alignments and adjusts accordingly using an
-algorithm that loops over all overlapping and divergent polygons. This can take some
-time to run.
-}
-\details{
-Converts sf objects to crs 6933 and uses s2. However, output remains WGS84.
+algorithm that loops over all overlapping and divergent polygons.
+
+This can take some time to run.
+
+Distances are calculated using projection crs 6933 and uses s2. However, output remains WGS84.
 }
 \examples{
 library(sf)

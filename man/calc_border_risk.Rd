@@ -24,10 +24,7 @@ calc_border_risk(
 \item{add_html_lables}{default FALSE, used for leaflet tooltips in the Shiny app.}
 }
 \description{
-Calculate weighted border risk from required datasets.
-}
-\details{
-Calculates the risk of introduction for each epi unit based on the risk of
+Calculates the risk of introduction for each epidemiological unit based on the risk of
 emission of neighbouring countries. The score is weighted based on the length of
 shared borders.
 }

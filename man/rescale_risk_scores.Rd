@@ -7,16 +7,28 @@
 rescale_risk_scores(
   data,
   cols,
-  method = c("linear", "quadratic", "exponential", "sigmoid"),
-  inverse = FALSE,
+  ...,
   from,
   to = c(0, 100),
+  method = c("linear", "quadratic", "exponential", "sigmoid"),
+  inverse = FALSE,
   names_prefix = NULL,
   names_to = NULL,
-  keep_cols = FALSE
+  keep_cols = TRUE
 )
 }
 \arguments{
+\item{data}{dataset to add scaled risk column to.}
+
+\item{cols}{Column containing numeric vector of risk values in the range [0, 12] OR a named
+vector, names will be used as the \code{names_to} arg, giving new names to rescaled columns.}
+
+\item{...}{keep empty}
+
+\item{from}{existing range of possible values for \code{risk_col} that will be converted to}
+
+\item{to}{new range of possible values for \code{risk_col}, by default it is 0 to 100.}
+
 \item{method}{The scaling method to apply. Options are \code{"linear"}, \code{"quadratic"},
 \code{"exponential"}, \code{"sigmoid"}, or \code{"complementary"}.}
 
@@ -24,16 +36,9 @@ rescale_risk_scores(
 high becomes low. Similar to the \code{"complementary"} value of method, but can be
 added to quadratic.}
 
-\item{from}{existing range of possible values for \code{risk_col} that will be converted to}
+\item{names_prefix}{string, prefix \code{col} names to have new names for scaled columns.}
 
-\item{to}{new range of possible values for \code{risk_col}, by default it is 0 to 100.}
-
-\item{dataset}{dataset to add scaled risk column to.}
-
-\item{risk_col}{Column containing numeric vector of risk values in the range [0, 12].}
-
-\item{new_col}{string, The name of the new scaled column, defaults to \verb{\{method\}_scaled_\{risk_col\}}.
-If set to \code{NA} the scaled column will replace the existing column.}
+\item{names_to}{string vector, provide new name for rescaled columns.}
 }
 \value{
 A dataset with new column containing  numeric vector of scaled values in the range [0, 100].
