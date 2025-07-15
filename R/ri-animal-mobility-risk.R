@@ -1,4 +1,4 @@
-
+#' @export
 calc_animal_mobility_risk <- function(
     animal_mobility,
     emission_risk,

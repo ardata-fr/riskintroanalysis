@@ -363,13 +363,14 @@ All epi units containing an entry point (with an associated weighted emission ri
 ### Animal mobility method:
 
 Considerations:
-  1. fix exports, need to export as much as possible.
-  1. add "countries" package as dep and re-export country_name
-  1. Provide tools to tidy data for analysis and validate datasets 
-  at the start of each function.
-  1. Do we continue to include lealfet labels in output?
-  1. create plot.generics for each output to a basic plot or leaflet?
-  1 Combine calc_animal_mobility_point_risk and calc_animal_mobility_eu_risk into one function?
+
+1. fix exports, need to export as much as possible.
+1. add "countries" package as dep and re-export country_name
+1. Provide tools to tidy data for analysis and validate datasets 
+at the start of each function.
+1. Do we continue to include lealfet labels in output?
+1. create plot.generics for each output to a basic plot or leaflet?
+1. Combine calc_animal_mobility_point_risk and calc_animal_mobility_eu_risk into one function?
 
 ```{r}
 library(riskintroanalysis)

@@ -1,0 +1,34 @@
+url: ~
+template:
+  bootstrap: 5
+  theme: breeze-light
+  bootswatch: simplex
+  bslib:
+    pkgdown-nav-height: 100px
+    base_font:
+      google: "Open Sans"
+
+reference:
+  - title: Standardize Datasets for 'Riskintro' Analysis
+    contents:
+    - apply_mapping
+  - title: Calculate risks
+    desc: >
+     These functions are to be used for calculations of risks of introduction
+    contents:
+    - starts_with("calc_")
+    - augment_epi_units_with_raster
+    - rescale_risk_scores
+  - title: Generate risks' Maps
+    desc: >
+     These functions are to be used for drawing static or dynamic maps
+     showing the risks that have been calculated.
+    contents:
+    - starts_with("calc_")
+  - title: Utilities
+    contents:
+    - add_source_labels
+    - erf_row
+    - get_erf_weights
+    - get_wahis_erf
+    - updateRoadAccessLeaflet

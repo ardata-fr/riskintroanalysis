@@ -1,5 +1,5 @@
-Package: riskintroanalysis
 Type: Package
+Package: riskintroanalysis
 Title: Analysis Methods for Managing Animal Disease Introduction Risk
 Version: 0.1.1.003
 Authors@R: c(
@@ -8,34 +8,35 @@ Authors@R: c(
     person("ArData", role = "ctr"),
     person("CIRAD", role = "cph")
   )
-Description: The riskintroanalysis R package provides functions to analyse the
-    risk of introduction of animal diseases within a geographic area.
+Description: The riskintroanalysis R package provides functions to analyse
+    the risk of introduction of animal diseases within a geographic area.
 License: MIT + file LICENSE
 Depends:
-    R (>= 4.4.0),
-    ggplot2 (>= 3.5.2)
+    ggplot2 (>= 3.5.2),
+    R (>= 4.4.0)
 Imports:
-    riskintrodata,
-    rlang,
     cli,
     dplyr,
-    stringr,
-    tidyr,
-    purrr,
-    sf,
-    s2,
     ggnewscale,
-    leaflet,
     glue,
+    leaflet,
     legendry,
+    purrr,
+    riskintrodata,
+    rlang,
+    s2,
+    sf,
     shiny,
-    tibble
+    stringr,
+    terra,
+    tibble,
+    tidyr
 Suggests: 
-    testthat (>= 3.0.0),
-    knitr
+    knitr,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 Encoding: UTF-8
-LazyData: true
 Language: en
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Config/testthat/edition: 3

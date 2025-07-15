@@ -4,6 +4,7 @@
 # riskintroanalysis
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The riskintroanalysis R package provides functions to analyse the risk
@@ -13,7 +14,7 @@ directly into the riskintro Rshiny app. The motivation behind these
 projects is to easily conduct geospatial risk analysis using existing
 data from WAHIS (World Animal Health Information System).
 
-## Installation
+# Installation
 
 You can install the development version of riskintroanalysis like so:
 
@@ -21,7 +22,7 @@ You can install the development version of riskintroanalysis like so:
 remotes::install_github("riskintroanalysis")
 ```
 
-## Dev notes!!
+# Dev notes!!
 
 Functions required:
 
@@ -33,7 +34,7 @@ Functions required:
 
 See analysis examples to develop.
 
-## Analysis
+# Analysis
 
 The package provides functions for certain risk of introduction
 analysis, but requires external data to be provided. The functions are
@@ -80,7 +81,15 @@ individually to montor is risk of introduction.
 
 # Example 1: Tunisia
 
+`riskintroanalysis` is intended to be used alongside `sf` geospatial
+data manipulation, `dplyr` for general data manipulation, and `terra`
+for raster data.
+
 ## Core datasets
+
+The two core datasets are emission risk factors and epidemiological
+units. The first is used in three out of four analysis methods, the
+second is used in all of them.
 
 ### Emission Risk Factors:
 
@@ -96,18 +105,9 @@ associated with this score, and a 0 means no additional risk.
 ``` r
 
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 library(riskintroanalysis)
 #> Loading required package: ggplot2
 library(sf)
-#> Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE
 
 algeria <- erf_row(
   iso3 = "DZA",
@@ -173,13 +173,12 @@ hist(
 )
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
 It is also useful to join the world_sf geospatial dataset to emission
 risk for later.
 
 ``` r
-
 world <- riskintrodata::world_sf
 
 emission_risk_sf <- dplyr::left_join(
@@ -191,9 +190,9 @@ plot(select(emission_risk_sf, emission_risk),
      main = "Emission risk scores")
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
-### Area of interest (epidemiological units)
+### Epidemiological Units
 
 Epidemiological units (or epi units for short) is the term used for
 geographical areas of interests for analysing understand the risk of
@@ -227,7 +226,7 @@ tunisia <- apply_mapping(
 plot(sf::st_geometry(tunisia))
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
 What’s left after using `apply_mapping()` is the required “epi_units”
 dataset that is compatible with the rest of the analysis going forward.
 
@@ -236,7 +235,7 @@ dataset that is compatible with the rest of the analysis going forward.
 The 4 methods of analysis provided by the package are detailed below:
 
 This an example of analysing the risk of introduction for Tunisian
-governorates.
+governorates. Based off of the core datasets
 
 ### Risk of introduction through land borders:
 
@@ -298,7 +297,7 @@ ggplot() +
 #> give correct results for longitude/latitude data
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /> The
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /> The
 main purpose of the function is to correct misaligned borders, as can be
 seen in the overlaps and divergent borders. The epidemiological units
 data is used as the “true” border as geospatial data from different
@@ -350,7 +349,7 @@ ggplot() +
 #> give correct results for longitude/latitude data
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 We can see that Remada has a risk of introduction weighted by border
 lengths. The numbers shown along the borders are the emission risk
@@ -417,7 +416,7 @@ ggplot() +
     scale_color_viridis_c(limits = c(0, 12), direction = -1)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 All epi units containing an entry point (with an associated weighted
 emission risk) now have a risk of introduction based on the points
@@ -425,13 +424,16 @@ within its area.
 
 ### Animal mobility method:
 
-Considerations: 1. fix exports, need to export as much as possible. 1.
-add “countries” package as dep and re-export country_name 1. Provide
-tools to tidy data for analysis and validate datasets at the start of
-each function. 1. Do we continue to include lealfet labels in output? 1.
-create plot.generics for each output to a basic plot or leaflet? 1
-Combine calc_animal_mobility_point_risk and calc_animal_mobility_eu_risk
-into one function?
+Considerations:
+
+1.  fix exports, need to export as much as possible.
+2.  add “countries” package as dep and re-export country_name
+3.  Provide tools to tidy data for analysis and validate datasets at the
+    start of each function.
+4.  Do we continue to include lealfet labels in output?
+5.  create plot.generics for each output to a basic plot or leaflet? 1
+    Combine calc_animal_mobility_point_risk and
+    calc_animal_mobility_eu_risk into one function?
 
 ``` r
 library(riskintroanalysis)
@@ -486,7 +488,7 @@ ggplot() +
   )
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
 Some points remain grey indicating that the country from which the flow
 comes does not have an entry in the emission risk factors table.
@@ -507,7 +509,7 @@ road_raster <- terra::rast(road_raster_fp)
 terra::plot(terra::crop(road_raster, tunisia, mask = TRUE)) 
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
 
 This shows us what the raster data looks like for Tunisia. Now we will
 aggragate these values over each administrative area. Here, mean is
@@ -524,7 +526,7 @@ road_access_risk <- augment_epi_units_with_raster(
 plot(select(road_access_risk, road_access_risk))
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
 
 The output shows the road access risk associated with each area.
 
@@ -559,7 +561,7 @@ rescaled <- rescale_risk(
 plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-13-1.png" width="100%" />
 
 While a sigmoid transformation looks like the below. The choice of the
 `method` argument are left up to the judgement of the analyst.
@@ -576,7 +578,7 @@ rescaled <- rescale_risk(
 plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
 ```
 
-<img src="man/figures/README-unnamed-chunk-12-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-14-1.png" width="100%" />
 
 ## Summary table
 

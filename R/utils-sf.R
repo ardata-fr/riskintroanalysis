@@ -57,28 +57,6 @@ latlng_to_sf <- function(dat) {
   dat
 }
 
-#' @export
-#' @keywords internal
-#' @title Check if a vector is a valid latitude
-#' @description Check if a vector is a valid latitude
-#' @param x numeric vector
-#' @return logical vector of the same length as x
-is.lat <- function(x){
-  z <- na.omit(x)
-  z <= 90 & z >= -90
-}
-
-#' @export
-#' @keywords internal
-#' @title Check if a vector is a valid longitude
-#' @description Check if a vector is a valid longitude
-#' @param x numeric vector
-#' @return logical vector of the same length as x
-is.lng <- function(x){
-  z <- na.omit(x)
-  z <= 180 & z >= -180
-}
-
 #' Fill in holes in a polygon
 #'
 #' @param x polgon
