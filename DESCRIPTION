@@ -21,16 +21,19 @@ Imports:
     glue,
     leaflet,
     legendry,
+    lubridate,
     purrr,
     riskintrodata,
     rlang,
     s2,
     sf,
     shiny,
+    shinyWidgets,
     stringr,
     terra,
     tibble,
-    tidyr
+    tidyr,
+    tidyselect
 Suggests: 
     knitr,
     testthat (>= 3.0.0)

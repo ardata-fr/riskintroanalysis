@@ -31,3 +31,26 @@ cli_abort_if_not <- function(..., .call = .envir, .envir = parent.frame(), .fram
   }
   invisible(NULL)
 }
+
+
+absolute_path <- function(x){
+
+  if (length(x) != 1L)
+    stop("'x' must be a single character string")
+  epath <- path.expand(x)
+
+  if( file.exists(epath)){
+    epath <- normalizePath(epath, "/", mustWork = TRUE)
+  } else {
+    if( !dir.exists(dirname(epath)) ){
+      stop("directory of ", x, " does not exist.", call. = FALSE)
+    }
+    cat("", file = epath)
+    epath <- normalizePath(epath, "/", mustWork = TRUE)
+    unlink(epath)
+  }
+  epath
+}
+
+
+utils::globalVariables(c(".data"))

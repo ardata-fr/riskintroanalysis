@@ -59,7 +59,8 @@ Below are the equations used for each method:
 }
 \examples{
 # rescale_risk -----
-library(riskintro)
+library(riskintrodata)
+library(riskintroanalysis)
 
 dat <- data.frame(RISK = seq(0, 12, by = 0.01))
 

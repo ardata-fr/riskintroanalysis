@@ -155,7 +155,7 @@ get_erf_weights <- function() {
 #' )
 #'
 #' calc_epistatus(test_data, "date_last_outbreak")
-#'
+#' @importFrom lubridate today
 calc_epistatus <- function(dat, x) {
   dat |>
     mutate(

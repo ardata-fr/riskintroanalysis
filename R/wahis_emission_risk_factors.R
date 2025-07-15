@@ -159,7 +159,11 @@ erf_row <- function(
     selective_killing_and_disposal = if_numeric_to_int(selective_killing_and_disposal),
     zoning = if_numeric_to_int(zoning),
     official_vaccination = if_numeric_to_int(official_vaccination),
-    last_outbreak_end_date = if (class(last_outbreak_end_date) != "Date") as.Date(last_outbreak_end_date) else last_outbreak_end_date,
+    last_outbreak_end_date = if_else(
+      !inherits(last_outbreak_end_date, "Date"),
+      as.Date(last_outbreak_end_date),
+      last_outbreak_end_date
+    ),
     commerce_illegal = if_numeric_to_int(commerce_illegal),
     commerce_legal = if_numeric_to_int(commerce_legal),
     data_source = data_source

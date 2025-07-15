@@ -1,4 +1,5 @@
-library(riskintro)
+library(riskintrodata)
+library(riskintroanalysis)
 
 dat <- data.frame(RISK = seq(0, 12, by = 0.01))
 
