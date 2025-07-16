@@ -188,7 +188,6 @@ add_source_labels <- function(ep, eps, er) {
 
 # Leaflet ----------------------------------------------------------------
 #' @importFrom leaflet addCircleMarkers addLegend addMarkers clearMarkers iconList makeIcon markerOptions
-#' @importFrom shiny HTML
 updateEntryPointLayer <- function(ll, dat) {
   iSize <- 16
 
@@ -318,13 +317,12 @@ updateEntryPointsPolygonLayer <- function(ll, dat) {
 
 # GGplot -----------------------------------------------------------------------
 
-#' @import ggnewscale
 entryPointsStaticPlot <- function(entry_point_intro_risk, entry_points_with_sources, bounds) {
 
   ggout <- ggplot(entry_point_intro_risk) +
     geom_sf(aes(fill = .data[["ri_entry_points"]]), color = "white") +
     coord_sf()
-  ggout <- get_risks_levels_scale(ggout)
+
   ggout <- ggout  +
     theme(
       legend.position = c(0.85, 0.8)
@@ -354,7 +352,6 @@ entryPointsStaticPlot <- function(entry_point_intro_risk, entry_points_with_sour
   )
 
   ggout <- ggout +
-    ggnewscale::new_scale_fill() +
     geom_sf_label(
       data = entry_points_with_sources,
       mapping = aes(label = .data[["unicode_text_symbol"]], fill = .data[["mode"]]),
@@ -363,7 +360,7 @@ entryPointsStaticPlot <- function(entry_point_intro_risk, entry_points_with_sour
       alpha = .5
     ) +
     scale_fill_manual(
-      name = get_label(key = "entry_point_mode", lang = "en", to_text = FALSE),
+      name = "Introduction risk",
       values = c(C = "#f72585", NC = "#7209b7"),
       labels = c(C = "Legal", "NC" = "Illegal")) +
     guides(fill = guide_legend(override.aes = list(color = "transparent"))) +

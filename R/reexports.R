@@ -18,4 +18,3 @@ riskintrodata::mapping_animal_mobility
 #' @export
 #' @importFrom riskintrodata mapping_emission_risk_factors
 riskintrodata::mapping_emission_risk_factors
-

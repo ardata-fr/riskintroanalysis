@@ -111,21 +111,25 @@ fill_multipolygon <- function(mp) {
 }
 
 
-
 get_eu_country <- function(eu) {
 
   eu_country <- suppressMessages(
-    suppressWarnings(
-      countries_sf_lowres[st_nearest_feature(get_sf_centerpoint(eu, sf = TRUE), countries_sf_lowres),]
-    )
-  )
+    suppressWarnings({
+      sf::sf_use_s2(FALSE)
+      x <- riskintrodata::world_sf[
+        st_nearest_feature(get_sf_centerpoint(eu, sf = TRUE), riskintrodata::world_sf),
+        ]
+      sf::sf_use_s2(TRUE)
+      x
+    }))
 
   list(
-    country_iso3 = eu_country$ISO3,
-    country_name = eu_country$country_en
+    country_iso3 = eu_country$iso3,
+    country_name = eu_country$country_name
   )
 }
 
+#' @importFrom sf st_make_valid st_point_on_surface st_coordinates
 get_sf_centerpoint <- function(eu, union = TRUE,  sf = FALSE) {
   eu <- st_make_valid(eu)
   if(union){
@@ -145,5 +149,5 @@ get_sf_centerpoint <- function(eu, union = TRUE,  sf = FALSE) {
 
 iso3_to_name <- function(x, lang = "en") {
   x <- as.character(x)
-  country_ref[[paste0("name_", lang)]][match(x, country_ref$iso3)] %||% NA
+  riskintrodata::country_ref[[paste0("name_", lang)]][match(x, riskintrodata::country_ref$iso3)] %||% NA
 }

@@ -15,7 +15,7 @@ calc_border_risk(
 \arguments{
 \item{epi_units}{epidemiological units dataset}
 
-\item{shared_borders}{shared borders dataset as outputted by \code{\link[=calc_shared_border_lengths]{calc_shared_border_lengths()}}}
+\item{shared_borders}{shared borders dataset as outputted by \code{\link[=calc_border_lengths]{calc_border_lengths()}}}
 
 \item{emission_risk}{emission risk dataset,}
 

@@ -37,22 +37,33 @@ overall_risk <- function(epi_units, risk_table, method){
   out
 }
 
+
+#' @title Summarise risk score
+#' @description
+#' Summarise risk scores across columns using the chosen method.
+#' @param risk_table dataset containing all risk data for each epidemiological unit
+#' @param cols columns to summarise
+#' @param method summary method such as `"mean"` or `"max"`.
+#'
 #' @export
 #' @importFrom dplyr rowwise mutate c_across ungroup
-summarise_risk_scores <- function(risk_table, risk_cols, method = c("mean", "max", "min")){
-
+summarise_risk_scores <- function(
+    risk_table,
+    cols,
+    method = c("mean", "max", "min", "median")
+    ){
   method <- match.arg(method)
   method_func <- switch(
     method,
     "mean" = function(x) safe_stat(x, FUN = mean, NA_value = NA_real_),
     "max" = function(x) safe_stat(x, FUN = max, NA_value = NA_real_),
-    "min" = function(x) safe_stat(x, FUN = min, NA_value = NA_real_)
+    "min" = function(x) safe_stat(x, FUN = min, NA_value = NA_real_),
+    "median" = function(x) safe_stat(x, FUN = median, NA_value = NA_real_)
   )
 
   out <- risk_table |>
-    mutate(across( all_of(risk_cols), function(x) if_else(is.nan(x), 0, x))) |>
     rowwise() |>
-    mutate(overall_risk = method_func(c_across(risk_cols))) |>
+    mutate(overall_risk = method_func(c_across(cols))) |>
     ungroup()
   out
 }
@@ -128,8 +139,6 @@ riskSummaryStaticPlot <- function(ri, bounds){
   ggout <- ggplot(ri) +
     geom_sf(aes(fill = .data[["overall_risk"]]), color = "white") +
     coord_sf()
-
-  ggout <- get_risks_levels_scale(ggout)
 
   if (isTruthy(bounds)) {
     ggout <- ggout +

@@ -13,15 +13,11 @@
 #'  call_args call_args_names call_name cnd_entrace
 #' @importFrom purrr
 #'  map imap pmap map_chr
-#' @importFrom shiny
-#'  HTML
 #' @importFrom rlang
-#'  check_dots_empty inherits_any
-#' @importFrom shinyWidgets
-#'  show_alert
+#'  check_dots_empty inherits_any %||%
 #' @importFrom leaflet
 #'  addLayersControl addMapPane addRasterImage addPolylines layersControlOptions
-#'  pathOptions
+#'  pathOptions leafletOptions
 #' @importFrom sf
 #'  st_coordinates st_crs st_difference st_geometry st_geometry_type
 #'  st_intersects st_length st_line_merge st_make_valid st_multipolygon

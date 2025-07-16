@@ -17,6 +17,10 @@
 #' @return An `sf` object containing shared borders between EUs and bordering countries,
 #' with calculated border lengths and weights.
 #'
+#' @details
+#' This is the first step in the border risk analysis method, the outputs of this
+#' function should be passed on to [calc_border_risk()].
+#'
 #' @export
 #' @example examples/border-risk.R
 calc_border_lengths <- function(
@@ -196,7 +200,7 @@ calc_border_lengths <- function(
 #' shared borders.
 #'
 #' @param epi_units epidemiological units dataset
-#' @param shared_borders shared borders dataset as outputted by [calc_shared_border_lengths()]
+#' @param shared_borders shared borders dataset as outputted by [calc_border_lengths()]
 #' @param emission_risk emission risk dataset,
 #' @param ... empty
 #' @param add_html_lables default FALSE, used for leaflet tooltips in the Shiny app.
@@ -263,7 +267,6 @@ calc_border_risk <- function(
   )
 }
 
-#' @importFrom shiny HTML
 label_borders <- function(borders, epi_units, emission_risk) {
   border_risks <- borders |>
     left_join(emission_risk, by = c("bc_id" = "iso3")) |>
@@ -551,7 +554,7 @@ get_a_neighbour <- function(pISO3, sISO3, countries_sf_linestring) {
 
 
 get_country_neighbours <- function(eu_country_code) {
-  filter(neighbours_table, .data[["country_id"]] == eu_country_code)
+  filter(riskintrodata::neighbours_table, .data[["country_id"]] == eu_country_code)
 }
 
 # static plot -------
@@ -560,7 +563,6 @@ borderRiskStaticPlot <- function(epi_units_border_risk, borders_labeled, bounds)
   ggout <- ggplot(epi_units_border_risk) +
     geom_sf(aes(fill = .data[["ri_border_risk"]]), alpha = .6, color = "white") +
     coord_sf()
-  ggout <- get_risks_levels_scale(ggout)
 
   ggout <- ggout +
     geom_sf(

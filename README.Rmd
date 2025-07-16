@@ -139,7 +139,7 @@ emission_risk_factors <- dplyr::bind_rows(
   wahis_erf
   )
 
-emission_risk_table <- calc_weighted_emission_risk(emission_risk_factors = emission_risk_factors)
+emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
 
 hist(
   emission_risk_table$emission_risk,
@@ -379,17 +379,15 @@ animal_mobility <- apply_mapping(
   )
 )
 
-analysis_point <- calc_animal_mobility_point_risk(
+animal_mobility_risk <- calc_animal_mobility_risk(
   animal_mobility = animal_mobility, 
   emission_risk = emission_risk_table, 
-  country_iso3 = "TUN"
-    )
-
-analysis_output <- calc_animal_mobility_eu_risk(
-  animal_mobility_points = analysis_point, 
-  epi_units = tunisia, 
+  epi_units = tunisia,
   method = "mean"
-  )
+)
+
+flows_risk <- extract_flow_risk(animal_mobility_risk)
+animal_mobility_risk <- extract_intro_risk(animal_mobility_risk)
 
 ggplot() +
   geom_sf(
@@ -398,7 +396,7 @@ ggplot() +
   ) +
   scale_fill_viridis_c(limits = c(0, 12), direction = -1)+
   geom_sf(
-    data = analysis_point, 
+    data = flows_risk, 
     color = "black", size = 1.5, shape = 21,
     aes(fill = emission_risk_weighted )
   )
@@ -455,14 +453,14 @@ rescaled <- rescale_risk_scores(
   keep_cols = TRUE
 )
 
-plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
+plot(road_access_risk$road_access_risk, road_access_risk$scaled_road_access_risk)
 
 ```
 
 While a sigmoid transformation looks like the below. The choice of the `method` argument are left up to the judgement of the analyst.
 
 ```{r rescaling-road-access-risk-2}
-rescaled <- rescale_risk_scores(
+road_access_risk <- rescale_risk_scores(
   data = road_access_risk,
   cols = "road_access_risk", 
   names_to = "scaled_road_access_risk",
@@ -483,7 +481,7 @@ Once all the risk methods have been compiled and scaled similarly, it can be han
 
 summary_table <- tunisia |> 
   left_join(
-    st_drop_geometry(rescaled), 
+    st_drop_geometry(road_access_risk), 
     by = c("eu_id", "eu_name")
   ) |> 
   left_join(

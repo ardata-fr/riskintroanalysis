@@ -4,21 +4,13 @@
 \alias{calc_animal_mobility_risk}
 \title{Calculate animal mobility risk}
 \usage{
-calc_animal_mobility_risk(
-  animal_mobility,
-  emission_risk,
-  country_iso3,
-  epi_units,
-  method
-)
+calc_animal_mobility_risk(animal_mobility, emission_risk, epi_units, method)
 }
 \arguments{
 \item{animal_mobility}{animal moblity dataset as formatted and validated by
 \code{\link[=apply_mapping]{apply_mapping()}} and \code{\link[=mapping_animal_mobility]{mapping_animal_mobility()}}}
 
 \item{emission_risk}{emission risk dataset from \link{calc_emission_risk}}
-
-\item{country_iso3}{ISO3 code for epidemiological units country, used to get international flows.}
 
 \item{epi_units}{epidemiological units dataset}
 

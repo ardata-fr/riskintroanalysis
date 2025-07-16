@@ -3,35 +3,14 @@ library(riskintroanalysis)
 
 dat <- data.frame(RISK = seq(0, 12, by = 0.01))
 
-dat_scaled <- rescale_risk(
-  dataset = dat, risk_col = "RISK",
+dat_scaled <- rescale_risk_scores(
+  data = dat,
+  cols = "RISK",
   method = "linear",
   from = c(0, 12),
-  to = c(0, 100)
-) |>
-  rescale_risk(
-    risk_col = "RISK",
-    method = "quadratic",
-    from = c(0, 12),
-    to = c(0, 100)
-  ) |>
-  rescale_risk(
-    risk_col = "RISK",
-    method = "exponential",
-    from = c(0, 12),
-    to = c(0, 100)
-  ) |>
-  rescale_risk(
-    risk_col = "RISK",
-    method = "sigmoid",
-    from = c(0, 12),
-    to = c(0, 100)
-  )
+  to = c(0, 100),
+  names_prefix = "sigmoid_"
+)
 
-if (require(ggplot2) && require(tidyr) && require(tidyselect)) {
-  # Plot it !
-  dat_scaled |>
-    pivot_longer(cols = -RISK, names_to = "method", values_to = "scaled") |>
-    ggplot(aes(x = RISK, y = scaled, color = method)) +
-    geom_line()
-}
+ggplot(dat_scaled, aes(x = RISK, y  = sigmoid_RISK)) +
+  geom_point()

@@ -57,7 +57,7 @@ get_wahis_erf <- function(
 #'
 #' Constructs and validates a single row of emission risk factor data for a given country, species, and disease context.
 #' This function serves as a robust helper to generate new entries in the emission risk factors dataset, ensuring
-#' compatibility with subsequent analytical workflows in the [`riskintroanalysis`] package.
+#' compatibility with subsequent analytical workflows in the `riskintroanalysis` package.
 #'
 #' The function performs input validation and data cleaning (e.g., coercing numeric fields to integer) and assigns
 #' appropriate data types. It ensures the output meets the schema expected by the emission risk scoring system, which
@@ -90,15 +90,11 @@ get_wahis_erf <- function(
 #' @param commerce_legal Integer (0, 1, or 3). Risk score for legal animal commerce.
 #' @param data_source Character. Describes the data source, defaulting to the user name and current date.
 #'
-#' @return A 1-row [tibble::tibble] object with cleaned, validated, and structured emission risk factor data.
-#'         The object includes an attribute `"datatype" = "erf_table"` for downstream compatibility.
+#' @return A 1-row [tibble::tibble()] object with cleaned, validated, and structured emission risk factor data.
 #'
 #' @details
-#' The returned tibble is validated against the expected schema using `validate_table_content()` and
-#' `validate_table_content_cli_msg()`. Any coercions or type fixes are handled internally via helper functions like
-#' `if_numeric_to_int()`.
-#'
-#' @seealso [build_emission_risk_table()] for generating weighted emission risk scores from ERF data.
+#' The returned tibble is validated against the expected schema. If there are issues,
+#' an error is thrown that tells you what to fix.
 #'
 #' @examples
 #' erf_row(

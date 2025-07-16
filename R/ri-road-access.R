@@ -99,7 +99,6 @@ roadAccessRiskStaticPlot <- function(epi_units_agg_scaled, bounds) {
   ggout <- ggplot(epi_units_agg_scaled) +
     geom_sf(aes(fill = .data[["ri_road_access"]]), color = "white") +
     coord_sf()
-  ggout <- get_risks_levels_scale(ggout)
 
   if (isTruthy(bounds)) {
     ggout <- ggout +

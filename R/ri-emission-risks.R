@@ -36,7 +36,7 @@
 #'
 #' The overall emission risk score is the weighted sum of these components and is ensured to fall in the range (0, 12].
 #'
-#' @param dat A data frame containing risk factor data (default is `emission_risk_factors`).
+#' @param emission_risk_factors A data frame containing risk factor data (default is `emission_risk_factors`).
 #' @param weights A named list of weights corresponding to the columns in `dat`. Default weights are applied if not provided.
 #' @return A data frame containing:
 #' - Intermediate scores for each risk domain (`sc_epistatus`, `sc_survmeasures`, `sc_control`, and `sc_commerce`).
@@ -44,10 +44,10 @@
 #'
 #' @family emission_risk_calculation
 #' @export
-calc_weighted_emission_risk <- function(
+calc_emission_risk <- function(
     emission_risk_factors,
     weights = get_erf_weights()
-    ) {
+) {
   # Refer to data-raw/emission-risk-defaults.R
   risk_factor_cols <- names(weights)
 
@@ -57,40 +57,40 @@ calc_weighted_emission_risk <- function(
 
   weighted_emission_risk <- emission_risk_factors |>
     # Weighted risk factors ----
-    mutate(
-      across(
-        all_of(risk_factor_cols),
-        function(x) {
-          weights[[cur_column()]] * rm_na(x)
-        }
-      )
-    ) |>
+  mutate(
+    across(
+      all_of(risk_factor_cols),
+      function(x) {
+        weights[[cur_column()]] * rm_na(x)
+      }
+    )
+  ) |>
     # Calculate scores from risk factors ----
-    mutate(
-      sc_survmeasures =
-        .data[["targeted_surveillance"]] + .data[["general_surveillance"]] +
-          .data[["screening"]] + .data[["disease_notification"]],
-      sc_control =
-        .data[["precautions_at_the_borders"]] + .data[["slaughter"]] +
-          .data[["selective_killing_and_disposal"]] + .data[["zoning"]] +
-          .data[["official_vaccination"]],
-      sc_commerce = case_when(
-        .data[["commerce_illegal"]] == 0 & .data[["commerce_legal"]] == 0 ~ 0,
-        .data[["commerce_illegal"]] == 1 & .data[["commerce_legal"]] == 0 ~ 3,
-        .data[["commerce_illegal"]] == 0 & .data[["commerce_legal"]] == 1 ~ 1,
-        .data[["commerce_illegal"]] == 1 & .data[["commerce_legal"]] == 1 ~ 4,
-        TRUE ~ NA_integer_
-      )
-    ) |>
+  mutate(
+    sc_survmeasures =
+      .data[["targeted_surveillance"]] + .data[["general_surveillance"]] +
+      .data[["screening"]] + .data[["disease_notification"]],
+    sc_control =
+      .data[["precautions_at_the_borders"]] + .data[["slaughter"]] +
+      .data[["selective_killing_and_disposal"]] + .data[["zoning"]] +
+      .data[["official_vaccination"]],
+    sc_commerce = case_when(
+      .data[["commerce_illegal"]] == 0 & .data[["commerce_legal"]] == 0 ~ 0,
+      .data[["commerce_illegal"]] == 1 & .data[["commerce_legal"]] == 0 ~ 3,
+      .data[["commerce_illegal"]] == 0 & .data[["commerce_legal"]] == 1 ~ 1,
+      .data[["commerce_illegal"]] == 1 & .data[["commerce_legal"]] == 1 ~ 4,
+      TRUE ~ NA_integer_
+    )
+  ) |>
     calc_epistatus("last_outbreak_end_date") |>
     # Calculate overall emission_risk from scores! (finally) ----
-    mutate(
-      emission_risk =
-        .data[["sc_survmeasures"]] +
-          .data[["sc_control"]] +
-          rm_na(.data[["sc_epistatus"]],replace_na = 0) +
-          rm_na(.data[["sc_commerce"]], replace_na = 0)
-    ) |>
+  mutate(
+    emission_risk =
+      .data[["sc_survmeasures"]] +
+      .data[["sc_control"]] +
+      rm_na(.data[["sc_epistatus"]],replace_na = 0) +
+      rm_na(.data[["sc_commerce"]], replace_na = 0)
+  ) |>
     select(all_of(
       c("iso3", "country", "disease", "animal_category", "species","data_source",
         "sc_survmeasures", "sc_control", "sc_commerce", "sc_epistatus", "emission_risk"
@@ -155,11 +155,10 @@ get_erf_weights <- function() {
 #' )
 #'
 #' calc_epistatus(test_data, "date_last_outbreak")
-#' @importFrom lubridate today
 calc_epistatus <- function(dat, x) {
   dat |>
     mutate(
-      years_since_outbreak = as.numeric(lubridate::today() - as.Date(.data[[x]])) * (1 / 365),
+      years_since_outbreak = as.numeric(as.Date(Sys.time()) - as.Date(.data[[x]])) * (1 / 365),
       sc_epistatus = case_when(
         is.na(.data[["years_since_outbreak"]]) ~ NA,
         .data[["years_since_outbreak"]] <= 0 ~ 3,

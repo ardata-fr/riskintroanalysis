@@ -52,5 +52,62 @@ absolute_path <- function(x){
   epath
 }
 
-
 utils::globalVariables(c(".data"))
+
+#' @title copy of HTML from htmltools
+#' @description
+#' A copy of the `isTruthy` function from the `shiny` package.
+#' @param text The text value to mark with HTML
+#' @param ... Any additional values to be converted to character and concatenated together
+#' @param .noWS Character vector used to omit some of the whitespace that would
+#' normally be written around this HTML. Valid options include before, after,
+#' and outside (equivalent to before and end).
+#' @return A logical value indicating whether the expression is truthy
+#' @importFrom rlang dots_list
+HTML <- function (text, ..., .noWS = NULL)
+{
+  htmlText <- c(text, as.character(dots_list(...)))
+  htmlText <- paste8(htmlText, collapse = " ")
+  attr(htmlText, "html") <- TRUE
+  attr(htmlText, "noWS") <- .noWS
+  class(htmlText) <- c("html", "character")
+  htmlText
+}
+paste8 <- function (..., sep = " ", collapse = NULL){
+  args <- c(lapply(list(...), enc2utf8), list(sep = if (is.null(sep)) sep else enc2utf8(sep),
+                                              collapse = if (is.null(collapse)) collapse else enc2utf8(collapse)))
+  do.call(paste, args)
+}
+
+#' @title Truthy and falsy values
+#' @description
+#' A copy of the `isTruthy` function from the `shiny` package.
+#' @param x An expression whose truthiness value we want to determine
+#' @return A logical value indicating whether the expression is truthy
+#' @examples
+#' isTruthy(1)
+#' isTruthy(character())
+#' isTruthy(character(1))
+#' isTruthy(NULL)
+#' @export
+isTruthy <- function (x) {
+  if (is.null(x))
+    return(FALSE)
+  if (inherits(x, "try-error"))
+    return(FALSE)
+  if (!is.atomic(x))
+    return(TRUE)
+  if (length(x) == 0)
+    return(FALSE)
+  if (all(is.na(x)))
+    return(FALSE)
+  if (is.character(x) && !any(nzchar(stats::na.omit(x))))
+    return(FALSE)
+  if (inherits(x, "shinyActionButtonValue") && x == 0)
+    return(FALSE)
+  if (is.logical(x) && !any(stats::na.omit(x)))
+    return(FALSE)
+  return(TRUE)
+}
+
+

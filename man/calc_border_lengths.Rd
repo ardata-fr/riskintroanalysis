@@ -28,6 +28,10 @@ This can take some time to run.
 
 Distances are calculated using projection crs 6933 and uses s2. However, output remains WGS84.
 }
+\details{
+This is the first step in the border risk analysis method, the outputs of this
+function should be passed on to \code{\link[=calc_border_risk]{calc_border_risk()}}.
+}
 \examples{
 library(sf)
 library(dplyr)

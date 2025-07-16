@@ -1,7 +1,7 @@
 Type: Package
 Package: riskintroanalysis
 Title: Analysis Methods for Managing Animal Disease Introduction Risk
-Version: 0.1.1.004
+Version: 0.1.1.005
 Authors@R: c(
     person("Eli", "Daniels", , "eli.daniels@ardata.fr", role = c("aut", "cre")),
     person("David", "Gohel", , "david.gohel@ardata.fr", role = "aut"),
@@ -16,25 +16,18 @@ Depends:
     R (>= 4.4.0)
 Imports:
     cli,
+    glue,
     dplyr,
     geosphere,
-    ggnewscale,
-    glue,
     leaflet,
-    legendry,
-    lubridate,
     purrr,
     riskintrodata,
     rlang,
-    s2,
     sf,
-    shiny,
-    shinyWidgets,
     stringr,
     terra,
     tibble,
-    tidyr,
-    tidyselect
+    tidyr
 Suggests: 
     knitr,
     testthat (>= 3.0.0)

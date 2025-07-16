@@ -16,7 +16,6 @@
 #' @param animal_mobility animal moblity dataset as formatted and validated by
 #' [apply_mapping()] and [mapping_animal_mobility()]
 #' @param emission_risk emission risk dataset from [calc_emission_risk]
-#' @param country_iso3 ISO3 code for epidemiological units country, used to get international flows.
 #' @param epi_units epidemiological units dataset
 #' @param method aggregation method for eu risk
 #'
@@ -24,26 +23,31 @@
 calc_animal_mobility_risk <- function(
     animal_mobility,
     emission_risk,
-    country_iso3,
     epi_units,
     method
 ){
+  epi_units_iso3 <- get_eu_country(epi_units)$country_iso3
 
-  points <- calc_animal_mobility_point_risk(
+  # Step 1
+  flows_risk <- calc_animal_mobility_flows_risk(
     animal_mobility = animal_mobility,
     emission_risk = emission_risk,
-    country_iso3 = country_iso3
+    epi_units_iso3 = epi_units_iso3
   )
 
-  eu <- calc_animal_mobility_eu_risk(
+  # Step 2
+  eu <- calc_animal_mobility_intro_risk(
+    animal_mobility_flows = flows_risk,
     epi_units = epi_units,
     method = method
   )
 
-  list(
-    points = points,
-    epi_units = epi_units
+  x <- list(
+    flows = flows_risk,
+    ri = epi_units
   )
+  class(x) <- "riskintro_analysis"
+  x
 }
 
 #' Animal mobility destination point risk
@@ -55,22 +59,19 @@ calc_animal_mobility_risk <- function(
 #'
 #' @param animal_mobility the animal mobility dataset
 #' @param emission_risk emission risk data set
-#' @param country_iso3 the iso3 code for the country in which the study EUs are situated.
+#' @param epi_units_iso3 the iso3 code for the country in which the study EUs are situated.
 #'
 #' @returns A dataframe of aggregated and weighted risk for each pointin the study EUs.
 #' @export
 #' @importFrom dplyr distinct first filter select all_of
 #' @importFrom sf st_as_sf
-calc_animal_mobility_point_risk <- function(
+calc_animal_mobility_flows_risk <- function(
     animal_mobility,
     emission_risk,
-    country_iso3
+    epi_units_iso3
     ) {
-
   inflow <- animal_mobility |>
-    # Keep only the flows into Epiunit country.
-    filter(.data$o_iso3 != country_iso3, .data$d_iso3 == country_iso3) |>
-    # Keep required columns
+    filter(.data$o_iso3 != epi_units_iso3, .data$d_iso3 == epi_units_iso3) |>
     select(all_of(c("o_iso3", "o_name", "o_country", "d_name", "quantity")))
 
   # Manage the geospatial data for each point.
@@ -121,14 +122,14 @@ calc_animal_mobility_point_risk <- function(
 #' Given the output of the function `calc_animal_mobility_point_risk()` (destination
 #' points and their risks) and the study EUs, calculate the risk of introduction into each EU.
 #'
-#' @param animal_mobility_points output of `calc_animal_mobility_point_risk()`
+#' @param animal_mobility_flows output of `calc_animal_mobility_point_risk()`
 #' @param epi_units study EUs sf object
 #' @param method the aggregation method to use
 #'
 #' @returns the study EUs with associated introduction risk caluclated from point emission risk
 #' @export
-calc_animal_mobility_eu_risk <- function(
-    animal_mobility_points,
+calc_animal_mobility_intro_risk <- function(
+    animal_mobility_flows,
     epi_units,
     method
     ) {
@@ -139,7 +140,7 @@ calc_animal_mobility_eu_risk <- function(
   )
 
   # Spatial join with epi_units
-  epi_units_risk <- st_join_quiet(epi_units, animal_mobility_points, join = st_intersects)
+  epi_units_risk <- st_join_quiet(epi_units, animal_mobility_flows, join = st_intersects)
 
   # Aggregation here needs to be up to use input
   risk_per_epi_unit <- epi_units_risk |>
@@ -226,14 +227,6 @@ updateAnimalMovementLines <- function(ll, dat, country_iso3){
     # Keep only the flows into Epiunit country.
     filter(.data$o_iso3 != country_iso3, .data$d_iso3 == country_iso3)
 
-  if(nrow(dat) < 1){
-    show_alert(
-      title = "Animal mobility data error",
-      text  = paste("Animal mobility data contains no international flows into", country_iso3, ". No risk score for animal mobility will be calculated.")
-    )
-    return(NULL)
-  }
-
   # Create the geospatial lines between ORIGIN and DESTINATION points
   od_lines <- gcIntermediate(
     as.matrix(dat[, c("o_lng", "o_lat")]),
@@ -318,7 +311,6 @@ roadAnimalMobilityRiskStaticPlot <- function(animal_mobility, animal_mobility_po
   ggout <- ggplot(eu_animal_mobility_risk) +
     geom_sf(aes(fill = .data[["ri_animal_movement"]]), color = "white") +
     coord_sf()
-  ggout <- get_risks_levels_scale(ggout)
 
   if (isTruthy(bounds)) {
     ggout <- ggout +

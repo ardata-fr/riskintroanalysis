@@ -158,8 +158,6 @@ inv_sigmoid <- function(x) {
   qlogis((x + 1)/2)
 }
 
-
-#' @importFrom legendry primitive_bracket bracket_square key_range_manual
 plot_rescale_risk_density <- function(dat,
                                       linear_col = "emission_risk_linear",
                                       rescaled_col = "emission_risk_scaled",
@@ -177,16 +175,7 @@ plot_rescale_risk_density <- function(dat,
     mutate(x = row_number(), .by = cat) |>
     mutate(cat = factor(cat, levels = c("linear", scaling_label)))
 
-  ranges <- key_range_manual(
-    start = c(0, 25, 50, 75),
-    end   = c(25, 50, 75, 100),
-    name  = c("Negligible", "Low", "Medium", "High"),
-    level = 1,
-    colour = c("#2B83BA","#ABDDA4","#FDAE61","#D7191C")
-  )
-
   ggplot() +
-    guides(x.sec = primitive_bracket(ranges, bracket = bracket_square)) +
     geom_density(
       data = prepost,
       mapping = aes(
@@ -202,7 +191,6 @@ plot_rescale_risk_density <- function(dat,
     scale_linetype_manual(values = c("solid", "dashed")) +
     scale_x_continuous(name = "Risk scores", limits = c(0, 100), expand = c(0, 0))+
     scale_y_continuous(name = "Density", expand = c(0, 0)) +
-    .my_theme +
     theme(
       legend.position = c(.95, .95),
       legend.justification = c("right", "top"),
@@ -221,10 +209,10 @@ plot_rescale_risk_points <- function(dat, fun, inverse, raw_col, scaled_col, fro
     raw_col <- "linear_risk"
   }
 
-
-  lines_df <- rescale_risk(
-    dataset = data.frame(x = seq(from[1], from[2], 0.25)),
-    risk_col = "x", new_col = "y",
+  lines_df <- rescale_risk_scores(
+    data = data.frame(x = seq(from[1], from[2], 0.25)),
+    cols = "x",
+    names_to = "y",
     method = fun,
     inverse = inverse,
     from = from,
@@ -272,9 +260,6 @@ plot_rescale_risk_points <- function(dat, fun, inverse, raw_col, scaled_col, fro
       )
   }
 
-  gg_obj <- gg_obj +
-    .my_theme
-
   gg_obj
 }
 
@@ -283,8 +268,9 @@ plot_rescale_raster_points <- function(dat, fun, inverse, raw_col, scaled_col, f
 
   xmax <- from[2]
 
-  lines_df <- rescale_risk(
-    dataset = data.frame(x = seq(0, xmax + 25, 0.25)), risk_col = "x", new_col = "y",
+  lines_df <- rescale_risk_scores(
+    data = data.frame(x = seq(0, xmax + 25, 0.25)),
+    risk_col = "x", names_to = "y",
     method = fun, inverse = inverse, from = from, to = to
   )
 
@@ -308,6 +294,5 @@ plot_rescale_raster_points <- function(dat, fun, inverse, raw_col, scaled_col, f
       limits = c(to[1]-0.5, to[2] + 10),
       breaks = seq(to[1], to[2], to[2]/10),
       expand = c(0, 0)
-    ) +
-    .my_theme
+    )
 }

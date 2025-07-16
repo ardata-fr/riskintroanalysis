@@ -63,13 +63,12 @@ erf_row(
 \item{data_source}{Character. Describes the data source, defaulting to the user name and current date.}
 }
 \value{
-A 1-row \link[tibble:tibble]{tibble::tibble} object with cleaned, validated, and structured emission risk factor data.
-The object includes an attribute \code{"datatype" = "erf_table"} for downstream compatibility.
+A 1-row \code{\link[tibble:tibble]{tibble::tibble()}} object with cleaned, validated, and structured emission risk factor data.
 }
 \description{
 Constructs and validates a single row of emission risk factor data for a given country, species, and disease context.
 This function serves as a robust helper to generate new entries in the emission risk factors dataset, ensuring
-compatibility with subsequent analytical workflows in the \code{\link{riskintroanalysis}} package.
+compatibility with subsequent analytical workflows in the \code{riskintroanalysis} package.
 }
 \details{
 The function performs input validation and data cleaning (e.g., coercing numeric fields to integer) and assigns
@@ -85,9 +84,8 @@ uses this data to calculate risk scores across four weighted domains:
 The resulting row includes domain-specific fields that will be used by scoring algorithms such as \code{build_emission_risk_table()}
 to derive intermediate and final emission risk values.
 
-The returned tibble is validated against the expected schema using \code{validate_table_content()} and
-\code{validate_table_content_cli_msg()}. Any coercions or type fixes are handled internally via helper functions like
-\code{if_numeric_to_int()}.
+The returned tibble is validated against the expected schema. If there are issues,
+an error is thrown that tells you what to fix.
 }
 \examples{
 erf_row(
@@ -110,7 +108,4 @@ erf_row(
   commerce_legal = 1
 )
 
-}
-\seealso{
-\code{\link[=build_emission_risk_table]{build_emission_risk_table()}} for generating weighted emission risk scores from ERF data.
 }
