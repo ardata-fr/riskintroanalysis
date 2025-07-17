@@ -24,9 +24,19 @@ the emission risk factorts dataset as documented here \link[riskintrodata:wahis_
 Helper function for getting the WAHIS emission risk factors dataset. As most
 analysis done require filtering for one type of each of diease, species and
 animal_category, this function is a helper for that.
+
+For dataset documentation see: \link[riskintrodata:wahis_emission_risk_factors]{riskintrodata::wahis_emission_risk_factors}.
+
+The function is supposed to be used to get data for all countries that could
+be involved in the introduction of a risk. The function can not be used to
+gather data for different diseases, species or animal categories at the same time.
 }
-\details{
-For dataset documentation see: \link[riskintrodata:wahis_emission_risk_factors]{riskintrodata::wahis_emission_risk_factors}
+\examples{
+get_wahis_erf(
+  disease = "Anthrax",
+  species = "Cattle",
+  animal_category = "Domestic"
+)
 }
 \seealso{
 Other functions for "Emission Risk Factors" management: 

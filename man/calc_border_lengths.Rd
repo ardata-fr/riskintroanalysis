@@ -34,7 +34,6 @@ function should be passed on to \code{\link[=calc_border_risk]{calc_border_risk(
 }
 \examples{
 library(sf)
-library(dplyr)
 
 # Create example epidemiological units (epi_units)
 epi_units <- st_as_sf(

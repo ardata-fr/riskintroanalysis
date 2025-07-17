@@ -1,5 +1,4 @@
 library(sf)
-library(dplyr)
 
 # Create example epidemiological units (epi_units)
 epi_units <- st_as_sf(

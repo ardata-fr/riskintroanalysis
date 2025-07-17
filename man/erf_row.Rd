@@ -26,44 +26,76 @@ erf_row(
 )
 }
 \arguments{
-\item{iso3}{Character. ISO3 country code (e.g., \code{"FRA"}).}
+\item{iso3}{ISO3 country code (e.g., "FRA"), it should be a valid ISO3 code
+with a match in column \code{iso3} returned by \code{\link[riskintrodata:country_reference]{riskintrodata::country_reference()}}
+or a string starting with 'JOKER'.}
 
-\item{country}{Character. Country name.}
+\item{country}{Country name (e.g., "France"), the name is free text, but is
+expected to match the country name \code{name_en} or \code{name_fr} in the dataset
+returned by \code{\link[riskintrodata:country_reference]{riskintrodata::country_reference()}}.}
 
-\item{disease}{Character. Disease name.}
+\item{disease}{Disease name (e.g., "ASF"), it should be a valid disease code
+or name. For now there is no check for the disease name: it is expected
+to match the disease name in the dataset of WAHIS diseases but as the
+data are not covering all deceases, it is not checked so that users can
+add their own diseases.}
 
-\item{animal_category}{Character. A high-level category label (e.g., \code{"livestock"}, \code{"wildlife"}).}
+\item{animal_category}{Animal category, one of "wild" or "domestic".}
 
-\item{species}{Character. Target animal species.}
+\item{species}{Species name (e.g., "pig"), it is a free text. It's expected
+to match the species name in the dataset returned by WAHIS species dataset
+but as the data are not covering all species, it is not checked so that
+users can add their own species.}
 
-\item{disease_notification}{Integer (0 or 1). Is disease notification mandatory?}
+\item{disease_notification}{Integer (0 or 1). All are either 1 or 0, 0 means
+'measure inplace' and 1 means 'no measure inplace', i.e. 1 = there is a risk,
+0 = there is no risk.}
 
-\item{targeted_surveillance}{Integer (0 or 1). Is targeted surveillance applied?}
+\item{targeted_surveillance}{Integer (0 or 1). Is targeted surveillance applied?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{general_surveillance}{Integer (0 or 1). Is general surveillance applied?}
+\item{general_surveillance}{Integer (0 or 1). Is general surveillance applied?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{screening}{Integer (0 or 1). Are screening measures in place?}
+\item{screening}{Integer (0 or 1). Are screening measures in place?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{precautions_at_the_borders}{Integer (0 or 1). Are there border precautions?}
+\item{precautions_at_the_borders}{Integer (0 or 1). Are precautions taken at the borders?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{slaughter}{Integer (0 or 1). Is emergency slaughter used as a control measure?}
+\item{slaughter}{Integer (0 or 1). Are slaughter processes in place?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{selective_killing_and_disposal}{Integer (0 or 1). Are infected animals selectively killed and disposed?}
+\item{selective_killing_and_disposal}{Integer (0 or 1). Are selective killing
+and disposal procedures in place?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{zoning}{Integer (0 or 1). Is zoning or compartmentalization used?}
+\item{zoning}{Integer (0 or 1). Are zoning strategies applied?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{official_vaccination}{Integer (0 or 1). Is official vaccination used?}
+\item{official_vaccination}{Integer (0 or 1). Are official vaccination programs applied?
+All are either 1 or 0, 0 means 'measure inplace' and 1 means 'no measure inplace',
+i.e. 1 = there is a risk, 0 = there is no risk.}
 
-\item{last_outbreak_end_date}{Date or character convertible to Date. The date when the last known outbreak ended.}
+\item{last_outbreak_end_date}{Date. The end date of the last outbreak.}
 
-\item{commerce_illegal}{Integer (0, 1, or 3). Risk score for illegal animal commerce (higher is riskier).}
+\item{commerce_illegal}{Integer (0, 1). Indicators of whether illegal commerce are being conducted.}
 
-\item{commerce_legal}{Integer (0, 1, or 3). Risk score for legal animal commerce.}
+\item{commerce_legal}{Integer (0, 1). Indicators of whether legal commerce are being conducted.}
 
-\item{data_source}{Character. Describes the data source, defaulting to the user name and current date.}
+\item{data_source}{Character. A description of the data source, defaulting to the user name and current date.
+This is free text.}
 }
 \value{
-A 1-row \code{\link[tibble:tibble]{tibble::tibble()}} object with cleaned, validated, and structured emission risk factor data.
+A \code{\link[tibble:tibble]{tibble::tibble()}} object with cleaned, validated, and
+structured emission risk factor data.
 }
 \description{
 Constructs and validates a single row of emission risk factor data for a given country, species, and disease context.
@@ -83,9 +115,6 @@ uses this data to calculate risk scores across four weighted domains:
 
 The resulting row includes domain-specific fields that will be used by scoring algorithms such as \code{build_emission_risk_table()}
 to derive intermediate and final emission risk values.
-
-The returned tibble is validated against the expected schema. If there are issues,
-an error is thrown that tells you what to fix.
 }
 \examples{
 erf_row(

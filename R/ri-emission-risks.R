@@ -41,7 +41,18 @@
 #' @return A data frame containing:
 #' - Intermediate scores for each risk domain (`sc_epistatus`, `sc_survmeasures`, `sc_control`, and `sc_commerce`).
 #' - The overall emission risk score (`emission_risk`).
+#' @examples
+#' library(riskintroanalysis)
 #'
+#' wahis_erf <- get_wahis_erf(
+#'   disease = "Avian infectious laryngotracheitis",
+#'   animal_category = "Domestic",
+#'   species = "Birds"
+#' )
+#'
+#' emission_risk_table <- calc_emission_risk(
+#'   emission_risk_factors = wahis_erf
+#' )
 #' @family emission_risk_calculation
 #' @export
 calc_emission_risk <- function(

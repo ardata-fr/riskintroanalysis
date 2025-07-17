@@ -57,4 +57,17 @@ the risk level identified for trade and movement activities.
 
 The overall emission risk score is the weighted sum of these components and is ensured to fall in the range (0, 12].
 }
+\examples{
+library(riskintroanalysis)
+
+wahis_erf <- get_wahis_erf(
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds"
+)
+
+emission_risk_table <- calc_emission_risk(
+  emission_risk_factors = wahis_erf
+)
+}
 \concept{emission_risk_calculation}

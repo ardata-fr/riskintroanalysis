@@ -204,7 +204,49 @@ calc_border_lengths <- function(
 #' @param emission_risk emission risk dataset,
 #' @param ... empty
 #' @param add_html_lables default FALSE, used for leaflet tooltips in the Shiny app.
+#' @examples
+#' library(sf)
+#' library(dplyr)
 #'
+#' tunisia_raw <- read_sf(system.file(
+#'   package = "riskintrodata",
+#'   "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+#' ))
+#'
+#' # Apply mapping to prepare colnames and validate dataset
+#' tunisia <- apply_mapping(
+#'   tunisia_raw,
+#'   mapping = mapping_epi_units(
+#'     eu_name = "NAME_2",
+#'     geometry = "geom"
+#'   ),
+#'   validate = TRUE
+#' )
+#'
+#' tun_neighbours <- riskintrodata::neighbours_table |>
+#'   filter(country_id == "TUN")
+#'
+#' bordering_countries <- riskintrodata::world_sf |>
+#'   filter(iso3 %in% tun_neighbours$neighbour_id)
+#' \donttest{
+#' # Run function to get shared borders
+#' shared_borders <- calc_border_lengths(
+#'   epi_units = tunisia,
+#'   eu_id_col = "eu_id",
+#'   bordering_countries = bordering_countries,
+#'   bc_id_col = "iso3"
+#' )
+#' shared_borders
+#' }
+#' @return A sf object containing the following columns:
+#'
+#' - `eu_id`: ID of the epidemiological unit.
+#' - `bc_id`: ISO3 of the bordering country.
+#' - `border_length`: Length of the shared border, use [units::units] to get
+#' the units. It is expected in km.
+#' - `geometry`: The geometry column containing the shared border, a `MULTILINESTRING`
+#' or `LINESTRING`.
+#' - `weight`: The risk weighting coefficient based on the length of the border.
 #' @export
 calc_border_risk <- function(
     epi_units,
