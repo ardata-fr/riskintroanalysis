@@ -24,15 +24,30 @@ calc_border_risk(
 \item{add_html_lables}{default FALSE, used for leaflet tooltips in the Shiny app.}
 }
 \value{
-A sf object containing the following columns:
+A list containing \code{borders} and \code{epi_units}
+
+\strong{epi_units}: a \code{sf} object containing shared borders between EUs and bordering countries,
+with calculated border lengths and weights. The table is containing the following columns:
+\itemize{
+\item \code{eu_id}: ID of the epidemiological unit. This will be used as a join key to the
+\code{epi_units} table.
+\item \code{eu_name}: Name of the epidemiological unit. This comes from the \code{epi_units} table.
+\item \code{borders}: Total length of shared borders with neighbouring countries in km.
+\item \code{border_risk}: The risk of introduction based on the emission risk of neighbouring countries,
+its values are in the range [0, 12].
+\item \code{geometry}: The geometry column containing the shared border, a \code{MULTIPOLYGON}.
+}
+
+\strong{borders}: an \code{sf} object containing shared borders between EUs and bordering countries.
+The table is containing the following columns:
 \itemize{
 \item \code{eu_id}: ID of the epidemiological unit.
 \item \code{bc_id}: ISO3 of the bordering country.
 \item \code{border_length}: Length of the shared border, use \link[units:units]{units::units} to get
 the units. It is expected in km.
-\item \code{geometry}: The geometry column containing the shared border, a \code{MULTILINESTRING}
-or \code{LINESTRING}.
-\item \code{weight}: The risk weighting coefficient based on the length of the border.
+\item \code{geometry}: The geometry column containing the shared border, a \code{MULTILINESTRING} or a
+\code{LINESTRING}.
+\item TO BE COMPLETED
 }
 }
 \description{
@@ -72,6 +87,10 @@ shared_borders <- calc_border_lengths(
   bordering_countries = bordering_countries,
   bc_id_col = "iso3"
 )
-shared_borders
+calc_border_risk(
+  epi_units = tunisia,
+  shared_borders = shared_borders,
+  emission_risk = emission_risk_table
+)
 }
 }

@@ -14,13 +14,20 @@
 #' @param bordering_countries An `sf` object containing the bordering countries.
 #' @param bc_id_col A string specifying the column name in `bordering_countries` that identifies each country.
 #'
-#' @return An `sf` object containing shared borders between EUs and bordering countries,
-#' with calculated border lengths and weights.
 #'
 #' @details
 #' This is the first step in the border risk analysis method, the outputs of this
 #' function should be passed on to [calc_border_risk()].
+#' @return An `sf` object containing shared borders between EUs and bordering countries,
+#' with calculated border lengths and weights. The table is containing the following columns:
 #'
+#' - `eu_id`: ID of the epidemiological unit.
+#' - `bc_id`: ISO3 of the bordering country.
+#' - `border_length`: Length of the shared border, use [units::units] to get
+#' the units. It is expected in km.
+#' - `geometry`: The geometry column containing the shared border, a `MULTILINESTRING`
+#' or `LINESTRING`.
+#' - `weight`: The risk weighting coefficient based on the length of the border.
 #' @export
 #' @example examples/border-risk.R
 calc_border_lengths <- function(
@@ -236,17 +243,36 @@ calc_border_lengths <- function(
 #'   bordering_countries = bordering_countries,
 #'   bc_id_col = "iso3"
 #' )
-#' shared_borders
+#' calc_border_risk(
+#'   epi_units = tunisia,
+#'   shared_borders = shared_borders,
+#'   emission_risk = emission_risk_table
+#' )
 #' }
-#' @return A sf object containing the following columns:
+#' @return A list containing `borders` and `epi_units`
+#'
+#' **epi_units**: a `sf` object containing shared borders between EUs and bordering countries,
+#' with calculated border lengths and weights. The table is containing the following columns:
+#'
+#' - `eu_id`: ID of the epidemiological unit. This will be used as a join key to the
+#' `epi_units` table.
+#' - `eu_name`: Name of the epidemiological unit. This comes from the `epi_units` table.
+#' - `borders`: Total length of shared borders with neighbouring countries in km.
+#' - `border_risk`: The risk of introduction based on the emission risk of neighbouring countries,
+#' its values are in the range \[0, 12\].
+#' - `geometry`: The geometry column containing the shared border, a `MULTIPOLYGON`.
+#'
+#'
+#' **borders**: an `sf` object containing shared borders between EUs and bordering countries.
+#' The table is containing the following columns:
 #'
 #' - `eu_id`: ID of the epidemiological unit.
 #' - `bc_id`: ISO3 of the bordering country.
 #' - `border_length`: Length of the shared border, use [units::units] to get
 #' the units. It is expected in km.
-#' - `geometry`: The geometry column containing the shared border, a `MULTILINESTRING`
-#' or `LINESTRING`.
-#' - `weight`: The risk weighting coefficient based on the length of the border.
+#' - `geometry`: The geometry column containing the shared border, a `MULTILINESTRING` or a
+#' `LINESTRING`.
+#' - TO BE COMPLETED
 #' @export
 calc_border_risk <- function(
     epi_units,

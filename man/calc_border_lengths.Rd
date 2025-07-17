@@ -17,7 +17,16 @@ calc_border_lengths(epi_units, eu_id_col, bordering_countries, bc_id_col)
 }
 \value{
 An \code{sf} object containing shared borders between EUs and bordering countries,
-with calculated border lengths and weights.
+with calculated border lengths and weights. The table is containing the following columns:
+\itemize{
+\item \code{eu_id}: ID of the epidemiological unit.
+\item \code{bc_id}: ISO3 of the bordering country.
+\item \code{border_length}: Length of the shared border, use \link[units:units]{units::units} to get
+the units. It is expected in km.
+\item \code{geometry}: The geometry column containing the shared border, a \code{MULTILINESTRING}
+or \code{LINESTRING}.
+\item \code{weight}: The risk weighting coefficient based on the length of the border.
+}
 }
 \description{
 This function identifies shared borders between epidemiological units (EUs) and neighbouring countries.
