@@ -46,7 +46,9 @@ calc_animal_mobility_risk <- function(
     flows = flows_risk,
     ri = epi_units
   )
-  class(x) <- "riskintro_analysis"
+  attr(x$dataset, "risk_col") <- "animal_mobility_risk"
+  attr(x$dataset, "risk_type") <- "animal_mobility"
+  class(x) <- "ri_analysis"
   x
 }
 
@@ -146,7 +148,7 @@ calc_animal_mobility_intro_risk <- function(
   risk_per_epi_unit <- epi_units_risk |>
     group_by(across(all_of(c("eu_id", "eu_name")))) |>
     summarise_quiet(
-      animal_movement_risk = method_func(.data$emission_risk_weighted, na.rm = TRUE),
+      animal_mobility_risk = method_func(.data$emission_risk_weighted, na.rm = TRUE),
       .groups = "drop"
     )
 

@@ -14,7 +14,6 @@
 #' @param bordering_countries An `sf` object containing the bordering countries.
 #' @param bc_id_col A string specifying the column name in `bordering_countries` that identifies each country.
 #'
-#'
 #' @details
 #' This is the first step in the border risk analysis method, the outputs of this
 #' function should be passed on to [calc_border_risk()].
@@ -329,10 +328,14 @@ calc_border_risk <- function(
     epi_units_border_risk <- select(epi_units_border_risk, -all_of("risk_sources_label"))
   }
 
-  list(
+  x <- list(
     borders = borders,
     epi_units = epi_units_border_risk
   )
+  attr(x$dataset, "risk_col") <- "border_risk"
+  attr(x$dataset, "risk_type") <- "border_risk"
+  class(x) <- "ri_analysis"
+  x
 }
 
 label_borders <- function(borders, epi_units, emission_risk) {

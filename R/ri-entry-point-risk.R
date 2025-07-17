@@ -128,6 +128,8 @@ calc_entry_point_risk <- function(
     points = points_emission_risk,
     epi_units = risk_per_eu
   )
+  attr(x$dataset, "risk_col") <- "entry_points"
+  attr(x$dataset, "risk_type") <- "entry_points_risk"
   class(x) <- "ri_analysis"
   x
 }

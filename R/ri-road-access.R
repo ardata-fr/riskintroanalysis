@@ -19,42 +19,16 @@
 #' -  `road_access_risk`: road access risk of inroduction score (unscaled)
 #' -  `geometry`: geometry for each epidemiological unit of type `POLYGON` or `MULTIPOLYGON`.
 #'
+#' This data can be extracted from the `ri_analysis` object with [extract_raster()]
+#'
 #' 2. `raster`: a `SpatRaster` containing the cropped raster that covers only
 #' the epidemiological units areas.
 #'
+#' @seealso [extract_raster()], [extract_intro_risk()], [riskintrodata::download_road_access_raster()]
 #' @export
+#' @family default riskintro analysis
 #' @importFrom terra crop
-#' @exampls
-#' library(riskintroanalysis)
-#' library(riskintrodata)
-#' library(dplyr)
-#' library(terra)
-#' library(sf)
-#' # Example with raw sf files, previously downloaded with geodata::gadm()
-#' tunisia_raw <- read_sf(system.file(
-#'   package = "riskintrodata",
-#'   "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
-#' ))
-#'
-#' # Apply mapping to prepare colnames and validate dataset
-#' tunisia <- apply_mapping(
-#'   tunisia_raw,
-#'   mapping = mapping_epi_units(
-#'     eu_name = "NAME_2",
-#'     geometry = "geom"
-#'   ),
-#'   validate = TRUE
-#' )
-#'
-#' road_raster_fp <- download_road_access_raster()
-#' road_raster <- rast(road_raster_fp)
-#'
-#' road_access_risk <- calc_road_access_risk(
-#'   epi_units = tunisia,
-#'   road_access_raster = road_raster,
-#'   aggregate_fun = "mean"
-#' )
-#'
+#' @example examples/calc_road_access_risk.R
 calc_road_access_risk <- function(
     epi_units,
     road_access_raster,
@@ -78,8 +52,6 @@ calc_road_access_risk <- function(
   class(x) <- "ri_analysis"
   x
 }
-
-
 
 #' Aggregate raster values over polygon areas
 #'
