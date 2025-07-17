@@ -58,6 +58,7 @@ the risk level identified for trade and movement activities.
 The overall emission risk score is the weighted sum of these components and is ensured to fall in the range (0, 12].
 }
 \examples{
+library(riskintrodata)
 library(riskintroanalysis)
 
 wahis_erf <- get_wahis_erf(

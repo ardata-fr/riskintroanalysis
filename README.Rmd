@@ -84,6 +84,7 @@ means no additional risk.
 ```{r emission-risk-loading}
 
 library(dplyr)
+library(riskintrodata)
 library(riskintroanalysis)
 library(sf)
 
@@ -220,7 +221,7 @@ country with the longer border.
 
 The analysis method starts with finding shared borders between epi units and bordering countries, which requires an algoithm align borders.
 
-```{r shared-borders}
+```{r shared-borders, cache=TRUE}
 tun_neighbours <- riskintrodata::neighbours_table |> 
   filter(country_id == "TUN")
 

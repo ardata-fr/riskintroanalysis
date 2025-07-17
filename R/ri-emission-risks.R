@@ -42,6 +42,7 @@
 #' - Intermediate scores for each risk domain (`sc_epistatus`, `sc_survmeasures`, `sc_control`, and `sc_commerce`).
 #' - The overall emission risk score (`emission_risk`).
 #' @examples
+#' library(riskintrodata)
 #' library(riskintroanalysis)
 #'
 #' wahis_erf <- get_wahis_erf(
@@ -54,6 +55,7 @@
 #'   emission_risk_factors = wahis_erf
 #' )
 #' @family emission_risk_calculation
+#' @importFrom riskintrodata get_erf_weights
 #' @export
 calc_emission_risk <- function(
     emission_risk_factors,
@@ -110,15 +112,6 @@ calc_emission_risk <- function(
   weighted_emission_risk
 }
 
-
-#' Get Default Emission Risk Weights
-#' @return named list of emission risk weights [riskintrodata::emission_risk_weights]
-#' @export
-#' @importFrom dplyr filter
-#' @family functions for "Emission Risk Factors" management
-get_erf_weights <- function() {
-  riskintrodata::emission_risk_weights
-}
 
 #' @title Calculate epidemiological status risk score (`sc_epistatus`)
 #'

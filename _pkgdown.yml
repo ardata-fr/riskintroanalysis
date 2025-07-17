@@ -24,7 +24,4 @@ reference:
     contents:
     - starts_with("extract_")
     - add_source_labels
-    - erf_row
-    - get_erf_weights
-    - get_wahis_erf
     - updateRoadAccessLeaflet
