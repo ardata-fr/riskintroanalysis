@@ -6,7 +6,7 @@
 #' @importFrom dplyr
 #'  mutate select group_by summarise across if_else ungroup row_number as_tibble
 #'  c_across case_when desc pull rename rowwise coalesce starts_with cur_column
-#'  arrange inner_join
+#'  arrange inner_join all_of any_of
 #' @importFrom rlang
 #'  call_args call_args_names call_name cnd_entrace
 #' @importFrom purrr

@@ -6,6 +6,7 @@
 \alias{extract_flow_risk}
 \alias{extract_intro_risk}
 \alias{extract_raster}
+\alias{extract_border}
 \title{Extract analysis subcomponents}
 \usage{
 extract_point_risk(x)
@@ -15,6 +16,8 @@ extract_flow_risk(x)
 extract_intro_risk(x)
 
 extract_raster(x)
+
+extract_border(x)
 }
 \arguments{
 \item{x}{analysis object containing multiple steps/components.}
@@ -31,6 +34,7 @@ emission risk data for each flow.
 \item \code{extract_intro_risk(x)} returns the dataset containing the risk of introduction
 for each epidemiological unit. Usually the final step in all risk analyses.
 \item \code{extract_raster(x)} returns the raster data cropped to the epidemiological units areas.
+\item \code{extract_border(x)} returns the border risk data for cropped to the epidemiological units areas.
 }
 }
 \description{

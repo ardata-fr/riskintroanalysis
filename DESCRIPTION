@@ -25,7 +25,6 @@ Imports:
     sf,
     stringr,
     terra,
-    tibble,
     tidyr
 Suggests: 
     knitr,

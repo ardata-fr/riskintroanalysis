@@ -15,8 +15,8 @@
 #' emission risk data for each flow.
 #' -  `extract_intro_risk(x)` returns the dataset containing the risk of introduction
 #' for each epidemiological unit. Usually the final step in all risk analyses.
-#'
 #' - `extract_raster(x)` returns the raster data cropped to the epidemiological units areas.
+#' - `extract_border(x)` returns the border risk data for cropped to the epidemiological units areas.
 #' @name extract-analysis
 NULL
 
@@ -37,7 +37,7 @@ extract_point_risk <- function(x){
 extract_flow_risk <- function(x){
   cli_abort_if_not(
     "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Flows risks not available for this risk" =  rlang::has_name(x, "flows")
+    "Flows risks not available for this risk analysis" =  rlang::has_name(x, "flows")
   )
   x[["flows"]]
 }
@@ -48,7 +48,7 @@ extract_flow_risk <- function(x){
 extract_intro_risk <- function(x){
   cli_abort_if_not(
     "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Introduction risk not available for this risk" = rlang::has_name(x, "ri")
+    "Risk of introduction not available for this risk analysis" = rlang::has_name(x, "ri")
   )
   x[["ri"]]
 }
@@ -60,7 +60,18 @@ extract_intro_risk <- function(x){
 extract_raster <- function(x){
   cli_abort_if_not(
     "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Introduction risk not available for this risk" = rlang::has_name(x, "raster")
+    "Raster data not available for this risk analysis" = rlang::has_name(x, "raster")
   )
   x[["raster"]]
+}
+
+#' @export
+#' @rdname extract-analysis
+#' @importFrom rlang has_name
+extract_border <- function(x){
+  cli_abort_if_not(
+    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
+    "Borders dataset not available for this risk analysis" = rlang::has_name(x, "borders")
+  )
+  x[["borders"]]
 }

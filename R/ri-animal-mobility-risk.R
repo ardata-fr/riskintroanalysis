@@ -36,7 +36,7 @@ calc_animal_mobility_risk <- function(
   )
 
   # Step 2
-  eu <- calc_animal_mobility_intro_risk(
+  eu_risk <- calc_animal_mobility_intro_risk(
     animal_mobility_flows = flows_risk,
     epi_units = epi_units,
     method = method
@@ -44,7 +44,7 @@ calc_animal_mobility_risk <- function(
 
   x <- list(
     flows = flows_risk,
-    ri = epi_units
+    ri = eu_risk
   )
   attr(x$ri, "risk_col") <- "animal_mobility_risk"
   attr(x$ri, "risk_type") <- "animal_mobility"
@@ -223,125 +223,125 @@ updateAnimalMobilityPolygonLayer <- function(ll, dat) {
   ll
 }
 
-updateAnimalMovementLines <- function(ll, dat, country_iso3){
-
-  dat <- dat |>
-    # Keep only the flows into Epiunit country.
-    filter(.data$o_iso3 != country_iso3, .data$d_iso3 == country_iso3)
-
-  # Create the geospatial lines between ORIGIN and DESTINATION points
-  od_lines <- gcIntermediate(
-    as.matrix(dat[, c("o_lng", "o_lat")]),
-    as.matrix(dat[, c("d_lng", "d_lat")]),
-    n = 300,
-    addStartEnd = TRUE,
-    sp = TRUE,
-    breakAtDateLine = FALSE
-  )
-
-  # Convert to sf
-  od_lines <- st_as_sf(od_lines)
-
-  # Join to original data
-  dat$id <- as.character(c(1:nrow(dat)))
-  od_lines$id <- as.character(c(1:nrow(od_lines)))
-  dat_sf <- inner_join(od_lines, dat, by = "id")
-
-  ll |>
-    addPolylines(
-      data = dat_sf,
-      weight = 3,
-      opacity = 0.7,
-      label = ~paste0(
-        "From: ", "<strong>", o_name, "</strong>", " (", o_country, " - ", o_iso3 ,")", "<br>",
-        "To: ", "<strong>", d_name, "</strong>", " (", d_country, " - ", d_iso3 ,")", "<br>",
-        "Quantity:", "<strong>", fmt_num(quantity), "</strong>"
-      ) |> map(HTML),
-      labelOptions = riLabelOptions()
-    ) |>
-    addCircleMarkers(
-      layerId = ~paste("origin_points", seq_along(animal_mobility_id)),
-      data = dat_sf,
-      lng = ~o_lng,
-      lat = ~o_lat,
-      fillColor = "orange",
-      fillOpacity = 0.6,
-      color = "orange",
-      opacity = 1,
-      stroke = TRUE,
-      weight = 2.5,
-      radius = 6,
-      label = ~ paste0("Origin point: ", "<strong>",  o_name, "</strong>",  "<br>",
-                       "Origin country: ", "<strong>", o_country, "</strong>", " (", o_iso3 ,")") |>
-        map(HTML),
-      labelOptions = riLabelOptions()
-    ) |>
-    addLegend(
-      data = data.frame(
-        labels = c("Origin", "Destination", "Approximate path"),
-        colors = c("orange", "purple", "blue")),
-      title = "Animal mobility",
-      colors = ~colors,
-      labels = ~labels,
-      layerId = "line_point_legend"
-    )
-
-}
-
-# static plot -------
-roadAnimalMobilityRiskStaticPlot <- function(animal_mobility, animal_mobility_point_risk, eu_animal_mobility_risk, bounds) {
-
-  od_lines <- gcIntermediate(
-    as.matrix(animal_mobility[, c("o_lng", "o_lat")]),
-    as.matrix(animal_mobility[, c("d_lng", "d_lat")]),
-    n = 300,
-    addStartEnd = TRUE,
-    sp = TRUE,
-    breakAtDateLine = FALSE
-  )
-
-  # Convert to sf
-  od_lines <- st_as_sf(od_lines)
-
-  # Join to original data
-  animal_mobility$id <- as.character(c(1:nrow(animal_mobility)))
-  od_lines$id <- as.character(c(1:nrow(od_lines)))
-  dat_sf <- inner_join(od_lines, animal_mobility, by = "id")
-
-
-
-  ggout <- ggplot(eu_animal_mobility_risk) +
-    geom_sf(aes(fill = .data[["ri_animal_movement"]]), color = "white") +
-    coord_sf()
-
-  if (isTruthy(bounds)) {
-    ggout <- ggout +
-      xlim(c(bounds$west, bounds$east)) +
-      ylim(c(bounds$south, bounds$north))
-  }
-
-  ggout <- ggout +
-    geom_sf(
-      data = animal_mobility_point_risk,
-      size = 2,
-      alpha = 0.6,
-      color = "purple"
-    )
-
-  ggout <- ggout +
-    geom_sf(
-      data = dat_sf,
-      linewidth = 0.5,
-      color = "black",
-      alpha = .6
-    )
-  ggout <- ggout  +
-    theme(
-      legend.position = c(0.85, 0.8)
-    )
-  ggout <- ggout  +
-    labs(
-      title = "Animal mobility risks"
-    )
-  ggout
-}
+# updateAnimalMovementLines <- function(ll, dat, country_iso3){
+#
+#   dat <- dat |>
+#     # Keep only the flows into Epiunit country.
+#     filter(.data$o_iso3 != country_iso3, .data$d_iso3 == country_iso3)
+#
+#   # Create the geospatial lines between ORIGIN and DESTINATION points
+#   od_lines <- gcIntermediate(
+#     as.matrix(dat[, c("o_lng", "o_lat")]),
+#     as.matrix(dat[, c("d_lng", "d_lat")]),
+#     n = 300,
+#     addStartEnd = TRUE,
+#     sp = TRUE,
+#     breakAtDateLine = FALSE
+#   )
+#
+#   # Convert to sf
+#   od_lines <- st_as_sf(od_lines)
+#
+#   # Join to original data
+#   dat$id <- as.character(c(1:nrow(dat)))
+#   od_lines$id <- as.character(c(1:nrow(od_lines)))
+#   dat_sf <- inner_join(od_lines, dat, by = "id")
+#
+#   ll |>
+#     addPolylines(
+#       data = dat_sf,
+#       weight = 3,
+#       opacity = 0.7,
+#       label = ~paste0(
+#         "From: ", "<strong>", o_name, "</strong>", " (", o_country, " - ", o_iso3 ,")", "<br>",
+#         "To: ", "<strong>", d_name, "</strong>", " (", d_country, " - ", d_iso3 ,")", "<br>",
+#         "Quantity:", "<strong>", fmt_num(quantity), "</strong>"
+#       ) |> map(HTML),
+#       labelOptions = riLabelOptions()
+#     ) |>
+#     addCircleMarkers(
+#       layerId = ~paste("origin_points", seq_along(animal_mobility_id)),
+#       data = dat_sf,
+#       lng = ~o_lng,
+#       lat = ~o_lat,
+#       fillColor = "orange",
+#       fillOpacity = 0.6,
+#       color = "orange",
+#       opacity = 1,
+#       stroke = TRUE,
+#       weight = 2.5,
+#       radius = 6,
+#       label = ~ paste0("Origin point: ", "<strong>",  o_name, "</strong>",  "<br>",
+#                        "Origin country: ", "<strong>", o_country, "</strong>", " (", o_iso3 ,")") |>
+#         map(HTML),
+#       labelOptions = riLabelOptions()
+#     ) |>
+#     addLegend(
+#       data = data.frame(
+#         labels = c("Origin", "Destination", "Approximate path"),
+#         colors = c("orange", "purple", "blue")),
+#       title = "Animal mobility",
+#       colors = ~colors,
+#       labels = ~labels,
+#       layerId = "line_point_legend"
+#     )
+#
+# }
+#
+# # static plot -------
+# roadAnimalMobilityRiskStaticPlot <- function(animal_mobility, animal_mobility_point_risk, eu_animal_mobility_risk, bounds) {
+#
+#   od_lines <- gcIntermediate(
+#     as.matrix(animal_mobility[, c("o_lng", "o_lat")]),
+#     as.matrix(animal_mobility[, c("d_lng", "d_lat")]),
+#     n = 300,
+#     addStartEnd = TRUE,
+#     sp = TRUE,
+#     breakAtDateLine = FALSE
+#   )
+#
+#   # Convert to sf
+#   od_lines <- st_as_sf(od_lines)
+#
+#   # Join to original data
+#   animal_mobility$id <- as.character(c(1:nrow(animal_mobility)))
+#   od_lines$id <- as.character(c(1:nrow(od_lines)))
+#   dat_sf <- inner_join(od_lines, animal_mobility, by = "id")
+#
+#
+#
+#   ggout <- ggplot(eu_animal_mobility_risk) +
+#     geom_sf(aes(fill = .data[["ri_animal_movement"]]), color = "white") +
+#     coord_sf()
+#
+#   if (isTruthy(bounds)) {
+#     ggout <- ggout +
+#       xlim(c(bounds$west, bounds$east)) +
+#       ylim(c(bounds$south, bounds$north))
+#   }
+#
+#   ggout <- ggout +
+#     geom_sf(
+#       data = animal_mobility_point_risk,
+#       size = 2,
+#       alpha = 0.6,
+#       color = "purple"
+#     )
+#
+#   ggout <- ggout +
+#     geom_sf(
+#       data = dat_sf,
+#       linewidth = 0.5,
+#       color = "black",
+#       alpha = .6
+#     )
+#   ggout <- ggout  +
+#     theme(
+#       legend.position = c(0.85, 0.8)
+#     )
+#   ggout <- ggout  +
+#     labs(
+#       title = "Animal mobility risks"
+#     )
+#   ggout
+# }

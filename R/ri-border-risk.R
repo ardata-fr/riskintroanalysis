@@ -210,44 +210,7 @@ calc_border_lengths <- function(
 #' @param emission_risk emission risk dataset,
 #' @param ... empty
 #' @param add_html_lables default FALSE, used for leaflet tooltips in the Shiny app.
-#' @examples
-#' library(sf)
-#' library(dplyr)
-#'
-#' tunisia_raw <- read_sf(system.file(
-#'   package = "riskintrodata",
-#'   "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
-#' ))
-#'
-#' # Apply mapping to prepare colnames and validate dataset
-#' tunisia <- apply_mapping(
-#'   tunisia_raw,
-#'   mapping = mapping_epi_units(
-#'     eu_name = "NAME_2",
-#'     geometry = "geom"
-#'   ),
-#'   validate = TRUE
-#' )
-#'
-#' tun_neighbours <- riskintrodata::neighbours_table |>
-#'   filter(country_id == "TUN")
-#'
-#' bordering_countries <- riskintrodata::world_sf |>
-#'   filter(iso3 %in% tun_neighbours$neighbour_id)
-#' \donttest{
-#' # Run function to get shared borders
-#' shared_borders <- calc_border_lengths(
-#'   epi_units = tunisia,
-#'   eu_id_col = "eu_id",
-#'   bordering_countries = bordering_countries,
-#'   bc_id_col = "iso3"
-#' )
-#' calc_border_risk(
-#'   epi_units = tunisia,
-#'   shared_borders = shared_borders,
-#'   emission_risk = emission_risk_table
-#' )
-#' }
+#' @example examples/calc_border_risk.R
 #' @return A list containing `borders` and `epi_units`
 #'
 #' **epi_units**: a `sf` object containing shared borders between EUs and bordering countries,
@@ -281,12 +244,13 @@ calc_border_risk <- function(
     add_html_lables = FALSE
 ) {
   check_dots_empty()
-
   borders <- label_borders(
     borders = shared_borders,
     epi_units = epi_units,
     emission_risk = emission_risk
-    )
+    ) |>
+    select(-any_of(c("sc_commerce", "sc_epistatus", "sc_survmeasures", "sc_control",
+                     "disease", "animal_category", "species")))
 
   epi_units_border_risk <- epi_units |>
     mutate(eu_id = as.character(.data$eu_id)) |>
@@ -341,7 +305,9 @@ calc_border_risk <- function(
 label_borders <- function(borders, epi_units, emission_risk) {
   border_risks <- borders |>
     left_join(emission_risk, by = c("bc_id" = "iso3")) |>
-    left_join(epi_units |> st_drop_geometry() |> mutate(eu_id = as.character(.data[["eu_id"]])),
+    left_join(epi_units |>
+                st_drop_geometry() |>
+                mutate(eu_id = as.character(.data[["eu_id"]])),
               by = "eu_id"
     ) |>
     mutate(
@@ -357,7 +323,6 @@ label_borders <- function(borders, epi_units, emission_risk) {
     select(-all_of("eu_name"))
   border_risks
 }
-
 
 # Leaflet ---------------------------------------------------------------
 

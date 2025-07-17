@@ -56,6 +56,10 @@ emission of neighbouring countries. The score is weighted based on the length of
 shared borders.
 }
 \examples{
+
+
+\donttest{
+
 library(sf)
 library(dplyr)
 
@@ -79,7 +83,8 @@ tun_neighbours <- riskintrodata::neighbours_table |>
 
 bordering_countries <- riskintrodata::world_sf |>
   filter(iso3 \%in\% tun_neighbours$neighbour_id)
-\donttest{
+
+
 # Run function to get shared borders
 shared_borders <- calc_border_lengths(
   epi_units = tunisia,
@@ -87,6 +92,15 @@ shared_borders <- calc_border_lengths(
   bordering_countries = bordering_countries,
   bc_id_col = "iso3"
 )
+
+wahis_factors <- riskintrodata::get_wahis_erf(
+  disease = "Anthrax",
+  species = "Cattle",
+  animal_category = "Domestic"
+)
+
+emission_risk_table <- calc_emission_risk(wahis_factors)
+
 calc_border_risk(
   epi_units = tunisia,
   shared_borders = shared_borders,
