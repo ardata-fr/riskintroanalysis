@@ -64,6 +64,7 @@ utils::globalVariables(c(".data"))
 #' and outside (equivalent to before and end).
 #' @return A logical value indicating whether the expression is truthy
 #' @importFrom rlang dots_list
+#' @noRd
 HTML <- function (text, ..., .noWS = NULL)
 {
   htmlText <- c(text, as.character(dots_list(...)))
@@ -89,7 +90,7 @@ paste8 <- function (..., sep = " ", collapse = NULL){
 #' isTruthy(character())
 #' isTruthy(character(1))
 #' isTruthy(NULL)
-#' @export
+#' @noRd
 isTruthy <- function (x) {
   if (is.null(x))
     return(FALSE)
