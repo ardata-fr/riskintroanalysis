@@ -4,6 +4,7 @@
 # riskintroanalysis
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The riskintroanalysis R package provides functions to analyse the risk
@@ -92,6 +93,7 @@ associated with this score, and a 0 means no additional risk.
 ``` r
 
 library(dplyr)
+library(riskintrodata)
 library(riskintroanalysis)
 #> Loading required package: ggplot2
 library(sf)
@@ -151,7 +153,7 @@ emission_risk_factors <- dplyr::bind_rows(
   wahis_erf
   )
 
-emission_risk_table <- calc_weighted_emission_risk(emission_risk_factors = emission_risk_factors)
+emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
 
 hist(
   emission_risk_table$emission_risk,
@@ -224,7 +226,7 @@ The 4 methods of analysis provided by the package are detailed below:
 This an example of analysing the risk of introduction for Tunisian
 governorates. Based off of the core datasets
 
-### Risk of introduction through land borders:
+### Border risk
 
 Required datasets:
 
@@ -276,10 +278,7 @@ ggplot() +
   geom_sf(data = tunisia, fill = "lightblue", colour = "blue", alpha = 0.5) +
   geom_sf(data = shared_borders, colour = "black") +
   geom_sf_label(data = shared_borders, aes(label = round(border_length)), size = 1.5) +
-  coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE) + 
-  labs(
-    title = "Output from get_shared_border_lengths() function "
-  )
+  coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE)
 #> Warning in st_point_on_surface.sfc(sf::st_zm(x)): st_point_on_surface may not
 #> give correct results for longitude/latitude data
 ```
@@ -303,28 +302,30 @@ border_risk_results <- calc_border_risk(
   emission_risk = emission_risk_table
   )
 
+borders <- extract_border(border_risk_results)
+ri_borders <- extract_intro_risk(border_risk_results)
 ggplot() +
   geom_sf(
-    data = border_risk_results$epi_units, 
+    data = ri_borders, 
     aes(fill = border_risk),
     alpha = 0.5
   ) +
-  scale_color_viridis_c(limits = c(0, 12), direction = -1) +
+  scale_color_viridis_c(limits = c(0, 12)) +
   geom_sf(
-    data = border_risk_results$borders,
+    data = borders,
     aes(color = border_risk),
     linewidth =  2
   ) +
-  scale_fill_viridis_c(limits = c(0, 12), direction = -1) +
+  scale_fill_viridis_c(limits = c(0, 12)) +
   geom_sf_label(
-    data = border_risk_results$border,
+    data = borders,
     aes(label = round(border_risk, 2)),
     size = 5/.pt, vjust = 2
   ) +
     geom_sf_label(
     data = 
       filter(
-      border_risk_results$epi_units,
+      ri_borders,
       eu_name %in% c("Faouar", "Ben Guerdane", "Dhiba", "Remada")
     ),
     aes(label = paste(eu_name, "\n", round(border_risk, 2))),
@@ -344,7 +345,7 @@ weighted by border lengths with neighbouring countries of Algeria and
 Libya. As on Remada shares borders with both countries, it is the only
 one with a weighted average.
 
-### Entry point method:
+### Entry point risk
 
 ``` r
 library(riskintroanalysis)
@@ -387,21 +388,22 @@ results <- calc_entry_point_risk(
   epi_units = tunisia,
   emission_risk = emission_risk_table
 )
-# extract_points() au lieu de $points
-points_entry_point_intro_risk <- results$points
-epi_units_entry_point_intro_risk <- results$epi_units
+
+point_risk <- extract_point_risk(results)
+ri_entry_points <- extract_intro_risk(results)
 
 ggplot() +
-  geom_sf(data = epi_units_entry_point_intro_risk,
-          aes(fill = entry_points_risk),
-          alpha = 0.6) +
-  scale_fill_viridis_c(limits = c(0, 12), direction = -1) +
   geom_sf(
-    data = points_entry_point_intro_risk,
+    data = ri_entry_points,
+    aes(fill = entry_points_risk ),
+    alpha = 0.6
+  ) +
+  geom_sf(
+    data = point_risk,
     size = 1.5, shape = 21,
     aes(fill = emission_risk)
-    ) +
-    scale_color_viridis_c(limits = c(0, 12), direction = -1)
+  ) +
+  scale_fill_viridis_c(limits = c(0, 12)) 
 ```
 
 <img src="man/figures/README-entry-points-analysis-1.png" width="100%" />
@@ -410,7 +412,7 @@ All epi units containing an entry point (with an associated weighted
 emission risk) now have a risk of introduction based on the points
 within its area.
 
-### Animal mobility method:
+### Animal mobility
 
 Considerations:
 
@@ -451,26 +453,24 @@ animal_mobility <- apply_mapping(
 )
 #> ✔ All data in "animal_mobility" valided.
 
-analysis_point <- calc_animal_mobility_point_risk(
+animal_mobility_risk <- calc_animal_mobility_risk(
   animal_mobility = animal_mobility, 
   emission_risk = emission_risk_table, 
-  country_iso3 = "TUN"
-    )
-
-analysis_output <- calc_animal_mobility_eu_risk(
-  animal_mobility_points = analysis_point, 
-  epi_units = tunisia, 
+  epi_units = tunisia,
   method = "mean"
-  )
+)
+
+flows_risk <- extract_flow_risk(animal_mobility_risk)
+ri_animal_mobility <- extract_intro_risk(animal_mobility_risk)
 
 ggplot() +
   geom_sf(
-    data = analysis_output,
-    aes(geometry = geometry, fill = animal_movement_risk)
+    data = ri_animal_mobility,
+    aes(geometry = geometry, fill = animal_mobility_risk)
   ) +
-  scale_fill_viridis_c(limits = c(0, 12), direction = -1)+
+  scale_fill_viridis_c(limits = c(0, 12))+
   geom_sf(
-    data = analysis_point, 
+    data = flows_risk, 
     color = "black", size = 1.5, shape = 21,
     aes(fill = emission_risk_weighted )
   )
@@ -481,7 +481,7 @@ ggplot() +
 Some points remain grey indicating that the country from which the flow
 comes does not have an entry in the emission risk factors table.
 
-### Road accessibility method:
+### Road accessibility
 
 Road access risk is calculated from the road accessibility raster file,
 a global raster that contains data of distance from roads. This data is
@@ -489,6 +489,7 @@ aggregated over each epidemiological unit of Tunisia.
 
 ``` r
 library(riskintroanalysis)
+library(dplyr)
 library(terra)
 #> terra 1.8.54
 
@@ -504,14 +505,14 @@ aggragate these values over each administrative area. Here, mean is
 used.
 
 ``` r
-road_access_risk <- augment_epi_units_with_raster(
+ri_road_access <- augment_epi_units_with_raster(
   epi_units = tunisia, 
   raster = road_raster, 
   risk_name = "road_access_risk",
   aggregate_fun = "mean"
 )
 
-plot(select(road_access_risk, road_access_risk))
+plot(select(ri_road_access, road_access_risk))
 ```
 
 <img src="man/figures/README-do-augment_epi_units_with_raster-1.png" width="100%" />
@@ -539,10 +540,10 @@ comparing across countries later.
 
 ``` r
 rescaled <- rescale_risk_scores(
-  data = road_access_risk,
+  data = ri_road_access,
   cols = "road_access_risk", 
   names_to = "scaled_road_access_risk",
-  from = c(0, max(road_access_risk$road_access_risk)),
+  from = c(0, max(ri_road_access$road_access_risk)),
   to = c(0, 100),
   method = "linear", 
   keep_cols = TRUE
@@ -557,16 +558,16 @@ While a sigmoid transformation looks like the below. The choice of the
 `method` argument are left up to the judgement of the analyst.
 
 ``` r
-rescaled <- rescale_risk_scores(
-  data = road_access_risk,
+ri_road_access <- rescale_risk_scores(
+  data = ri_road_access,
   cols = "road_access_risk", 
   names_to = "scaled_road_access_risk",
-  from = c(0, max(road_access_risk$road_access_risk)),
+  from = c(0, max(ri_road_access$road_access_risk)),
   method = "sigmoid", 
   keep_cols = TRUE
 )
 
-plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
+plot(ri_road_access$road_access_risk, ri_road_access$scaled_road_access_risk)
 ```
 
 <img src="man/figures/README-rescaling-road-access-risk-2-1.png" width="100%" />
@@ -581,19 +582,19 @@ epidemiological unit and its various risks scores.
 
 summary_table <- tunisia |> 
   left_join(
-    st_drop_geometry(rescaled), 
+    st_drop_geometry(ri_road_access), 
     by = c("eu_id", "eu_name")
   ) |> 
   left_join(
-    st_drop_geometry(epi_units_entry_point_intro_risk), 
+    st_drop_geometry(ri_entry_points), 
     by = c("eu_id", "eu_name")
   ) |> 
   left_join(
-    st_drop_geometry(border_risk_results$epi_units), 
+    st_drop_geometry(ri_borders), 
     by = c("eu_id", "eu_name")
   ) |> 
   left_join(
-    st_drop_geometry(analysis_output), 
+    st_drop_geometry(ri_animal_mobility), 
     by = c("eu_id", "eu_name")
   ) |> 
   select(
@@ -601,7 +602,7 @@ summary_table <- tunisia |>
     ri_road_access = scaled_road_access_risk,
     ri_entry_points = entry_points_risk,
     ri_border_risk = border_risk,
-    ri_animal_movement = animal_movement_risk
+    ri_animal_movement = animal_mobility_risk
   ) |>
   rescale_risk_scores(
     cols = c(
@@ -618,14 +619,14 @@ summary_table <- tunisia |>
 risk_cols <- grepv(pattern = "RISK__", x = colnames(summary_table))
 
 combined_risk_table <- summary_table |> 
-  summarise_risk_scores(risk_cols  = risk_cols, method = "mean")
+  summarise_risk_scores(cols  = risk_cols, method = "mean")
 
 ggplot() +
   geom_sf(
     data = combined_risk_table,
     aes(fill = overall_risk)
     ) +
-    scale_fill_viridis_c(limits = c(0, 100), direction = -1) +
+    scale_fill_viridis_c(limits = c(0, 100)) +
   theme_void()
 ```
 

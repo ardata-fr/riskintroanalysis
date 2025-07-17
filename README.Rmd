@@ -448,7 +448,7 @@ rescaled <- rescale_risk_scores(
   data = ri_road_access,
   cols = "road_access_risk", 
   names_to = "scaled_road_access_risk",
-  from = c(0, max(road_access_risk$road_access_risk)),
+  from = c(0, max(ri_road_access$road_access_risk)),
   to = c(0, 100),
   method = "linear", 
   keep_cols = TRUE
@@ -465,7 +465,7 @@ ri_road_access <- rescale_risk_scores(
   data = ri_road_access,
   cols = "road_access_risk", 
   names_to = "scaled_road_access_risk",
-  from = c(0, max(road_access_risk$road_access_risk)),
+  from = c(0, max(ri_road_access$road_access_risk)),
   method = "sigmoid", 
   keep_cols = TRUE
 )
