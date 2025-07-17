@@ -28,3 +28,9 @@ animal_category, this function is a helper for that.
 \details{
 For dataset documentation see: \link[riskintrodata:wahis_emission_risk_factors]{riskintrodata::wahis_emission_risk_factors}
 }
+\seealso{
+Other functions for "Emission Risk Factors" management: 
+\code{\link{erf_row}()},
+\code{\link{get_erf_weights}()}
+}
+\concept{functions for "Emission Risk Factors" management}

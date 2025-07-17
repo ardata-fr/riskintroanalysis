@@ -107,5 +107,10 @@ erf_row(
   commerce_illegal = 1,
   commerce_legal = 1
 )
-
 }
+\seealso{
+Other functions for "Emission Risk Factors" management: 
+\code{\link{get_erf_weights}()},
+\code{\link{get_wahis_erf}()}
+}
+\concept{functions for "Emission Risk Factors" management}

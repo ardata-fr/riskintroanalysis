@@ -104,6 +104,7 @@ calc_emission_risk <- function(
 #' @return named list of emission risk weights [riskintrodata::emission_risk_weights]
 #' @export
 #' @importFrom dplyr filter
+#' @family functions for "Emission Risk Factors" management
 get_erf_weights <- function() {
   riskintrodata::emission_risk_weights
 }

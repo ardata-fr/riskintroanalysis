@@ -15,6 +15,7 @@
 #' @export
 #' @importFrom dplyr filter
 #' @importFrom riskintrodata validate_table_content
+#' @family functions for "Emission Risk Factors" management
 get_wahis_erf <- function(
     disease = character(),
     species = character(),
@@ -116,7 +117,7 @@ get_wahis_erf <- function(
 #'   commerce_illegal = 1,
 #'   commerce_legal = 1
 #' )
-#'
+#' @family functions for "Emission Risk Factors" management
 #' @export
 #' @importFrom tibble tibble
 #' @importFrom riskintrodata validate_table_content validate_table_content_cli_msg

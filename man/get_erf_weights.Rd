@@ -12,3 +12,9 @@ named list of emission risk weights \link[riskintrodata:emission_risk_weights]{r
 \description{
 Get Default Emission Risk Weights
 }
+\seealso{
+Other functions for "Emission Risk Factors" management: 
+\code{\link{erf_row}()},
+\code{\link{get_wahis_erf}()}
+}
+\concept{functions for "Emission Risk Factors" management}
