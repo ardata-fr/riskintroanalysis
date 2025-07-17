@@ -47,8 +47,8 @@ calc_road_access_risk <- function(
     ri = dataset,
     raster = cropped_raster
   )
-  attr(x$dataset, "risk_col") <- "road_access_risk"
-  attr(x$dataset, "risk_type") <- "road_access"
+  attr(x$ri, "risk_col") <- "road_access_risk"
+  attr(x$ri, "risk_type") <- "road_access"
   class(x) <- "ri_analysis"
   x
 }

@@ -46,8 +46,8 @@ calc_animal_mobility_risk <- function(
     flows = flows_risk,
     ri = epi_units
   )
-  attr(x$dataset, "risk_col") <- "animal_mobility_risk"
-  attr(x$dataset, "risk_type") <- "animal_mobility"
+  attr(x$ri, "risk_col") <- "animal_mobility_risk"
+  attr(x$ri, "risk_type") <- "animal_mobility"
   class(x) <- "ri_analysis"
   x
 }

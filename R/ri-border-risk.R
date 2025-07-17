@@ -330,10 +330,10 @@ calc_border_risk <- function(
 
   x <- list(
     borders = borders,
-    epi_units = epi_units_border_risk
+    ri = epi_units_border_risk
   )
-  attr(x$dataset, "risk_col") <- "border_risk"
-  attr(x$dataset, "risk_type") <- "border_risk"
+  attr(x$ri, "risk_col") <- "border_risk"
+  attr(x$ri, "risk_type") <- "border_risk"
   class(x) <- "ri_analysis"
   x
 }
