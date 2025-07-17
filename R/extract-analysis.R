@@ -16,6 +16,7 @@
 #' -  `extract_intro_risk(x)` returns the dataset containing the risk of introduction
 #' for each epidemiological unit. Usually the final step in all risk analyses.
 #'
+#' - `extract_raster(x)` returns the raster data cropped to the epidemiological units areas.
 #' @name extract-analysis
 NULL
 
@@ -24,7 +25,7 @@ NULL
 #' @importFrom rlang has_name
 extract_point_risk <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls riskintro_analysis}" = inherits(x, "riskintro_analysis"),
+    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
     "Point risks not available for this risk analysis" = rlang::has_name(x, "points")
   )
   x[["points"]]
@@ -35,7 +36,7 @@ extract_point_risk <- function(x){
 #' @importFrom rlang has_name
 extract_flow_risk <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls riskintro_analysis}" = inherits(x, "riskintro_analysis"),
+    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
     "Flows risks not available for this risk" =  rlang::has_name(x, "flows")
   )
   x[["flows"]]
@@ -46,8 +47,20 @@ extract_flow_risk <- function(x){
 #' @importFrom rlang has_name
 extract_intro_risk <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls riskintro_analysis}" = inherits(x, "riskintro_analysis"),
+    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
     "Introduction risk not available for this risk" = rlang::has_name(x, "ri")
   )
   x[["ri"]]
+}
+
+
+#' @export
+#' @rdname extract-analysis
+#' @importFrom rlang has_name
+extract_raster <- function(x){
+  cli_abort_if_not(
+    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
+    "Introduction risk not available for this risk" = rlang::has_name(x, "raster")
+  )
+  x[["raster"]]
 }

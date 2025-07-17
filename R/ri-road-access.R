@@ -1,5 +1,85 @@
+#' Road access introduction risk analysis
+#'
+#' Calculates the risk of introduction for an animal disease using an
+#' accessibility to roads index.
+#'
+#' @param epi_units epidemiological units dataset
+#' @param road_access_raster road access raster data contains road accessibility
+#' index. Can be aquired using [riskintrodata::download_road_access_raster()] and
+#'  [terra::rast()].
+#' @param aggregate_fun function to use to aggregate raster values over
+#' epi units area, default is `mean`.
+#'
+#' @return list with class `ri_analysis` that contains:
+#'
+#' 1. `ri`: an `sf` dataset containing the road accessibility risk summarised over each
+#' epidemiological unit. Contains the following columns:
+#' -  `eu_id`: unique identifier for each epidemiological unit
+#' -  `eu_name`: name provided in `epi_units` dataset.
+#' -  `road_access_risk`: road access risk of inroduction score (unscaled)
+#' -  `geometry`: geometry for each epidemiological unit of type `POLYGON` or `MULTIPOLYGON`.
+#'
+#' 2. `raster`: a `SpatRaster` containing the cropped raster that covers only
+#' the epidemiological units areas.
+#'
+#' @export
+#' @importFrom terra crop
+#' @exampls
+#' library(riskintroanalysis)
+#' library(riskintrodata)
+#' library(dplyr)
+#' library(terra)
+#' library(sf)
+#' # Example with raw sf files, previously downloaded with geodata::gadm()
+#' tunisia_raw <- read_sf(system.file(
+#'   package = "riskintrodata",
+#'   "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+#' ))
+#'
+#' # Apply mapping to prepare colnames and validate dataset
+#' tunisia <- apply_mapping(
+#'   tunisia_raw,
+#'   mapping = mapping_epi_units(
+#'     eu_name = "NAME_2",
+#'     geometry = "geom"
+#'   ),
+#'   validate = TRUE
+#' )
+#'
+#' road_raster_fp <- download_road_access_raster()
+#' road_raster <- rast(road_raster_fp)
+#'
+#' road_access_risk <- calc_road_access_risk(
+#'   epi_units = tunisia,
+#'   road_access_raster = road_raster,
+#'   aggregate_fun = "mean"
+#' )
+#'
+calc_road_access_risk <- function(
+    epi_units,
+    road_access_raster,
+    aggregate_fun = c("mean", "max", "min", "sum")
+){
+  aggregate_fun <- match.arg(aggregate_fun)
+  cropped_raster <- crop(road_access_raster, epi_units, mask = TRUE)
 
-# Method -----------------------------------------------------------------------
+  dataset <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = cropped_raster,
+    aggregate_fun = aggregate_fun,
+    risk_name = "road_access_risk"
+  )
+  x <- list(
+    ri = dataset,
+    raster = cropped_raster
+  )
+  attr(x$dataset, "risk_col") <- "road_access_risk"
+  attr(x$dataset, "risk_type") <- "road_access"
+  class(x) <- "ri_analysis"
+  x
+}
+
+
 
 #' Aggregate raster values over polygon areas
 #'
@@ -26,9 +106,7 @@ augment_epi_units_with_raster <- function(
   aggregate_fun <- match.arg(aggregate_fun)
   p <- epi_units
   r <- raster
-
   r <- terra::crop(r, p, mask = TRUE)
-
   p_splat <- as_Spatial(p)
   p_splat <- vect(p_splat)
   aggs <- zonal(r, p_splat, fun = aggregate_fun, na.rm=TRUE)[[1]]
