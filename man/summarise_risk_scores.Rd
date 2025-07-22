@@ -6,8 +6,10 @@
 \usage{
 summarise_risk_scores(
   risk_table,
-  cols,
-  method = c("mean", "max", "min", "median")
+  cols = NULL,
+  method = c("mean", "max", "min", "median"),
+  name_to = "overall_risk",
+  keep_cols = FALSE
 )
 }
 \arguments{
@@ -16,6 +18,10 @@ summarise_risk_scores(
 \item{cols}{columns to summarise}
 
 \item{method}{summary method such as \code{"mean"} or \code{"max"}.}
+
+\item{name_to}{name of overall risk column, defaults to \code{"overall_risk"}}
+
+\item{keep_cols}{whether to keep \code{cols} or remove them.}
 }
 \description{
 Summarise risk scores across columns using the chosen method.

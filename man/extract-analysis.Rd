@@ -4,7 +4,6 @@
 \alias{extract-analysis}
 \alias{extract_point_risk}
 \alias{extract_flow_risk}
-\alias{extract_intro_risk}
 \alias{extract_raster}
 \alias{extract_border}
 \title{Extract analysis subcomponents}
@@ -12,8 +11,6 @@
 extract_point_risk(x)
 
 extract_flow_risk(x)
-
-extract_intro_risk(x)
 
 extract_raster(x)
 

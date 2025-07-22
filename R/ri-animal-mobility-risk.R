@@ -36,20 +36,17 @@ calc_animal_mobility_risk <- function(
   )
 
   # Step 2
-  eu_risk <- calc_animal_mobility_intro_risk(
+  dataset <- calc_animal_mobility_intro_risk(
     animal_mobility_flows = flows_risk,
     epi_units = epi_units,
     method = method
   )
 
-  x <- list(
-    flows = flows_risk,
-    ri = eu_risk
-  )
-  attr(x$ri, "risk_col") <- "animal_mobility_risk"
-  attr(x$ri, "risk_type") <- "animal_mobility"
-  class(x) <- "ri_analysis"
-  x
+  attr(dataset, "risk_col") <- "animal_mobility_risk"
+  attr(dataset, "risk_type") <- "animal_mobility"
+  attr(dataset, "flows") <- flows_risk
+  attr(dataset, "scale") <- c(0,12)
+  dataset
 }
 
 #' Animal mobility destination point risk

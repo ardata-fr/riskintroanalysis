@@ -25,10 +25,9 @@ NULL
 #' @importFrom rlang has_name
 extract_point_risk <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Point risks not available for this risk analysis" = rlang::has_name(x, "points")
+    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "points"))
   )
-  x[["points"]]
+  attr(x, "points")
 }
 
 #' @export
@@ -36,21 +35,9 @@ extract_point_risk <- function(x){
 #' @importFrom rlang has_name
 extract_flow_risk <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Flows risks not available for this risk analysis" =  rlang::has_name(x, "flows")
+    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "flows"))
   )
-  x[["flows"]]
-}
-
-#' @export
-#' @rdname extract-analysis
-#' @importFrom rlang has_name
-extract_intro_risk <- function(x){
-  cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Risk of introduction not available for this risk analysis" = rlang::has_name(x, "ri")
-  )
-  x[["ri"]]
+  attr(x, "flows")
 }
 
 
@@ -59,10 +46,9 @@ extract_intro_risk <- function(x){
 #' @importFrom rlang has_name
 extract_raster <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Raster data not available for this risk analysis" = rlang::has_name(x, "raster")
+    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "raster"))
   )
-  x[["raster"]]
+  attr(x, "raster")
 }
 
 #' @export
@@ -70,8 +56,7 @@ extract_raster <- function(x){
 #' @importFrom rlang has_name
 extract_border <- function(x){
   cli_abort_if_not(
-    "{.arg x} has class {.cls {class(x)}} and should be class {.cls ri_analysis}" = inherits(x, "ri_analysis"),
-    "Borders dataset not available for this risk analysis" = rlang::has_name(x, "borders")
+    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "borders"))
   )
-  x[["borders"]]
+  attr(x, "borders")
 }

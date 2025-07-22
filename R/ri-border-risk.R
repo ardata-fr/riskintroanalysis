@@ -252,7 +252,7 @@ calc_border_risk <- function(
     select(-any_of(c("sc_commerce", "sc_epistatus", "sc_survmeasures", "sc_control",
                      "disease", "animal_category", "species")))
 
-  epi_units_border_risk <- epi_units |>
+  dataset <- epi_units |>
     mutate(eu_id = as.character(.data$eu_id)) |>
     left_join(st_drop_geometry(borders), by = "eu_id") |>
     group_by(across(all_of("eu_id"))) |>
@@ -289,17 +289,14 @@ calc_border_risk <- function(
     select(-all_of("sources_label"))
 
   if (!add_html_lables) {
-    epi_units_border_risk <- select(epi_units_border_risk, -all_of("risk_sources_label"))
+    dataset <- select(dataset, -all_of("risk_sources_label"))
   }
 
-  x <- list(
-    borders = borders,
-    ri = epi_units_border_risk
-  )
-  attr(x$ri, "risk_col") <- "border_risk"
-  attr(x$ri, "risk_type") <- "border_risk"
-  class(x) <- "ri_analysis"
-  x
+  attr(dataset, "risk_col") <- "border_risk"
+  attr(dataset, "table_name") <- "border_risk"
+  attr(dataset, "borders") <- borders
+  attr(dataset, "scale") <- c(0,12)
+  dataset
 }
 
 label_borders <- function(borders, epi_units, emission_risk) {

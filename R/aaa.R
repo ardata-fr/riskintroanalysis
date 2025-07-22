@@ -22,6 +22,8 @@
 #'  st_nearest_feature st_point_on_surface st_polygon st_set_geometry
 #'  st_sfc st_snap st_transform st_area st_as_text st_cast st_collection_extract
 #'  sf_use_s2
+#' @importFrom cli
+#'  cli_abort cli_warn cli_inform cli_ul cli_ol cli_li
 NULL
 
 

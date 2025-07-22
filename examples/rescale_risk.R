@@ -4,7 +4,7 @@ library(riskintroanalysis)
 dat <- data.frame(RISK = seq(0, 12, by = 0.01))
 
 dat_scaled <- rescale_risk_scores(
-  data = dat,
+  dataset = dat,
   cols = "RISK",
   method = "linear",
   from = c(0, 12),

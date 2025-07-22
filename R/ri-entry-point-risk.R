@@ -112,7 +112,7 @@ calc_entry_point_risk <- function(
       .groups = "drop"
       )
 
-  risk_per_eu <- risk_per_point |>
+  dataset <- risk_per_point |>
     group_by(across(all_of(c("eu_id", "eu_name")))) |>
     summarise_quiet(
       entry_points_risk = safe_stat(.data[["ri_entry_points"]], FUN = max),
@@ -124,14 +124,11 @@ calc_entry_point_risk <- function(
       .groups = "drop"
     )
 
-  x <- list(
-    points = points_emission_risk,
-    ri = risk_per_eu
-  )
-  attr(x$ri, "risk_col") <- "entry_points"
-  attr(x$ri, "risk_type") <- "entry_points_risk"
-  class(x) <- "ri_analysis"
-  x
+  attr(dataset, "risk_col") <- "entry_points_risk"
+  attr(dataset, "table_name") <- "entry_points"
+  attr(dataset, "points") <- points_emission_risk
+  attr(dataset, "scale") <- c(0,12)
+  dataset
 }
 
 

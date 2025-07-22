@@ -4,7 +4,6 @@
 # riskintroanalysis
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The riskintroanalysis R package provides functions to analyse the risk
@@ -277,7 +276,7 @@ ggplot() +
   geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5) +
   geom_sf(data = tunisia, fill = "lightblue", colour = "blue", alpha = 0.5) +
   geom_sf(data = shared_borders, colour = "black") +
-  geom_sf_label(data = shared_borders, aes(label = round(border_length)), size = 1.5) +
+  geom_sf_label(data = shared_borders, aes(label = sprintf("%.fkm", border_length)), size = 1.5) +
   coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE)
 #> Warning in st_point_on_surface.sfc(sf::st_zm(x)): st_point_on_surface may not
 #> give correct results for longitude/latitude data
@@ -286,7 +285,7 @@ ggplot() +
 <img src="man/figures/README-shared-borders-1.png" width="100%" /> The
 main purpose of the function is to correct misaligned borders, as can be
 seen in the overlaps and divergent borders. The epidemiological units
-data is used as the “true” border as geospatial data from different
+data is used for the “true” border as geospatial data from different
 sources are rarely well aligned.
 
 A border length has been calculated for each epi unit that a foreign
@@ -296,14 +295,14 @@ of Tunisia’s southern most governorate. Which will have an emission risk
 weighed by the border lengths or each neighbour.
 
 ``` r
-border_risk_results <- calc_border_risk(
+ri_borders <- calc_border_risk(
   epi_units = tunisia, 
   shared_borders = shared_borders,
   emission_risk = emission_risk_table
   )
 
-borders <- extract_border(border_risk_results)
-ri_borders <- extract_intro_risk(border_risk_results)
+borders <- extract_border(ri_borders)
+
 ggplot() +
   geom_sf(
     data = ri_borders, 
@@ -383,14 +382,13 @@ entry_points <- apply_mapping(
 )
 #> ✔ All data in "entry_points" valided.
 
-results <- calc_entry_point_risk(
+ri_entry_points <- calc_entry_point_risk(
   entry_points = entry_points,
   epi_units = tunisia,
   emission_risk = emission_risk_table
 )
 
-point_risk <- extract_point_risk(results)
-ri_entry_points <- extract_intro_risk(results)
+point_risk <- extract_point_risk(ri_entry_points)
 
 ggplot() +
   geom_sf(
@@ -453,15 +451,14 @@ animal_mobility <- apply_mapping(
 )
 #> ✔ All data in "animal_mobility" valided.
 
-animal_mobility_risk <- calc_animal_mobility_risk(
+ri_animal_mobility <- calc_animal_mobility_risk(
   animal_mobility = animal_mobility, 
   emission_risk = emission_risk_table, 
   epi_units = tunisia,
   method = "mean"
 )
 
-flows_risk <- extract_flow_risk(animal_mobility_risk)
-ri_animal_mobility <- extract_intro_risk(animal_mobility_risk)
+flows_risk <- extract_flow_risk(ri_animal_mobility)
 
 ggplot() +
   geom_sf(
@@ -495,29 +492,35 @@ library(terra)
 
 road_raster_fp <- riskintrodata::download_road_access_raster()
 road_raster <- terra::rast(road_raster_fp)
-terra::plot(terra::crop(road_raster, tunisia, mask = TRUE)) 
+
+ri_road_access <- calc_road_access_risk(
+  epi_units = tunisia, 
+  road_access_raster = road_raster, 
+  aggregate_fun = "mean"
+)
+
+plot(
+  extract_raster(ri_road_access), 
+  main = "Raster cropped to epidemiological units"
+)
 ```
 
 <img src="man/figures/README-display-raster-1.png" width="100%" />
+
+``` r
+
+select(ri_road_access, road_access_risk) |> 
+  plot(main = "Road access risk by epidemiological unit")
+```
+
+<img src="man/figures/README-display-raster-2.png" width="100%" />
 
 This shows us what the raster data looks like for Tunisia. Now we will
 aggragate these values over each administrative area. Here, mean is
 used.
 
-``` r
-ri_road_access <- augment_epi_units_with_raster(
-  epi_units = tunisia, 
-  raster = road_raster, 
-  risk_name = "road_access_risk",
-  aggregate_fun = "mean"
-)
-
-plot(select(ri_road_access, road_access_risk))
-```
-
-<img src="man/figures/README-do-augment_epi_units_with_raster-1.png" width="100%" />
-
-The output shows the road access risk associated with each area.
+The output shows the road access risk associated with each
+epidemiological unit.
 
 ## Risk rescaling
 
@@ -540,15 +543,14 @@ comparing across countries later.
 
 ``` r
 rescaled <- rescale_risk_scores(
-  data = ri_road_access,
-  cols = "road_access_risk", 
-  names_to = "scaled_road_access_risk",
+  dataset = ri_road_access,
+  cols = "road_access_risk",
   from = c(0, max(ri_road_access$road_access_risk)),
   to = c(0, 100),
   method = "linear", 
+  names_to = "scaled_road_access_risk",
   keep_cols = TRUE
 )
-
 plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
 ```
 
@@ -557,20 +559,18 @@ plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
 While a sigmoid transformation looks like the below. The choice of the
 `method` argument are left up to the judgement of the analyst.
 
+Note that a risk dataset ouput from one of the 4 default risk analyses
+will detect which column to scale. The `cols` and `names_to` arguments
+are not required.
+
 ``` r
-ri_road_access <- rescale_risk_scores(
+ri_road_access_scaled <- rescale_risk_scores(
   data = ri_road_access,
-  cols = "road_access_risk", 
-  names_to = "scaled_road_access_risk",
   from = c(0, max(ri_road_access$road_access_risk)),
   method = "sigmoid", 
-  keep_cols = TRUE
+  keep_cols = FALSE
 )
-
-plot(ri_road_access$road_access_risk, ri_road_access$scaled_road_access_risk)
 ```
-
-<img src="man/figures/README-rescaling-road-access-risk-2-1.png" width="100%" />
 
 ## Summary table
 
@@ -579,55 +579,95 @@ can be handy to have them all in one table. Each row is an
 epidemiological unit and its various risks scores.
 
 ``` r
+# initialise the risk_table 
+rt <- risk_table(tunisia, scale = c(0, 100))
+# Add road_access which has already been rescaled
+rt <- add_risk(risk_table = rt, risk_data = ri_road_access_scaled)
 
-summary_table <- tunisia |> 
-  left_join(
-    st_drop_geometry(ri_road_access), 
-    by = c("eu_id", "eu_name")
-  ) |> 
-  left_join(
-    st_drop_geometry(ri_entry_points), 
-    by = c("eu_id", "eu_name")
-  ) |> 
-  left_join(
-    st_drop_geometry(ri_borders), 
-    by = c("eu_id", "eu_name")
-  ) |> 
-  left_join(
-    st_drop_geometry(ri_animal_mobility), 
-    by = c("eu_id", "eu_name")
-  ) |> 
-  select(
-    eu_id, eu_name,
-    ri_road_access = scaled_road_access_risk,
-    ri_entry_points = entry_points_risk,
-    ri_border_risk = border_risk,
-    ri_animal_movement = animal_mobility_risk
-  ) |>
-  rescale_risk_scores(
-    cols = c(
-      EP = "ri_entry_points", 
-      BORDER = "ri_border_risk", 
-      AM = "ri_animal_movement"), 
-    method = "linear", 
-    from = c(0, 12),
-    to = c(0, 100),
-    names_prefix = "RISK__",
-    keep_cols = FALSE
-  )
+# add other risks, rescaling them as needed
+rt <- add_risk(
+  risk_table = rt,
+  risk_data = rescale_risk_scores(
+    dataset = ri_entry_points, 
+    method = "sigmoid"
+    )
+)
 
-risk_cols <- grepv(pattern = "RISK__", x = colnames(summary_table))
+rt <- add_risk(
+  risk_table = rt,
+  risk_data = rescale_risk_scores(
+    dataset = ri_borders
+    )
+)
 
-combined_risk_table <- summary_table |> 
-  summarise_risk_scores(cols  = risk_cols, method = "mean")
+rt <- add_risk(
+  risk_table = rt,
+  risk_data = rescale_risk_scores(
+    dataset = ri_animal_mobility
+    )
+)
+
+attributes(rt)
+#> $names
+#> [1] "eu_id"                "eu_name"              "geometry"            
+#> [4] "road_access_risk"     "entry_points_risk"    "border_risk"         
+#> [7] "animal_mobility_risk"
+#> 
+#> $row.names
+#>   [1]   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
+#>  [19]  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36
+#>  [37]  37  38  39  40  41  42  43  44  45  46  47  48  49  50  51  52  53  54
+#>  [55]  55  56  57  58  59  60  61  62  63  64  65  66  67  68  69  70  71  72
+#>  [73]  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90
+#>  [91]  91  92  93  94  95  96  97  98  99 100 101 102 103 104 105 106 107 108
+#> [109] 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126
+#> [127] 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144
+#> [145] 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162
+#> [163] 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180
+#> [181] 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198
+#> [199] 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216
+#> [217] 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234
+#> [235] 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252
+#> [253] 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268
+#> 
+#> $sf_column
+#> [1] "geometry"
+#> 
+#> $agr
+#>                eu_id              eu_name     road_access_risk 
+#>                 <NA>                 <NA>                 <NA> 
+#>    entry_points_risk          border_risk animal_mobility_risk 
+#>                 <NA>                 <NA>                 <NA> 
+#> Levels: constant aggregate identity
+#> 
+#> $table_name
+#> [1] "epi_units"
+#> 
+#> $table_validated
+#> [1] TRUE
+#> 
+#> $scale
+#> [1]   0 100
+#> 
+#> $table
+#> [1] "ri_risk_table"
+#> 
+#> $risk_cols
+#> [1] "road_access_risk"     "entry_points_risk"    "border_risk"         
+#> [4] "animal_mobility_risk"
+#> 
+#> $class
+#> [1] "sf"         "tbl_df"     "tbl"        "data.frame"
+
+summarised_risks <- summarise_risk_scores(rt, method = "max")
 
 ggplot() +
   geom_sf(
-    data = combined_risk_table,
+    data = summarised_risks,
     aes(fill = overall_risk)
     ) +
     scale_fill_viridis_c(limits = c(0, 100)) +
   theme_void()
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+<img src="man/figures/README-summary-table-1.png" width="100%" />

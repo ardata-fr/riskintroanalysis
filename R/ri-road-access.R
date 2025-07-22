@@ -43,14 +43,12 @@ calc_road_access_risk <- function(
     aggregate_fun = aggregate_fun,
     risk_name = "road_access_risk"
   )
-  x <- list(
-    ri = dataset,
-    raster = cropped_raster
-  )
-  attr(x$ri, "risk_col") <- "road_access_risk"
-  attr(x$ri, "risk_type") <- "road_access"
-  class(x) <- "ri_analysis"
-  x
+
+  attr(dataset, "risk_col") <- "road_access_risk"
+  attr(dataset, "table_name") <- "road_access"
+  attr(dataset, "raster") <- cropped_raster
+  attr(dataset, "scale") <- NULL
+  dataset
 }
 
 #' Aggregate raster values over polygon areas

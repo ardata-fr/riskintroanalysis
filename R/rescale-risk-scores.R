@@ -18,7 +18,7 @@
 #' \deqn{f(x) = \frac{100}{1 + \exp(-10 \cdot (\frac{x}{12} - 0.5))}}
 #'
 #'
-#' @param data dataset to add scaled risk column to.
+#' @param dataset dataset to add scaled risk column to.
 #' @param cols Column containing numeric vector of risk values in the range \[0, 12\] OR a named
 #' vector, names will be used as the `names_to` arg, giving new names to rescaled columns.
 #' @param from existing range of possible values for `risk_col` that will be converted to
@@ -30,50 +30,67 @@
 #' added to quadratic.
 #' @param names_prefix string, prefix `cols` names to have new names for scaled columns.
 #' @param names_to string vector, provide new name for rescaled columns.
-#' @param keep_cols default TRUE, whether to keep `cols` columns after rescaling is done.
-#' @param ... keep empty
+#' @param keep_cols default TRUE, whether to keep `cols` columns after rescaling is done or to remove.
 #' @return A dataset with new column containing  numeric vector of scaled values in the range \[0, 100\].
 #' @examples
 #' # rescale_risk -----
 #' @example examples/rescale_risk.R
 #' @export
 rescale_risk_scores <- function(
-    data,
-    cols,
-    ...,
-    from,
+    dataset,
+    cols = NULL,
+    from = NULL,
     to = c(0, 100),
     method = c("linear", "quadratic", "exponential", "sigmoid"),
     inverse = FALSE,
     names_prefix = NULL,
     names_to = NULL,
-    keep_cols = TRUE
+    keep_cols = FALSE
     ) {
 
-  check_dots_empty()
+  if (is.null(cols) && !is.null(attr(dataset, "risk_col"))) {
+    cols <- attr(dataset, "risk_col")
+  } else if (!is.null(cols) && !is.null(attr(dataset, "risk_col"))) {
+    if(attr(dataset, "risk_col") != cols){
+      cli_warn("{.arg risk_col} attribute of {.arg dataset} is being overwritten by {.arg cols}")
+    }
+  } else {
+    cli_abort("{.args cols} needs to be provided as {.arg dataset} has no {.arg risk_col} attribute")
+  }
+  if (!is.null(from) && is.null(attr(dataset, "scale"))) {
+    from <- from
+  } else if (is.null(from) && !is.null(attr(dataset, "scale"))) {
+    from <- attr(dataset, "scale")
+  } else if (!is.null(from) && !is.null(attr(dataset, "scale"))) {
+    cli_warn("{.arg scale} attribute of {.arg dataset} is being overwritten by {.arg from}")
+  } else {
+    cli_abort("{.args from} needs to be provided as {.arg dataset} has no {.arg scale} attribute")
+  }
+
   cli_abort_if_not(
-    "{.arg  data} should be a data.frame or tibble" = "data.frame" %in% class(data),
+    "{.arg  dataset} should be a data.frame or tibble" = "data.frame" %in% class(dataset),
     "{.arg inverse} should be TRUE or FALSE" = inverse %in% c(TRUE, FALSE),
     "{.arg from} should have be a vector of length 2" = length(from) == 2,
     "{.arg to} should have be a vector of length 2" = length(from) == 2
   )
 
-  missing_cols <- cols[!cols %in% colnames(data)]
-  if (length(missing_cols) >1) {
-    cli::cli_abort("These {.arg  cols} not found in data: {quote_and_collapse(missing_cols, quote_char = '\"')}")
+  missing_cols <- cols[!cols %in% colnames(dataset)]
+  if (length(missing_cols) > 0) {
+    cli_abort("These {.arg  cols} not found in {.arg dataset}: {quote_and_collapse(missing_cols, quote_char = '\"')}")
   }
   if (rlang::is_named(cols) && !is.null(names_to)){
-    cli::cli_abort("When {.arg cols} is a named list, {.arg names_to} should not be provided.")
+    cli_abort("When {.arg cols} is a named list, {.arg names_to} should not be provided.")
   }
   if (!is.null(names_to) && length(names_to) != length(cols)) {
-    cli::cli_abort("{.arg names_to} must be the same length as {.arg cols}.")
+    cli_abort("{.arg names_to} must be the same length as {.arg cols}.")
   }
 
   new_cols <- names_to %||% names(cols) %||% cols
   new_cols <- paste0(names_prefix, new_cols)
 
   method <- match.arg(method)
-  dataset <- data
+  table_name <- attr(dataset, "table_name")
+  dat <- dataset
 
 
   old_min <- from[[1]] # existing min
@@ -103,7 +120,6 @@ rescale_risk_scores <- function(
     )
   }
 
-
   for (i in seq_along(cols)){
     dat <- data.frame(x = dataset[[cols[[i]]]])
     dat$normalised <- (dat$x - old_min) / (old_max - old_min)
@@ -112,13 +128,15 @@ rescale_risk_scores <- function(
     dataset[[new_cols[[i]]]] <- dat$rescaled
   }
 
-  if (!keep_cols) {
+  if (!keep_cols && !all(cols == new_cols)) {
     dataset <- dataset |> dplyr::select(-all_of(cols))
   }
+
+  attr(dataset, "scale") = to
+  attr(dataset, "risk_col") = new_cols
+  attr(dataset, "table_name") = table_name
   dataset
 }
-
-
 
 #' Sigmoid function
 #'
