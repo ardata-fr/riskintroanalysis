@@ -19,6 +19,12 @@ risk_table <- function(
     scale = c(0,100)
 ) {
 
+  cli_abort_if_not(
+    "{.arg epi_units} should have attribute {.arg table_name}, it is NULL" = !is.null(attr(epi_units, "table_name")),
+    "{.arg epi_units} should have attribute {.arg table_name} of {.arg epi_units} " = attr(epi_units, "table_name") == "epi_units",
+    "{.arg epi_units} should have been validated by {.fn apply_mapping}" = attr(epi_units, "table_validated")
+  )
+
   risk_table <- epi_units |>
     distinct(.data[["eu_id"]], .keep_all = TRUE) |>
     select(all_of(c(
@@ -28,6 +34,7 @@ risk_table <- function(
   attr(risk_table, "scale") <- scale
   attr(risk_table, "table") <- "ri_risk_table"
   attr(risk_table, "risk_cols") <- NULL
+  attr(risk_table, "table_validated") <- TRUE
   risk_table
 }
 
