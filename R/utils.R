@@ -111,4 +111,9 @@ isTruthy <- function (x) {
   return(TRUE)
 }
 
+#' @importFrom glue glue
+fmt_scale <- function(scales){
+  stopifnot("scale should have length 2" = length(scales) == 2)
+  glue::glue("[{scales[[1]]},{scales[[2]]}]")
+}
 
