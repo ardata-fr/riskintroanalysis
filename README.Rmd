@@ -259,35 +259,7 @@ ri_borders <- calc_border_risk(
   emission_risk = emission_risk_table
   )
 
-borders <- extract_border(ri_borders)
-
-ggplot() +
-  geom_sf(
-    data = ri_borders, 
-    aes(fill = border_risk),
-    alpha = 0.5
-  ) +
-  scale_color_viridis_c(limits = c(0, 12)) +
-  geom_sf(
-    data = borders,
-    aes(color = border_risk),
-    linewidth =  2
-  ) +
-  scale_fill_viridis_c(limits = c(0, 12)) +
-  geom_sf_label(
-    data = borders,
-    aes(label = round(border_risk, 2)),
-    size = 5/.pt, vjust = 2
-  ) +
-    geom_sf_label(
-    data = 
-      filter(
-      ri_borders,
-      eu_name %in% c("Faouar", "Ben Guerdane", "Dhiba", "Remada")
-    ),
-    aes(label = paste(eu_name, "\n", round(border_risk, 2))),
-    size = 5/.pt, fill = "lightblue", alpha = 0.6
-  )
+plot_risk(ri_borders)
 ```
 
 We can see that Remada has a risk of introduction weighted by border lengths. The 
@@ -329,20 +301,8 @@ ri_entry_points <- calc_entry_point_risk(
   emission_risk = emission_risk_table
 )
 
-point_risk <- extract_point_risk(ri_entry_points)
+plot_risk(ri_entry_points)
 
-ggplot() +
-  geom_sf(
-    data = ri_entry_points,
-    aes(fill = entry_points_risk ),
-    alpha = 0.6
-  ) +
-  geom_sf(
-    data = point_risk,
-    size = 1.5, shape = 21,
-    aes(fill = emission_risk)
-  ) +
-  scale_fill_viridis_c(limits = c(0, 12)) 
 ```
 
 All epi units containing an entry point (with an associated weighted emission risk) now have a risk of introduction based on the points within its area.
@@ -385,20 +345,7 @@ ri_animal_mobility <- calc_animal_mobility_risk(
   method = "mean"
 )
 
-flows_risk <- extract_flow_risk(ri_animal_mobility)
-
-ggplot() +
-  geom_sf(
-    data = ri_animal_mobility,
-    aes(geometry = geometry, fill = animal_mobility_risk)
-  ) +
-  scale_fill_viridis_c(limits = c(0, 12))+
-  geom_sf(
-    data = flows_risk, 
-    color = "black", size = 1.5, shape = 21,
-    aes(fill = emission_risk_weighted )
-  )
-
+plot_risk(ri_animal_mobility)
 ```
 
 Some points remain grey indicating that the country from which the flow comes does
@@ -427,8 +374,7 @@ plot(
   main = "Raster cropped to epidemiological units"
 )
 
-select(ri_road_access, road_access_risk) |> 
-  plot(main = "Road access risk by epidemiological unit")
+plot_risk(ri_road_access)
 ```
 
 This shows us what the raster data looks like for Tunisia. Now we will aggragate these values over each administrative area. Here, mean is used.
@@ -577,18 +523,9 @@ rt <- add_risk(
     dataset = ri_animal_mobility
     )
 )
-
-attributes(rt)
-
 summarised_risks <- summarise_risk_scores(rt, method = "max")
 
-ggplot() +
-  geom_sf(
-    data = summarised_risks,
-    aes(fill = overall_risk)
-    ) +
-    scale_fill_viridis_c(limits = c(0, 100)) +
-  theme_void()
+plot_risk(summarised_risks)
 ```
 
 

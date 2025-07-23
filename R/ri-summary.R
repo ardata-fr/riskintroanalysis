@@ -87,8 +87,9 @@ summarise_risk_scores <- function(
     attr(out, "risk_cols") <- cols
   }
 
-  attr(out, "overall_risk_col") <- name_to
-  attr(out, "table_name") <- "risk_summary"
+  attr(out, "scale") <- attr(risk_table, "scale")
+  attr(out, "risk_col") <- name_to
+  attr(out, "table_name") <- "risk_table"
   out
 }
 

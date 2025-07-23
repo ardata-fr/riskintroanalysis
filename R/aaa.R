@@ -2,7 +2,7 @@
 #'  ggplot geom_sf aes coord_sf theme labs .pt geom_sf_label
 #'  element_blank geom_point geom_density element_rect geom_smooth
 #'  scale_linetype_manual scale_x_continuous scale_y_continuous scale_fill_manual
-#'  xlim ylim guide_legend guides margin
+#'  xlim ylim guide_legend guides margin theme_void
 #' @importFrom dplyr
 #'  mutate select group_by summarise across if_else ungroup row_number as_tibble
 #'  c_across case_when desc pull rename rowwise coalesce starts_with cur_column

@@ -301,39 +301,7 @@ ri_borders <- calc_border_risk(
   emission_risk = emission_risk_table
   )
 
-borders <- extract_border(ri_borders)
-
-ggplot() +
-  geom_sf(
-    data = ri_borders, 
-    aes(fill = border_risk),
-    alpha = 0.5
-  ) +
-  scale_color_viridis_c(limits = c(0, 12)) +
-  geom_sf(
-    data = borders,
-    aes(color = border_risk),
-    linewidth =  2
-  ) +
-  scale_fill_viridis_c(limits = c(0, 12)) +
-  geom_sf_label(
-    data = borders,
-    aes(label = round(border_risk, 2)),
-    size = 5/.pt, vjust = 2
-  ) +
-    geom_sf_label(
-    data = 
-      filter(
-      ri_borders,
-      eu_name %in% c("Faouar", "Ben Guerdane", "Dhiba", "Remada")
-    ),
-    aes(label = paste(eu_name, "\n", round(border_risk, 2))),
-    size = 5/.pt, fill = "lightblue", alpha = 0.6
-  )
-#> Warning in st_point_on_surface.sfc(sf::st_zm(x)): st_point_on_surface may not
-#> give correct results for longitude/latitude data
-#> Warning in st_point_on_surface.sfc(sf::st_zm(x)): st_point_on_surface may not
-#> give correct results for longitude/latitude data
+plot_risk(ri_borders)
 ```
 
 <img src="man/figures/README-border-risk-analysis-1.png" width="100%" />
@@ -388,20 +356,7 @@ ri_entry_points <- calc_entry_point_risk(
   emission_risk = emission_risk_table
 )
 
-point_risk <- extract_point_risk(ri_entry_points)
-
-ggplot() +
-  geom_sf(
-    data = ri_entry_points,
-    aes(fill = entry_points_risk ),
-    alpha = 0.6
-  ) +
-  geom_sf(
-    data = point_risk,
-    size = 1.5, shape = 21,
-    aes(fill = emission_risk)
-  ) +
-  scale_fill_viridis_c(limits = c(0, 12)) 
+plot_risk(ri_entry_points)
 ```
 
 <img src="man/figures/README-entry-points-analysis-1.png" width="100%" />
@@ -458,19 +413,7 @@ ri_animal_mobility <- calc_animal_mobility_risk(
   method = "mean"
 )
 
-flows_risk <- extract_flow_risk(ri_animal_mobility)
-
-ggplot() +
-  geom_sf(
-    data = ri_animal_mobility,
-    aes(geometry = geometry, fill = animal_mobility_risk)
-  ) +
-  scale_fill_viridis_c(limits = c(0, 12))+
-  geom_sf(
-    data = flows_risk, 
-    color = "black", size = 1.5, shape = 21,
-    aes(fill = emission_risk_weighted )
-  )
+plot_risk(ri_animal_mobility)
 ```
 
 <img src="man/figures/README-animal-mobility-analysis-1.png" width="100%" />
@@ -509,8 +452,7 @@ plot(
 
 ``` r
 
-select(ri_road_access, road_access_risk) |> 
-  plot(main = "Road access risk by epidemiological unit")
+plot_risk(ri_road_access)
 ```
 
 <img src="man/figures/README-display-raster-2.png" width="100%" />
@@ -688,70 +630,9 @@ rt <- add_risk(
     dataset = ri_animal_mobility
     )
 )
-
-attributes(rt)
-#> $names
-#> [1] "eu_id"                "eu_name"              "geometry"            
-#> [4] "road_access_risk"     "water_risk"           "ri_random"           
-#> [7] "entry_points_risk"    "border_risk"          "animal_mobility_risk"
-#> 
-#> $row.names
-#>   [1]   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
-#>  [19]  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  34  35  36
-#>  [37]  37  38  39  40  41  42  43  44  45  46  47  48  49  50  51  52  53  54
-#>  [55]  55  56  57  58  59  60  61  62  63  64  65  66  67  68  69  70  71  72
-#>  [73]  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90
-#>  [91]  91  92  93  94  95  96  97  98  99 100 101 102 103 104 105 106 107 108
-#> [109] 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126
-#> [127] 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144
-#> [145] 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162
-#> [163] 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180
-#> [181] 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198
-#> [199] 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216
-#> [217] 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234
-#> [235] 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252
-#> [253] 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268
-#> 
-#> $sf_column
-#> [1] "geometry"
-#> 
-#> $agr
-#>                eu_id              eu_name     road_access_risk 
-#>                 <NA>                 <NA>                 <NA> 
-#>           water_risk            ri_random    entry_points_risk 
-#>                 <NA>                 <NA>                 <NA> 
-#>          border_risk animal_mobility_risk 
-#>                 <NA>                 <NA> 
-#> Levels: constant aggregate identity
-#> 
-#> $table_name
-#> [1] "epi_units"
-#> 
-#> $table_validated
-#> [1] TRUE
-#> 
-#> $scale
-#> [1]   0 100
-#> 
-#> $table
-#> [1] "ri_risk_table"
-#> 
-#> $risk_cols
-#> [1] "road_access_risk"     "water_risk"           "ri_random"           
-#> [4] "entry_points_risk"    "border_risk"          "animal_mobility_risk"
-#> 
-#> $class
-#> [1] "sf"         "tbl_df"     "tbl"        "data.frame"
-
 summarised_risks <- summarise_risk_scores(rt, method = "max")
 
-ggplot() +
-  geom_sf(
-    data = summarised_risks,
-    aes(fill = overall_risk)
-    ) +
-    scale_fill_viridis_c(limits = c(0, 100)) +
-  theme_void()
+plot_risk(summarised_risks)
 ```
 
 <img src="man/figures/README-summary-table-1.png" width="100%" />

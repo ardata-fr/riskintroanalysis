@@ -43,7 +43,7 @@ calc_animal_mobility_risk <- function(
   )
 
   attr(dataset, "risk_col") <- "animal_mobility_risk"
-  attr(dataset, "risk_type") <- "animal_mobility"
+  attr(dataset, "table_name") <- "animal_mobility"
   attr(dataset, "flows") <- flows_risk
   attr(dataset, "scale") <- c(0,12)
   dataset
