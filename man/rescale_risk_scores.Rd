@@ -17,6 +17,8 @@ rescale_risk_scores(
 )
 }
 \arguments{
+\item{dataset}{dataset to add scaled risk column to.}
+
 \item{cols}{Column containing numeric vector of risk values in the range [0, 12] OR a named
 vector, names will be used as the \code{names_to} arg, giving new names to rescaled columns.}
 
@@ -36,8 +38,6 @@ added to quadratic.}
 \item{names_to}{string vector, provide new name for rescaled columns.}
 
 \item{keep_cols}{default TRUE, whether to keep \code{cols} columns after rescaling is done or to remove.}
-
-\item{data}{dataset to add scaled risk column to.}
 }
 \value{
 A dataset with new column containing  numeric vector of scaled values in the range [0, 100].
@@ -69,14 +69,15 @@ library(riskintroanalysis)
 dat <- data.frame(RISK = seq(0, 12, by = 0.01))
 
 dat_scaled <- rescale_risk_scores(
-  data = dat,
+  dataset = dat,
   cols = "RISK",
-  method = "linear",
+  method = "quadratic",
   from = c(0, 12),
   to = c(0, 100),
-  names_prefix = "sigmoid_"
+  names_prefix = "quadratic_",
+  keep_cols = TRUE
 )
 
-ggplot(dat_scaled, aes(x = RISK, y  = sigmoid_RISK)) +
+ggplot(dat_scaled, aes(x = RISK, y  = quadratic_RISK)) +
   geom_point()
 }

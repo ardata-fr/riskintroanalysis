@@ -24,7 +24,7 @@
 #' 2. `raster`: a `SpatRaster` containing the cropped raster that covers only
 #' the epidemiological units areas.
 #'
-#' @seealso [extract_raster()], [extract_intro_risk()], [riskintrodata::download_road_access_raster()]
+#' @seealso [extract_raster()], [riskintrodata::download_road_access_raster()]
 #' @export
 #' @family default riskintro analysis
 #' @importFrom terra crop

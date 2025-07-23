@@ -12,7 +12,7 @@
 #' @returns `sf` table with columns `eu_id`, `eu_name` and `geometry`, these all
 #' come directly from the `epi_units` argument.
 #' @export
-#' @examples
+#' @example examples/risk_table.R
 #' @family risk-table
 risk_table <- function(
     epi_units,
@@ -42,32 +42,32 @@ risk_table <- function(
 #' Add risk to risk table
 #'
 #' Function to be used with risk table to add risk columns. The risk table
-#' is designed to store all risks associataed with a riskintro study.
+#' is designed to store all risks associated with a riskintro study.
 #'
 #' @param risk_table a risk table initialised with [risk_table()]
 #' @param risk_data a data.frame or risk analysis table containing the risk column to
 #' be added to the risk table and the joining column (usually `eu_id`).
-#' @param risk_col
-#'
-#' @returns
+#' @param cols risk columns in `risk_data` to add to `risk_table`.
+#' @param scale risk scale for `cols` in `risk_data`, should be a numeric vector of
+#' length 2. For example, `c(0, 100)`.
+#' @param join_by Name of column to be used to join `risk_data` to `risk_table`.#'
+#' @returns the intial risk table with the new risk column added.
 #' @export
 #' @family risk-table
 #' @importFrom dplyr select any_of all_of left_join
 #' @importFrom sf st_drop_geometry
-#' @examples
+#' @example examples/add_risk.R
 add_risk <- function(
     risk_table,
     risk_data,
     cols = NULL,
     scale = NULL,
-    join_by = "eu_id",
-    overwrite = FALSE
+    join_by = "eu_id"
     ) {
 
   if (is.null(cols)) {
     cols <- attr(risk_data, "risk_col")
   }
-
   if (!is.null(scale) && is.null(attr(risk_data, "scale"))) {
     cli_warn("Scale attribute of {.arg risk_data} overwritten by {.arg risk_data} argument.")
   } else {
@@ -77,9 +77,12 @@ add_risk <- function(
   cli_abort_if_not(
     "{.arg risk_table} should be the output of {.fn risk_table}" = attr(risk_table, "table") == "ri_risk_table",
     "{.arg cols} is NULL, please provided one" = !is.null(cols),
-    "{.arg scale} is NULL, please provided one" = !is.null(scale)
+    "{.arg cols} is zero-length" = length(cols) > 0L,
+    "{.arg scale} should have length 2" = length(scale) == 2L,
+    "{.arg scale} is NULL, please provided one" = !is.null(scale),
+    "{.arg join_by} should have length 1" = length(join_by) == 1L,
+    "{.arg join_by} must be in `risk_data`" = join_by %in% colnames(risk_data)
   )
-
   if (!all(scale == attr(risk_table, "scale"))) {
     cli_abort(paste(
       "This risk table expects all new risk scores a scale of {fmt_scale(attr(risk_table, 'scale'))}.",
@@ -89,12 +92,10 @@ add_risk <- function(
     ))
   }
 
-  if (overwrite){
-    risk_table <- select(risk_table, -select(any_of(cols)))
+  preexisting_cols <- cols[cols %in% risk_table]
+  if (length(preexisting_cols) > 0) {
+    risk_table <- select(risk_table, -select(any_of(preexisting_cols)))
   }
-
-  # "{.arg cols} already exists in risk table, use {.code overwrite = TRUE}."
-
   ri_risk <- select(risk_data, all_of(c(join_by, cols))) |>
     st_drop_geometry()
 
@@ -107,7 +108,7 @@ add_risk <- function(
 
   attr(out, "scale") <- attr(risk_table, "scale")
   attr(out, "table") <- attr(risk_table, "table")
-  attr(out, "risk_cols") <- c(attr(risk_table, "risk_cols"), cols)
+  attr(out, "risk_cols") <- unique(c(attr(risk_table, "risk_cols"), cols))
   out
 }
 
@@ -121,7 +122,7 @@ add_risk <- function(
 #' @export
 #' @family risk-table
 #' @importFrom dplyr select all_of
-#' @examples
+#' @example examples/add_risk.R
 remove_risk <- function(risk_table, cols) {
   out <- risk_table |>
     select(-all_of(cols))

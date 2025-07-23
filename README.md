@@ -572,6 +572,86 @@ ri_road_access_scaled <- rescale_risk_scores(
 )
 ```
 
+## Non-default risks
+
+Riskintro also provides more generic workflows for adding any sort of
+risk scores to a risk table alongside the default risk.
+
+### Risk from raster file
+
+First, import or generate the raster data to use for analysis. This
+example generates fictitious water courses in Tunisia which could be a
+source of introduction risk.
+
+``` r
+library(terra)
+tun_ext <- ext(6, 12, 30, 38)
+r_tun <- rast(tun_ext, res = 0.1, crs = "EPSG:4326")
+wkt_lines <- c(
+  "LINESTRING (9.0 36.0, 9.5 35.0, 10.0 34.5)",
+  "LINESTRING (8.5 33.5, 9.0 33.0, 10.0 32.5)"
+)
+water_sv <- vect(data.frame(wkt = wkt_lines),
+                 geom = "wkt",
+                 crs  = "EPSG:4326")
+water_sv$water <- 1
+water_rast <- rasterize(
+  water_sv,
+  r_tun,
+  field      = "water",
+  background = 0
+  )
+plot(water_rast, main = "Example watercourses")
+plot(tunisia, add = TRUE, color = "red")
+```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+
+``` r
+ri_water <- augment_epi_units_with_raster(
+  epi_units = tunisia, 
+  raster = water_rast, 
+  risk_name = "water_risk", 
+  aggregate_fun = "mean"
+) |> 
+  rescale_risk_scores(
+    cols = "water_risk", 
+    from = c(0,1),
+    to = c(0,100), 
+    method = "quadratic"
+  )
+
+ggplot(ri_water) +
+  geom_sf(aes(fill = water_risk)) +
+  scale_fill_viridis_c(limits = c(0, 100))
+```
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /> \###
+Pre-calculated risk
+
+In the case an analyst already has a dataset will risk scores for each
+epidemiolocal unit, it is possible to simply join this dataset to the
+risk table assuming that:
+
+1.  a correct join key exists in the pre-calculated dataset and,
+2.  there is no more an one risk score associated with each
+    epidemiological unit.
+
+Here we generate a dataset from a random uniform distribution
+
+``` r
+ri_random <- tunisia |> 
+  select(my_key = eu_id) |> 
+  mutate(
+    ri_random = runif(nrow(tunisia), min = 0, max = 100)
+         ) |> 
+  filter(row_number() <= 30) |> 
+  rescale_risk_scores(
+    cols = "ri_random",
+    from = c(0, 100), to = c(0, 100), method = "sigmoid"
+  )
+```
+
 ## Summary table
 
 Once all the risk methods have been compiled and scaled similarly, it
@@ -581,8 +661,10 @@ epidemiological unit and its various risks scores.
 ``` r
 # initialise the risk_table 
 rt <- risk_table(tunisia, scale = c(0, 100))
-# Add road_access which has already been rescaled
+# Add risks that have already been rescaled
 rt <- add_risk(risk_table = rt, risk_data = ri_road_access_scaled)
+rt <- add_risk(risk_table = rt, risk_data = ri_water)
+rt <- add_risk(risk_table = rt, risk_data = ri_random, join_by = "my_key")
 
 # add other risks, rescaling them as needed
 rt <- add_risk(
@@ -610,8 +692,8 @@ rt <- add_risk(
 attributes(rt)
 #> $names
 #> [1] "eu_id"                "eu_name"              "geometry"            
-#> [4] "road_access_risk"     "entry_points_risk"    "border_risk"         
-#> [7] "animal_mobility_risk"
+#> [4] "road_access_risk"     "water_risk"           "ri_random"           
+#> [7] "entry_points_risk"    "border_risk"          "animal_mobility_risk"
 #> 
 #> $row.names
 #>   [1]   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18
@@ -636,8 +718,10 @@ attributes(rt)
 #> $agr
 #>                eu_id              eu_name     road_access_risk 
 #>                 <NA>                 <NA>                 <NA> 
-#>    entry_points_risk          border_risk animal_mobility_risk 
+#>           water_risk            ri_random    entry_points_risk 
 #>                 <NA>                 <NA>                 <NA> 
+#>          border_risk animal_mobility_risk 
+#>                 <NA>                 <NA> 
 #> Levels: constant aggregate identity
 #> 
 #> $table_name
@@ -653,8 +737,8 @@ attributes(rt)
 #> [1] "ri_risk_table"
 #> 
 #> $risk_cols
-#> [1] "road_access_risk"     "entry_points_risk"    "border_risk"         
-#> [4] "animal_mobility_risk"
+#> [1] "road_access_risk"     "water_risk"           "ri_random"           
+#> [4] "entry_points_risk"    "border_risk"          "animal_mobility_risk"
 #> 
 #> $class
 #> [1] "sf"         "tbl_df"     "tbl"        "data.frame"

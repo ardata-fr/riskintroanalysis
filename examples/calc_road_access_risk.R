@@ -36,7 +36,6 @@ raster <- extract_raster(road_access_risk)
 plot(raster)
 
 # plotting the risk of introduction dataset
-risk <- extract_intro_risk(road_access_risk)
-ggplot(data=risk, aes(fill = road_access_risk)) + geom_sf()
+ggplot(data=road_access_risk, aes(fill = road_access_risk)) + geom_sf()
 
 }

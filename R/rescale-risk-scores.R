@@ -48,7 +48,9 @@ rescale_risk_scores <- function(
     keep_cols = FALSE
     ) {
 
-  if (is.null(cols) && !is.null(attr(dataset, "risk_col"))) {
+  if (!is.null(cols) && is.null(attr(dataset, "risk_col"))) {
+    cols <- cols
+  } else if (is.null(cols) && !is.null(attr(dataset, "risk_col"))) {
     cols <- attr(dataset, "risk_col")
   } else if (!is.null(cols) && !is.null(attr(dataset, "risk_col"))) {
     if(attr(dataset, "risk_col") != cols){
@@ -133,7 +135,7 @@ rescale_risk_scores <- function(
   }
 
   attr(dataset, "scale") = to
-  attr(dataset, "risk_col") = new_cols
+  attr(dataset, "risk_col") = unique(new_cols)
   attr(dataset, "table_name") = table_name
   dataset
 }
@@ -228,7 +230,7 @@ plot_rescale_risk_points <- function(dat, fun, inverse, raw_col, scaled_col, fro
   }
 
   lines_df <- rescale_risk_scores(
-    data = data.frame(x = seq(from[1], from[2], 0.25)),
+    dataset = data.frame(x = seq(from[1], from[2], 0.25)),
     cols = "x",
     names_to = "y",
     method = fun,
@@ -287,8 +289,8 @@ plot_rescale_raster_points <- function(dat, fun, inverse, raw_col, scaled_col, f
   xmax <- from[2]
 
   lines_df <- rescale_risk_scores(
-    data = data.frame(x = seq(0, xmax + 25, 0.25)),
-    risk_col = "x", names_to = "y",
+    dataset = data.frame(x = seq(0, xmax + 25, 0.25)),
+    cols = "x", names_to = "y",
     method = fun, inverse = inverse, from = from, to = to
   )
 

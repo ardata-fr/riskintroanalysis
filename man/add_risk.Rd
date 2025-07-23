@@ -4,14 +4,7 @@
 \alias{add_risk}
 \title{Add risk to risk table}
 \usage{
-add_risk(
-  risk_table,
-  risk_data,
-  cols = NULL,
-  scale = NULL,
-  join_by = "eu_id",
-  overwrite = FALSE
-)
+add_risk(risk_table, risk_data, cols = NULL, scale = NULL, join_by = "eu_id")
 }
 \arguments{
 \item{risk_table}{a risk table initialised with \code{\link[=risk_table]{risk_table()}}}
@@ -19,11 +12,86 @@ add_risk(
 \item{risk_data}{a data.frame or risk analysis table containing the risk column to
 be added to the risk table and the joining column (usually \code{eu_id}).}
 
-\item{risk_col}{}
+\item{cols}{risk columns in \code{risk_data} to add to \code{risk_table}.}
+
+\item{scale}{risk scale for \code{cols} in \code{risk_data}, should be a numeric vector of
+length 2. For example, \code{c(0, 100)}.}
+
+\item{join_by}{Name of column to be used to join \code{risk_data} to \code{risk_table}.#'}
+}
+\value{
+the intial risk table with the new risk column added.
 }
 \description{
 Function to be used with risk table to add risk columns. The risk table
-is designed to store all risks associataed with a riskintro study.
+is designed to store all risks associated with a riskintro study.
+}
+\examples{
+
+library(riskintrodata)
+library(riskintroanalysis)
+
+# Get epi_units dataset
+tunisia_raw <- sf::read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+# Apply mapping to prepare colnames and validate dataset
+tunisia <- apply_mapping(
+  tunisia_raw,
+  mapping = mapping_epi_units(
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ),
+  validate = TRUE
+)
+
+# Create risk table
+rt <- risk_table(tunisia, scale = c(0, 100))
+
+# Create risk
+entry_points_fp <-
+  system.file(
+    package = "riskintrodata",
+    "samples",
+    "tunisia",
+    "entry_points", "BORDER_CROSSING_POINTS.csv"
+  )
+
+entry_points <- readr::read_csv(entry_points_fp)
+entry_points <- apply_mapping(
+  dataset = entry_points,
+  mapping = mapping_entry_points(
+    point_name = "NAME",
+    lng = "LONGITUDE_X",
+    lat = "LATITUDE_Y",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ),
+  validate = TRUE
+)
+
+ri_entry_points <- calc_entry_point_risk(
+  entry_points = entry_points,
+  epi_units = tunisia,
+  emission_risk =
+    calc_emission_risk(
+      emission_risk_factors = get_wahis_erf(
+        disease = "Anthrax",
+        species = "Cattle",
+        animal_category = "Domestic"
+      )
+    )
+) |>
+  rescale_risk_scores()
+
+rt <- add_risk(risk_table = rt, risk_data = ri_entry_points)
+rt
+
+rt <- remove_risk(rt, cols = "entry_points_risk")
+rt
 }
 \seealso{
 Other risk-table: 

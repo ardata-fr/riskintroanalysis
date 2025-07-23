@@ -8,7 +8,7 @@
 #'  c_across case_when desc pull rename rowwise coalesce starts_with cur_column
 #'  arrange inner_join all_of any_of
 #' @importFrom rlang
-#'  call_args call_args_names call_name cnd_entrace
+#'  call_args call_args_names call_name cnd_entrace :=
 #' @importFrom purrr
 #'  map imap pmap map_chr
 #' @importFrom rlang

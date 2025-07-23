@@ -22,6 +22,25 @@ come directly from the \code{epi_units} argument.
 Creates the base table of risks where each risk associated with a study can be
 stored. Each risk is checked that its on the same scale.
 }
+\examples{
+tunisia_raw <- sf::read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+# Apply mapping to prepare colnames and validate dataset
+tunisia <- apply_mapping(
+  tunisia_raw,
+  mapping = mapping_epi_units(
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ),
+  validate = TRUE
+)
+
+rt <- risk_table(tunisia, scale = c(0, 100))
+rt
+}
 \seealso{
 Other risk-table: 
 \code{\link{add_risk}()},
