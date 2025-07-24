@@ -4,6 +4,7 @@
 # riskintroanalysis
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The riskintroanalysis R package provides functions to analyse the risk
@@ -145,6 +146,7 @@ wahis_erf <- get_wahis_erf(
     species = "Birds"
   )
 #> ✔ All data in "emission_risk_factors" valided.
+#> ✔ WAHIS emission risk factors dataset has 62 entries for `disease = Avian infectious laryngotracheitis`, `species = Birds`, and `animal_category = Domestic`.
 
 emission_risk_factors <- dplyr::bind_rows(
   algeria, 
@@ -431,7 +433,8 @@ aggregated over each epidemiological unit of Tunisia.
 library(riskintroanalysis)
 library(dplyr)
 library(terra)
-#> terra 1.8.54
+#> Warning: package 'terra' was built under R version 4.5.1
+#> terra 1.8.60
 
 road_raster_fp <- riskintrodata::download_road_access_raster()
 road_raster <- terra::rast(road_raster_fp)

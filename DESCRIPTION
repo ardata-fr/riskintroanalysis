@@ -36,3 +36,4 @@ Language: en
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+URL: https://ardata-fr.github.io/riskintroanalysis/
