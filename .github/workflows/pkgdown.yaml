@@ -33,8 +33,6 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: |
-            github::ardata-fr/riskintrodata
           extra-packages: any::pkgdown, local::.
           needs: website
 
