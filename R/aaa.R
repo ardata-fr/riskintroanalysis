@@ -24,6 +24,8 @@
 #'  sf_use_s2
 #' @importFrom cli
 #'  cli_abort cli_warn cli_inform cli_ul cli_ol cli_li
+#' @importFrom stats
+#'  setNames median
 NULL
 
 
