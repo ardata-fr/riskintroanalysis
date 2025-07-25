@@ -53,7 +53,8 @@ A tibble containing the following columns:
 
 This dataset also has a \strong{number of attributes} that are used in other
 functions from \code{riskintroanalysis} to make passing dataset metadata between
-functions more user-friendly.
+functions more user-friendly. Used mainly in used by \code{\link[=plot_risk]{plot_risk()}} and
+\code{\link[=rescale_risk_scores]{rescale_risk_scores()}}.
 \itemize{
 \item \code{table_name = "emission_risk_scores"}
 \item \code{risk_col = "emission_risk"}

@@ -2,16 +2,18 @@
 #' @description
 #' Calculating the entry point risk associated with each epidemiological unit.
 #'
-#' The first step is calculating the points dataset: each
-#' point located within an epidemiological unit is linked to one or more source countries from
-#' which animals enter into the epidemiological unit. For each point the emission
-#' risk of the source countries is averaged. This provides an average emission risk score
-#' for each point.
+#' Firstly, an aggregated (`points_agg_fun`) emission risk is calculated for each entry point. This is
+#' because on entry point can have multiple sources (countries) giving emission
+#' risk.
 #'
-#' The second step is creating the epidemiologcal units introduction risk dataset by
-#' joining th points dataset with epidemiological units and
-#' finding the average emission risk score for each entry points within each
-#' area. This gives a risk of introduction for each epidemiological unit.
+#' Then, each entry point is allocated to an epidemiological unit. This is done
+#' by geospatial means, if an entry point is located inside an epidemiological unit's
+#' area it is thus allocated to it. Entry points not located inside any epidemiological
+#' unit are allocated to the nearest one.
+#'
+#' Finally, now that each entry point has an emission risk and has been paired
+#' with an epidemiological unit, the aggregated (`eu_agg_fun`) risk score for each epidemiological
+#' unit is calculated.
 #'
 #' @param entry_points The entry points dataset as formatted and validated by [apply_mapping()] and
 #' [mapping_entry_points()]. This should be an `sf` object containing points and emission risks.
@@ -19,6 +21,10 @@
 #' [mapping_epi_units()]. This should be an `sf` object with polygons.
 #' @param emission_risk The emission risk dataset as returned by the [calc_emission_risk()]
 #' function.
+#' @param points_agg_fun Function used to aggrgate emission risk for each entry
+#' point. See description above. Default is [mean()].
+#' @param eu_agg_fun Function used to aggregate emission risk scores for each
+#' epidemiological unit. Default is [max()].
 #'
 #' @return an `sf` dataset containing the following columns:
 #' -  `eu_id`: epidemiological units id (from `epi_units` dataset)
@@ -30,21 +36,21 @@
 #' functions from `riskintroanalysis` to make passing dataset metadata between
 #' functions more user-friendly.
 #'
-#' 1. `points`: is a `sf` dataset containing describing the entry points and their
-#' associated emission risk. It can be easily accessed with [extract_point_risk()]
+#' 1. `points`: is an `sf` dataset containing the aggregated emission risk score
+#' for each point.  It can be easily accessed with [extract_point_risk()]
 #' and has the following columns:
-#'    - `point_id`:
-#'    - `point_name`:
-#'    - `mode`:
-#'    - `type`:
-#'    - `source`:
+#'    - `point_id`: unique identifier for entry points
+#'    - `point_name`: names of entry points
+#'    - `mode`: legality or illegality of the entry point
+#'    - `type`: transport type of the entry point
+#'    - `source`: string of concatenated source countries of entry point
+#'    - `points_label `: HTML label for use in leaflet tooltips
+#'    - Also attributes: `risk_col = "point_emission_risk"` and
+#'     `risk_scale = c(0,12)`
 #'
-#'
-#' 1.   Points (name: `points`) dataset contains the aggregated emission risk score for each
-#' entry point.
-#' 2.   Epidemiological units (name: `epi_units`) dataset containing the weighted
-#' average of each of points' emission risk scores within its area, this is the
-#' risk of introduction by entry points.
+#' 2. `risk_col = "entry_points_risk"` used by [plot_risk()]
+#' 3. `table_name = "entry_points"`used by [plot_risk()]
+#' 4. `scale = c(0, 12)` used by [plot_risk()] and [rescale_risk_scores()]
 #'
 #' @export
 #' @importFrom stats na.omit
@@ -54,7 +60,9 @@
 calc_entry_point_risk <- function(
     entry_points,
     epi_units,
-    emission_risk
+    emission_risk,
+    points_agg_fun = mean,
+    eu_agg_fun = max
     ) {
   er <- select(emission_risk, all_of(c("iso3", "country", "emission_risk")))
   points_er <- left_join(
@@ -70,7 +78,7 @@ calc_entry_point_risk <- function(
       map(length)
     msg <- paste0(names(counts_list), " missing for ", counts_list, " entry points.")
     warn_msg <- setNames(msg, rep("*", length(msg)))
-      cli_inform(c(
+      cli_warn(c(
       "!" = "There are missing emission risk scores for the following countries:",
       warn_msg,
       "Create new entries in the emission risk factor table using {.help [{.fun erf_row}](riskintrodata::erf_row)}."
@@ -81,7 +89,9 @@ calc_entry_point_risk <- function(
   points_labeled <- points_er |>
     group_by(across(all_of(c("point_id", "point_name")))) |>
     summarise_quiet(
-      point_emission_risk = safe_stat(.data$emission_risk, FUN = mean, NA_value = NA_real_),
+      point_emission_risk = safe_stat(.data$emission_risk, FUN = points_agg_fun, NA_value = NA_real_),
+      mode = paste(unique(.data$mode), collapse = ", "),
+      type = paste(unique(.data$type), collapse = ", "),
       points_label =
         paste0(
           "<strong>", first(.data$point_name),"</strong>", ' (', first(.data$point_id), ')', "<br>",
@@ -122,7 +132,7 @@ calc_entry_point_risk <- function(
   dataset <- eu_ep_src_risk |>
     group_by(across(all_of(c("eu_id", "eu_name")))) |>
     summarise(
-      entry_points_risk = safe_stat(.data$point_emission_risk, FUN = max),
+      entry_points_risk = safe_stat(.data$point_emission_risk, FUN = eu_agg_fun, NA_value = NA_real_),
       entry_points_li = paste0(
         "<li>",
         .data$point_name, " (", fmt_num(.data$point_emission_risk), "/12)",

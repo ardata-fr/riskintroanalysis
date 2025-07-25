@@ -4,7 +4,13 @@
 \alias{calc_entry_point_risk}
 \title{Calculate entry point risk}
 \usage{
-calc_entry_point_risk(entry_points, epi_units, emission_risk)
+calc_entry_point_risk(
+  entry_points,
+  epi_units,
+  emission_risk,
+  points_agg_fun = mean,
+  eu_agg_fun = max
+)
 }
 \arguments{
 \item{entry_points}{The entry points dataset as formatted and validated by \code{\link[=apply_mapping]{apply_mapping()}} and
@@ -15,6 +21,12 @@ calc_entry_point_risk(entry_points, epi_units, emission_risk)
 
 \item{emission_risk}{The emission risk dataset as returned by the \code{\link[=calc_emission_risk]{calc_emission_risk()}}
 function.}
+
+\item{points_agg_fun}{Function used to aggrgate emission risk for each entry
+point. See description above. Default is \code{\link[=mean]{mean()}}.}
+
+\item{eu_agg_fun}{Function used to aggregate emission risk scores for each
+epidemiological unit. Default is \code{\link[=max]{max()}}.}
 }
 \value{
 an \code{sf} dataset containing the following columns:
@@ -29,36 +41,39 @@ This dataset also has a \strong{number of attributes} that are used in other
 functions from \code{riskintroanalysis} to make passing dataset metadata between
 functions more user-friendly.
 \enumerate{
-\item \code{points}: is a \code{sf} dataset containing describing the entry points and their
-associated emission risk. It can be easily accessed with \code{\link[=extract_point_risk]{extract_point_risk()}}
+\item \code{points}: is an \code{sf} dataset containing the aggregated emission risk score
+for each point.  It can be easily accessed with \code{\link[=extract_point_risk]{extract_point_risk()}}
 and has the following columns:
 \itemize{
-\item \code{point_id}:
-\item \code{point_name}:
-\item \code{mode}:
-\item \code{type}:
-\item \code{source}:
+\item \code{point_id}: unique identifier for entry points
+\item \code{point_name}: names of entry points
+\item \code{mode}: legality or illegality of the entry point
+\item \code{type}: transport type of the entry point
+\item \code{source}: string of concatenated source countries of entry point
+\item \code{points_label }: HTML label for use in leaflet tooltips
+\item Also attributes: \code{risk_col = "point_emission_risk"} and
+\code{risk_scale = c(0,12)}
 }
-\item Points (name: \code{points}) dataset contains the aggregated emission risk score for each
-entry point.
-\item Epidemiological units (name: \code{epi_units}) dataset containing the weighted
-average of each of points' emission risk scores within its area, this is the
-risk of introduction by entry points.
+\item \code{risk_col = "entry_points_risk"} used by \code{\link[=plot_risk]{plot_risk()}}
+\item \code{table_name = "entry_points"}used by \code{\link[=plot_risk]{plot_risk()}}
+\item \code{scale = c(0, 12)} used by \code{\link[=plot_risk]{plot_risk()}} and \code{\link[=rescale_risk_scores]{rescale_risk_scores()}}
 }
 }
 \description{
 Calculating the entry point risk associated with each epidemiological unit.
 
-The first step is calculating the points dataset: each
-point located within an epidemiological unit is linked to one or more source countries from
-which animals enter into the epidemiological unit. For each point the emission
-risk of the source countries is averaged. This provides an average emission risk score
-for each point.
+Firstly, an aggregated (\code{points_agg_fun}) emission risk is calculated for each entry point. This is
+because on entry point can have multiple sources (countries) giving emission
+risk.
 
-The second step is creating the epidemiologcal units introduction risk dataset by
-joining th points dataset with epidemiological units and
-finding the average emission risk score for each entry points within each
-area. This gives a risk of introduction for each epidemiological unit.
+Then, each entry point is allocated to an epidemiological unit. This is done
+by geospatial means, if an entry point is located inside an epidemiological unit's
+area it is thus allocated to it. Entry points not located inside any epidemiological
+unit are allocated to the nearest one.
+
+Finally, now that each entry point has an emission risk and has been paired
+with an epidemiological unit, the aggregated (\code{eu_agg_fun}) risk score for each epidemiological
+unit is calculated.
 }
 \examples{
 library(riskintroanalysis)
@@ -163,4 +178,9 @@ ri_entry_points <- calc_entry_point_risk(
 )
 
 plot_risk(ri_entry_points)
+
+extract_point_risk(ri_entry_points)
+
+attributes(ri_entry_points)
+
 }

@@ -100,3 +100,8 @@ ri_entry_points <- calc_entry_point_risk(
 )
 
 plot_risk(ri_entry_points)
+
+extract_point_risk(ri_entry_points)
+
+attributes(ri_entry_points)
+
