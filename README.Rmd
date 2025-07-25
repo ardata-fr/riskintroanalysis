@@ -1,5 +1,9 @@
 ---
-output: github_document
+output:
+  github_document:
+    toc: true
+    toc_depth: 4
+    number_sections: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -39,15 +43,19 @@ The central datasets to each method are:
   1. **The emission risk score table**, which provides a risk of emission diseases (that is to say the risk of a disease spreading from that country). This score is based on summary of risk factors, many of which are available from WAHIS (see more [here](insert link to riksintrodata package docs)). This data exists for many countries around the world, and is augmented with geospatial data corresponding to each country's administrative boundaries.
   2. **The area of interest**, Geospatial data defining the borders of a region. This is the area for which we want to know the risk of introduction of a disease. The most common data is that of a country and its administrative boundaries, including internal boundaries. For example, French departments, or German states.
   
-These two datasets are compared against each other through the following analyses:
+These two datasets are used along with other data to calculate risk scores for the following analyses:
 
   1. **Border lengths**: using the length of shared borders the risk of introduction is weighed comared to each neighbouring country and their risk score.
   2. **Border entry points**: using an additional dataset that defines broder entry points, risk of introduction is weighted by legality of entry point.
   3. **Animal mobility**: using an additional dataset defining legal animal commerce flows, risk of introduction is weighed based on the number of animals entering the area.
+  
+The forth analysis method does not use emission risk data, just data from a road accesibility raster and the epidemiological units: 
+
   4. **Road access risk**: using raster data of the world, applied to the area of interest, risk of introdcution is infered through road acces. An area more accessible by road is considered higher risk.
   
-  These methods of analysis are intended to be used together or individually to montor is risk of introduction.
-
+These methods of analysis are intended to be used together or individually to montor is risk of introduction. This is done by ensuring risks are using the same scale (for example between 0 and 100) and they can easily added to a table of risk.
+  
+Additionally, some tools are provided to add other risk (such as the ones not show above). Currently supported are pre-calculated risks or risks from raster files. Which can be rescaled and added to the risk table as well. This allows of the risk analyst the flexibility to add other risks outside of the default risks.
 
 # Example 1: Tunisia
 
@@ -308,16 +316,6 @@ plot_risk(ri_entry_points)
 All epi units containing an entry point (with an associated weighted emission risk) now have a risk of introduction based on the points within its area.
 
 ### Animal mobility
-
-Considerations:
-
-1. fix exports, need to export as much as possible.
-1. add "countries" package as dep and re-export country_name
-1. Provide tools to tidy data for analysis and validate datasets 
-at the start of each function.
-1. Do we continue to include lealfet labels in output?
-1. create plot.generics for each output to a basic plot or leaflet?
-1. Combine calc_animal_mobility_point_risk and calc_animal_mobility_eu_risk into one function?
 
 ```{r animal-mobility-analysis}
 library(riskintroanalysis)

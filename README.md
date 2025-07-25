@@ -1,7 +1,24 @@
 
+- [1 riskintroanalysis](#1-riskintroanalysis)
+- [2 Installation](#2-installation)
+- [3 Analysis](#3-analysis)
+- [4 Example 1: Tunisia](#4-example-1-tunisia)
+  - [4.1 Core datasets](#41-core-datasets)
+    - [4.1.1 Emission Risk Factors:](#411-emission-risk-factors)
+    - [4.1.2 Epidemiological Units](#412-epidemiological-units)
+  - [4.2 Analysis](#42-analysis)
+    - [4.2.1 Border risk](#421-border-risk)
+    - [4.2.2 Entry point risk](#422-entry-point-risk)
+    - [4.2.3 Animal mobility](#423-animal-mobility)
+    - [4.2.4 Road accessibility](#424-road-accessibility)
+  - [4.3 Risk rescaling](#43-risk-rescaling)
+  - [4.4 Non-default risks](#44-non-default-risks)
+    - [4.4.1 Risk from raster file](#441-risk-from-raster-file)
+  - [4.5 Summary table](#45-summary-table)
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# riskintroanalysis
+# 1 riskintroanalysis
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -13,7 +30,7 @@ directly into the riskintro Rshiny app. The motivation behind these
 projects is to easily conduct geospatial risk analysis using existing
 data from WAHIS (World Animal Health Information System).
 
-# Installation
+# 2 Installation
 
 You can install the development version of riskintroanalysis like so:
 
@@ -21,7 +38,7 @@ You can install the development version of riskintroanalysis like so:
 remotes::install_github("riskintroanalysis")
 ```
 
-# Analysis
+# 3 Analysis
 
 The package provides functions for certain risk of introduction
 analysis, but requires external data to be provided. The functions are
@@ -47,8 +64,8 @@ The central datasets to each method are:
     and its administrative boundaries, including internal boundaries.
     For example, French departments, or German states.
 
-These two datasets are compared against each other through the following
-analyses:
+These two datasets are used along with other data to calculate risk
+scores for the following analyses:
 
 1.  **Border lengths**: using the length of shared borders the risk of
     introduction is weighed comared to each neighbouring country and
@@ -59,26 +76,38 @@ analyses:
 3.  **Animal mobility**: using an additional dataset defining legal
     animal commerce flows, risk of introduction is weighed based on the
     number of animals entering the area.
+
+The forth analysis method does not use emission risk data, just data
+from a road accesibility raster and the epidemiological units:
+
 4.  **Road access risk**: using raster data of the world, applied to the
     area of interest, risk of introdcution is infered through road
     acces. An area more accessible by road is considered higher risk.
 
 These methods of analysis are intended to be used together or
-individually to montor is risk of introduction.
+individually to montor is risk of introduction. This is done by ensuring
+risks are using the same scale (for example between 0 and 100) and they
+can easily added to a table of risk.
 
-# Example 1: Tunisia
+Additionally, some tools are provided to add other risk (such as the
+ones not show above). Currently supported are pre-calculated risks or
+risks from raster files. Which can be rescaled and added to the risk
+table as well. This allows of the risk analyst the flexibility to add
+other risks outside of the default risks.
+
+# 4 Example 1: Tunisia
 
 `riskintroanalysis` is intended to be used alongside `sf` geospatial
 data manipulation, `dplyr` for general data manipulation, and `terra`
 for raster data.
 
-## Core datasets
+## 4.1 Core datasets
 
 The two core datasets are emission risk factors and epidemiological
 units. The first is used in three out of four analysis methods, the
 second is used in all of them.
 
-### Emission Risk Factors:
+### 4.1.1 Emission Risk Factors:
 
 Emission risk factors are used to create an overall emission risk value
 that is associated with the possible spread of a disease from that
@@ -145,6 +174,7 @@ wahis_erf <- get_wahis_erf(
     species = "Birds"
   )
 #> ✔ All data in "emission_risk_factors" valided.
+#> ✔ WAHIS emission risk factors dataset has 62 entries for `disease = Avian infectious laryngotracheitis`, `species = Birds`, and `animal_category = Domestic`.
 
 emission_risk_factors <- dplyr::bind_rows(
   algeria, 
@@ -180,7 +210,7 @@ plot(select(emission_risk_sf, emission_risk),
 
 <img src="man/figures/README-display-world-1.png" width="100%" />
 
-### Epidemiological Units
+### 4.1.2 Epidemiological Units
 
 Epidemiological units (or epi units for short) is the term used for
 geographical areas of interests for analysing understand the risk of
@@ -218,14 +248,14 @@ plot(sf::st_geometry(tunisia))
 left after using `apply_mapping()` is the required “epi_units” dataset
 that is compatible with the rest of the analysis going forward.
 
-## Analysis
+## 4.2 Analysis
 
 The 4 methods of analysis provided by the package are detailed below:
 
 This an example of analysing the risk of introduction for Tunisian
 governorates. Based off of the core datasets
 
-### Border risk
+### 4.2.1 Border risk
 
 Required datasets:
 
@@ -312,7 +342,7 @@ weighted by border lengths with neighbouring countries of Algeria and
 Libya. As on Remada shares borders with both countries, it is the only
 one with a weighted average.
 
-### Entry point risk
+### 4.2.2 Entry point risk
 
 ``` r
 library(riskintroanalysis)
@@ -355,6 +385,22 @@ ri_entry_points <- calc_entry_point_risk(
   epi_units = tunisia,
   emission_risk = emission_risk_table
 )
+#> ! There are missing emission risk scores for the following countries:
+#> • BIH missing for 1 entry points.
+#> • BRN missing for 1 entry points.
+#> • ESP missing for 1 entry points.
+#> • FRA missing for 1 entry points.
+#> • HUN missing for 2 entry points.
+#> • ISR missing for 1 entry points.
+#> • MAR missing for 1 entry points.
+#> • NOR missing for 1 entry points.
+#> • PAN missing for 1 entry points.
+#> • PER missing for 1 entry points.
+#> • PHL missing for 1 entry points.
+#> • VNM missing for 1 entry points.
+#> • ZAF missing for 1 entry points.
+#> Create new entries in the emission risk factor table using `erf_row()`
+#> (`?riskintrodata::erf_row()`).
 
 plot_risk(ri_entry_points)
 ```
@@ -365,18 +411,7 @@ All epi units containing an entry point (with an associated weighted
 emission risk) now have a risk of introduction based on the points
 within its area.
 
-### Animal mobility
-
-Considerations:
-
-1.  fix exports, need to export as much as possible.
-2.  add “countries” package as dep and re-export country_name
-3.  Provide tools to tidy data for analysis and validate datasets at the
-    start of each function.
-4.  Do we continue to include lealfet labels in output?
-5.  create plot.generics for each output to a basic plot or leaflet?
-6.  Combine calc_animal_mobility_point_risk and
-    calc_animal_mobility_eu_risk into one function?
+### 4.2.3 Animal mobility
 
 ``` r
 library(riskintroanalysis)
@@ -421,7 +456,7 @@ plot_risk(ri_animal_mobility)
 Some points remain grey indicating that the country from which the flow
 comes does not have an entry in the emission risk factors table.
 
-### Road accessibility
+### 4.2.4 Road accessibility
 
 Road access risk is calculated from the road accessibility raster file,
 a global raster that contains data of distance from roads. This data is
@@ -434,6 +469,7 @@ library(terra)
 #> terra 1.8.54
 
 road_raster_fp <- riskintrodata::download_road_access_raster()
+#> Warning: `destfile` cannot be NULL, if you want to `use_cache = TRUE`.
 road_raster <- terra::rast(road_raster_fp)
 
 ri_road_access <- calc_road_access_risk(
@@ -464,7 +500,7 @@ used.
 The output shows the road access risk associated with each
 epidemiological unit.
 
-## Risk rescaling
+## 4.3 Risk rescaling
 
 Once all the analysis methods have given a result, we need to be able to
 compare them. Notably, road access risk is not on the same 0 to 12 scale
@@ -514,12 +550,12 @@ ri_road_access_scaled <- rescale_risk_scores(
 )
 ```
 
-## Non-default risks
+## 4.4 Non-default risks
 
 Riskintro also provides more generic workflows for adding any sort of
 risk scores to a risk table alongside the default risk.
 
-### Risk from raster file
+### 4.4.1 Risk from raster file
 
 First, import or generate the raster data to use for analysis. This
 example generates fictitious water courses in Tunisia which could be a
@@ -594,7 +630,7 @@ ri_random <- tunisia |>
   )
 ```
 
-## Summary table
+## 4.5 Summary table
 
 Once all the risk methods have been compiled and scaled similarly, it
 can be handy to have them all in one table. Each row is an
