@@ -4,18 +4,61 @@
 \alias{calc_emission_risk}
 \title{Build the weighted emission risk table}
 \usage{
-calc_emission_risk(emission_risk_factors, weights = get_erf_weights())
+calc_emission_risk(
+  emission_risk_factors,
+  weights = get_erf_weights(),
+  keep_scores = TRUE
+)
 }
 \arguments{
-\item{emission_risk_factors}{A data frame containing risk factor data (default is \code{emission_risk_factors}).}
+\item{emission_risk_factors}{A data frame containing risk factor data. Generally,
+this data will come from \code{\link[riskintrodata:get_wahis_erf]{riskintrodata::get_wahis_erf()}}. The dataset should be validated and
+have \code{table_name} attribute equal to \code{"emission_risk_factors"}.}
 
-\item{weights}{A named list of weights corresponding to the columns in \code{dat}. Default weights are applied if not provided.}
+\item{weights}{A named list of weights corresponding to the following columns in
+\code{emission_risk_factors} (and their default weights):
+\itemize{
+\item \code{disease_notification} (0.25)
+\item \code{targeted_surveillance} (0.5)
+\item \code{general_surveillance} (0.5)
+\item \code{screening} (0.75)
+\item \code{precautions_at_the_borders} (1)
+\item \code{slaughter} (0.5)
+\item \code{selective_killing_and_disposal} (0.5)
+\item \code{zoning} (0.75)
+\item \code{official_vaccination} (0.25)
+}
+
+The sum of the weights should add up to exactly 5, as these factors correspond
+to the weights contributing to \code{sc_survmeasures} and \code{sc_control}.}
+
+\item{keep_scores}{whether to keep or drop \verb{sc_*} columns, \code{emission_risk} column
+is always kept.}
 }
 \value{
-A data frame containing:
+A tibble containing the following columns:
 \itemize{
-\item Intermediate scores for each risk domain (\code{sc_epistatus}, \code{sc_survmeasures}, \code{sc_control}, and \code{sc_commerce}).
-\item The overall emission risk score (\code{emission_risk}).
+\item \code{iso3} identifis the country
+\item \code{country} country name (from emission risk factors dataset)
+\item \code{disease} disease being studied (from emission risk factors dataset)
+\item \code{animal_category } animal_category  being studied (from emission risk factors dataset)
+\item \code{species} species being studied (from emission risk factors dataset)
+\item \code{data_source} data source for emission risk factors (from emission risk factors dataset)
+\item \code{sc_survmeasures} as detailed above.
+\item \code{sc_control} as detailed above.
+\item \code{sc_commerce} as detailed above.
+\item \code{sc_epistatus} as detailed above.
+\item \code{emission_risk} as detailed above.
+}
+
+This dataset also has a \strong{number of attributes} that are used in other
+functions from \code{riskintroanalysis} to make passing dataset metadata between
+functions more user-friendly.
+\itemize{
+\item \code{table_name = "emission_risk_scores"}
+\item \code{risk_col = "emission_risk"}
+\item \code{scale = c(0, 12)}
+\item \code{table_validated = TRUE}
 }
 }
 \description{
@@ -28,34 +71,47 @@ based on four domains (each one counts for a certain number of points towards th
 \item \strong{Animal commerce movements} (4/12): Risk from commerce and movement of animals (\code{sc_commerce}).
 }
 
-Intermediate scores for each domain are calculated internally:
+The emission risk is the sum of each of the above.
+
+Each of the scores is calculated from the emission risk factors and some are weighted
+based on the emission risk factor weights (\code{weights} parameter).
 \itemize{
-\item \strong{\code{sc_epistatus}}: The epidemiological status score is based on the time since the last outbreak.
+\item \strong{\code{sc_epistatus}}: The epidemiological status score is based on the time since the last outbreak
+and accounds for 3 out of 12 of the final emission risk score.
 If the disease has not been detected in the last 5 years (\eqn{x > 5}), the score is 0. If the disease is
 currently present (\eqn{x = 0}), the score is 3. An exponential decay model smooths the scoring over time:
 \deqn{S = 3 \times \exp\left(-x \frac{\log(2)}{5}\right)}
-\item \strong{\code{sc_survmeasures}}: Surveillance measures are scored based on the absence of effective measures.
-Scores range from 0 (all measures implemented) to 3 (no measures deployed). The default coefficients are:
+\item \strong{\code{sc_survmeasures}}: Surveillance measures are scored based on the absence
+of effective measures and accounts for 2 out of 12 og the final emission risk
+score. The following risk factors contribute
+to this score:
 \itemize{
-\item \strong{Active surveillance}: 0.5
-\item \strong{Passive surveillance}: 0.5
-\item \strong{Risk-based surveillance}: 0.75
-\item \strong{Mandatory reporting}: 0.25
+\item Active surveillance
+\item Passive surveillance
+\item Risk-based surveillance
+\item Mandatory reporting
 }
-\item \strong{\code{sc_control}}: Control measures are scored similarly, ranging from 0 (all measures implemented) to 3 (no measures deployed).
-Default coefficients are:
+\item \strong{\code{sc_control}}: Control measures are scored similarly, and account for
+3 out of 12 of the emission risk score. The following risk factors contribute
+to this score:
 \itemize{
-\item \strong{Border control}: 1
-\item \strong{Culling at outbreak sites}: 0.5
-\item \strong{Culling around outbreak sites}: 0.5
-\item \strong{Movement zoning and restrictions}: 0.75
-\item \strong{Ring vaccination around outbreak sites}: 0.25
+\item Border control
+\item Culling at outbreak sites
+\item Culling around outbreak sites
+\item Movement zoning and restrictions
+\item Ring vaccination around outbreak sites
 }
-\item \strong{\code{sc_commerce}}: The risk score for animal commerce movements can take values of 0, 1, or 3, depending on
-the risk level identified for trade and movement activities.
+\item \strong{\code{sc_commerce}}: The risk score for animal commerce movements can take
+values of 0, 1, 3, or 4. It is the sum of the following:
+\itemize{
+\item 0 means there is no legal or illegal trade
+\item legal trade present adds 1 to this score
+\item illegal trade present adds 3 to this score
+}
 }
 
-The overall emission risk score is the weighted sum of these components and is ensured to fall in the range (0, 12].
+The overall emission risk score is the sum of each weighted risk factor,
+the final emission risk score is in the range of (0, 12].
 }
 \examples{
 library(riskintrodata)

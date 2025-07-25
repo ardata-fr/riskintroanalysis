@@ -9,38 +9,87 @@
 #' - **Control measures** (3/12): Effectiveness of disease control measures (`sc_control`).
 #' - **Animal commerce movements** (4/12): Risk from commerce and movement of animals (`sc_commerce`).
 #'
-#' Intermediate scores for each domain are calculated internally:
+#' The emission risk is the sum of each of the above.
 #'
-#' - **`sc_epistatus`**: The epidemiological status score is based on the time since the last outbreak.
+#' Each of the scores is calculated from the emission risk factors and some are weighted
+#' based on the emission risk factor weights (`weights` parameter).
+#'
+#' - **`sc_epistatus`**: The epidemiological status score is based on the time since the last outbreak
+#'    and accounds for 3 out of 12 of the final emission risk score.
 #'    If the disease has not been detected in the last 5 years (\eqn{x > 5}), the score is 0. If the disease is
 #'    currently present (\eqn{x = 0}), the score is 3. An exponential decay model smooths the scoring over time:
 #'    \deqn{S = 3 \times \exp\left(-x \frac{\log(2)}{5}\right)}
 #'
-#' - **`sc_survmeasures`**: Surveillance measures are scored based on the absence of effective measures.
-#'    Scores range from 0 (all measures implemented) to 3 (no measures deployed). The default coefficients are:
-#'    - **Active surveillance**: 0.5
-#'    - **Passive surveillance**: 0.5
-#'    - **Risk-based surveillance**: 0.75
-#'    - **Mandatory reporting**: 0.25
+#' - **`sc_survmeasures`**: Surveillance measures are scored based on the absence
+#'    of effective measures and accounts for 2 out of 12 og the final emission risk
+#'    score. The following risk factors contribute
+#'    to this score:
+#'    - Active surveillance
+#'    - Passive surveillance
+#'    - Risk-based surveillance
+#'    - Mandatory reporting
 #'
-#' - **`sc_control`**: Control measures are scored similarly, ranging from 0 (all measures implemented) to 3 (no measures deployed).
-#'    Default coefficients are:
-#'    - **Border control**: 1
-#'    - **Culling at outbreak sites**: 0.5
-#'    - **Culling around outbreak sites**: 0.5
-#'    - **Movement zoning and restrictions**: 0.75
-#'    - **Ring vaccination around outbreak sites**: 0.25
+#' - **`sc_control`**: Control measures are scored similarly, and account for
+#'    3 out of 12 of the emission risk score. The following risk factors contribute
+#'    to this score:
+#'    - Border control
+#'    - Culling at outbreak sites
+#'    - Culling around outbreak sites
+#'    - Movement zoning and restrictions
+#'    - Ring vaccination around outbreak sites
 #'
-#' - **`sc_commerce`**: The risk score for animal commerce movements can take values of 0, 1, or 3, depending on
-#'    the risk level identified for trade and movement activities.
+#' - **`sc_commerce`**: The risk score for animal commerce movements can take
+#' values of 0, 1, 3, or 4. It is the sum of the following:
+#'    - 0 means there is no legal or illegal trade
+#'    - legal trade present adds 1 to this score
+#'    - illegal trade present adds 3 to this score
 #'
-#' The overall emission risk score is the weighted sum of these components and is ensured to fall in the range (0, 12].
+#' The overall emission risk score is the sum of each weighted risk factor,
+#' the final emission risk score is in the range of (0, 12].
 #'
-#' @param emission_risk_factors A data frame containing risk factor data (default is `emission_risk_factors`).
-#' @param weights A named list of weights corresponding to the columns in `dat`. Default weights are applied if not provided.
-#' @return A data frame containing:
-#' - Intermediate scores for each risk domain (`sc_epistatus`, `sc_survmeasures`, `sc_control`, and `sc_commerce`).
-#' - The overall emission risk score (`emission_risk`).
+#' @param emission_risk_factors A data frame containing risk factor data. Generally,
+#' this data will come from [riskintrodata::get_wahis_erf()]. The dataset should be validated and
+#' have `table_name` attribute equal to `"emission_risk_factors"`.
+#' @param weights A named list of weights corresponding to the following columns in
+#' `emission_risk_factors` (and their default weights):
+#'
+#'  - `disease_notification` (0.25)
+#'  - `targeted_surveillance` (0.5)
+#'  - `general_surveillance` (0.5)
+#'  - `screening` (0.75)
+#'  - `precautions_at_the_borders` (1)
+#'  - `slaughter` (0.5)
+#'  - `selective_killing_and_disposal` (0.5)
+#'  - `zoning` (0.75)
+#'  - `official_vaccination` (0.25)
+#'
+#'  The sum of the weights should add up to exactly 5, as these factors correspond
+#'  to the weights contributing to `sc_survmeasures` and `sc_control`.
+#'
+#' @param keep_scores whether to keep or drop `sc_*` columns, `emission_risk` column
+#' is always kept.
+#' @return A tibble containing the following columns:
+#' -  `iso3` identifis the country
+#' - `country` country name (from emission risk factors dataset)
+#' - `disease` disease being studied (from emission risk factors dataset)
+#' - `animal_category ` animal_category  being studied (from emission risk factors dataset)
+#' - `species` species being studied (from emission risk factors dataset)
+#' - `data_source` data source for emission risk factors (from emission risk factors dataset)
+#' - `sc_survmeasures` as detailed above.
+#' - `sc_control` as detailed above.
+#' - `sc_commerce` as detailed above.
+#' - `sc_epistatus` as detailed above.
+#' - `emission_risk` as detailed above.
+#'
+#' This dataset also has a **number of attributes** that are used in other
+#' functions from `riskintroanalysis` to make passing dataset metadata between
+#' functions more user-friendly.
+#'
+#' -  `table_name = "emission_risk_scores"`
+#' -  `risk_col = "emission_risk"`
+#' -  `scale = c(0, 12)`
+#' -  `table_validated = TRUE`
+#'
 #' @examples
 #' library(riskintrodata)
 #' library(riskintroanalysis)
@@ -59,8 +108,23 @@
 #' @export
 calc_emission_risk <- function(
     emission_risk_factors,
-    weights = get_erf_weights()
+    weights = get_erf_weights(),
+    keep_scores = TRUE
 ) {
+
+  cli_abort_if_not(
+    "{.arg emission_risk_factors} dataset is not validated" = attr(emission_risk_factors, "table_validated"),
+    "{.arg emission_risk_factors} dataset does not have" = !is.null(attr(emission_risk_factors, "table_name")),
+    "{.arg weights} should sum to 5, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = sum(unlist(weights)) == 5L,
+    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = length(weights) == 9L
+  )
+  if (attr(emission_risk_factors, "table_name") != "emission_risk_factors") {
+    cli_abort(paste(
+      "{.arg emission_risk_factors} dataset attribute {.arg table_name} is",
+      "\"{attr(emission_risk_factors, \"table_name\")}\" and should be \"emission_risk_factors\""
+      ))
+  }
+
   # Refer to data-raw/emission-risk-defaults.R
   risk_factor_cols <- names(weights)
 
@@ -68,8 +132,8 @@ calc_emission_risk <- function(
     stop("Weight names should be the names of the `dat` column names")
   }
 
-  weighted_emission_risk <- emission_risk_factors |>
-    # Weighted risk factors ----
+  # Weighted risk factors ----
+  out <- emission_risk_factors |>
   mutate(
     across(
       all_of(risk_factor_cols),
@@ -77,7 +141,9 @@ calc_emission_risk <- function(
         weights[[cur_column()]] * rm_na(x)
       }
     )
-  ) |>
+  )
+
+  out <- out |>
     # Calculate scores from risk factors ----
   mutate(
     sc_survmeasures =
@@ -94,22 +160,39 @@ calc_emission_risk <- function(
       .data[["commerce_illegal"]] == 1 & .data[["commerce_legal"]] == 1 ~ 4,
       TRUE ~ NA_integer_
     )
-  ) |>
-    calc_epistatus("last_outbreak_end_date") |>
-    # Calculate overall emission_risk from scores! (finally) ----
-  mutate(
+  )
+
+  out <- out |>
+    calc_epistatus("last_outbreak_end_date")
+
+  out <- out |>
+    mutate(
     emission_risk =
       .data[["sc_survmeasures"]] +
       .data[["sc_control"]] +
       rm_na(.data[["sc_epistatus"]],replace_na = 0) +
       rm_na(.data[["sc_commerce"]], replace_na = 0)
-  ) |>
-    select(all_of(
-      c("iso3", "country", "disease", "animal_category", "species","data_source",
-        "sc_survmeasures", "sc_control", "sc_commerce", "sc_epistatus", "emission_risk"
-      )))
+  )
 
-  weighted_emission_risk
+  if (keep_scores) {
+    keep_cols <-c(
+      "iso3", "country", "disease", "animal_category", "species","data_source",
+      "sc_survmeasures", "sc_control", "sc_commerce", "sc_epistatus", "emission_risk"
+      )
+  } else {
+    keep_cols <-c(
+      "iso3", "country", "disease", "animal_category", "species","data_source",
+      "emission_risk"
+    )
+  }
+
+  out <- out |>
+    select(all_of(keep_cols))
+
+  attr(out, "table_name") <- "emission_risk_scores"
+  attr(out, "risk_col") <- "emission_risk"
+  attr(out, "scale") <- c(0, 12)
+  out
 }
 
 
@@ -161,6 +244,7 @@ calc_emission_risk <- function(
 #'
 #' calc_epistatus(test_data, "date_last_outbreak")
 calc_epistatus <- function(dat, x) {
+  cli_abort_if_not("Column {.var {x}} not found in dataset" = x %in% colnames(dat))
   dat |>
     mutate(
       years_since_outbreak = as.numeric(as.Date(Sys.time()) - as.Date(.data[[x]])) * (1 / 365),

@@ -4,13 +4,7 @@
 \alias{calc_border_risk}
 \title{Calculate weighted border risk}
 \usage{
-calc_border_risk(
-  epi_units,
-  shared_borders,
-  emission_risk,
-  ...,
-  add_html_lables = FALSE
-)
+calc_border_risk(epi_units, shared_borders, emission_risk)
 }
 \arguments{
 \item{epi_units}{epidemiological units dataset}
@@ -18,19 +12,13 @@ calc_border_risk(
 \item{shared_borders}{shared borders dataset as outputted by \code{\link[=calc_border_lengths]{calc_border_lengths()}}}
 
 \item{emission_risk}{emission risk dataset,}
-
-\item{...}{empty}
-
-\item{add_html_lables}{default FALSE, used for leaflet tooltips in the Shiny app.}
 }
 \value{
-A list containing \code{borders} and \code{epi_units}
-
-\strong{epi_units}: a \code{sf} object containing shared borders between EUs and bordering countries,
-with calculated border lengths and weights. The table is containing the following columns:
+An \code{sf} object containing the border risk score associated with each
+epidemiological unit. The table is containing the following columns:
 \itemize{
 \item \code{eu_id}: ID of the epidemiological unit. This will be used as a join key to the
-\code{epi_units} table.
+\code{epi_units} table and \code{risk_table}.
 \item \code{eu_name}: Name of the epidemiological unit. This comes from the \code{epi_units} table.
 \item \code{borders}: Total length of shared borders with neighbouring countries in km.
 \item \code{border_risk}: The risk of introduction based on the emission risk of neighbouring countries,
@@ -38,7 +26,11 @@ its values are in the range [0, 12].
 \item \code{geometry}: The geometry column containing the shared border, a \code{MULTIPOLYGON}.
 }
 
-\strong{borders}: an \code{sf} object containing shared borders between EUs and bordering countries.
+This dataset also has a \strong{number of attributes}, the first is a dataset, the other 3
+are used in other functions from \code{riskintroanalysis} to make passing dataset metadata
+between functions more user-friendly.
+\enumerate{
+\item \code{borders}: an \code{sf} object containing shared borders between EUs and bordering countries.
 The table is containing the following columns:
 \itemize{
 \item \code{eu_id}: ID of the epidemiological unit.
@@ -47,7 +39,13 @@ The table is containing the following columns:
 the units. It is expected in km.
 \item \code{geometry}: The geometry column containing the shared border, a \code{MULTILINESTRING} or a
 \code{LINESTRING}.
-\item TO BE COMPLETED
+}
+\item \code{table_name = "border_risk"}: the name of the table in the riskintroanalysis
+data model. This is used by other functions in  \code{riskintroanalysis}, such as \code{plot_risk}.
+\item \code{risk_col = "border_risk"}: the name of the risk score column in the dataset.
+This is used by other functions in  \code{riskintroanalysis}, such as \code{plot_risk}.
+\item \code{scale = c(0,12)}: the scale of \code{risk_col} used for other functions such
+as \code{rescale_risk_score} and \code{plot_risk}.
 }
 }
 \description{
@@ -101,10 +99,11 @@ wahis_factors <- riskintrodata::get_wahis_erf(
 
 emission_risk_table <- calc_emission_risk(wahis_factors)
 
-calc_border_risk(
+ri_border <- calc_border_risk(
   epi_units = tunisia,
   shared_borders = shared_borders,
   emission_risk = emission_risk_table
 )
+ri_border
 }
 }

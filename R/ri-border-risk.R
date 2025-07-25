@@ -208,42 +208,46 @@ calc_border_lengths <- function(
 #' @param epi_units epidemiological units dataset
 #' @param shared_borders shared borders dataset as outputted by [calc_border_lengths()]
 #' @param emission_risk emission risk dataset,
-#' @param ... empty
-#' @param add_html_lables default FALSE, used for leaflet tooltips in the Shiny app.
 #' @example examples/calc_border_risk.R
-#' @return A list containing `borders` and `epi_units`
-#'
-#' **epi_units**: a `sf` object containing shared borders between EUs and bordering countries,
-#' with calculated border lengths and weights. The table is containing the following columns:
+#' @return An `sf` object containing the border risk score associated with each
+#' epidemiological unit. The table is containing the following columns:
 #'
 #' - `eu_id`: ID of the epidemiological unit. This will be used as a join key to the
-#' `epi_units` table.
+#' `epi_units` table and `risk_table`.
 #' - `eu_name`: Name of the epidemiological unit. This comes from the `epi_units` table.
 #' - `borders`: Total length of shared borders with neighbouring countries in km.
 #' - `border_risk`: The risk of introduction based on the emission risk of neighbouring countries,
 #' its values are in the range \[0, 12\].
 #' - `geometry`: The geometry column containing the shared border, a `MULTIPOLYGON`.
 #'
+#' This dataset also has a **number of attributes**, the first is a dataset, the other 3
+#' are used in other functions from `riskintroanalysis` to make passing dataset metadata
+#' between functions more user-friendly.
 #'
-#' **borders**: an `sf` object containing shared borders between EUs and bordering countries.
+#' 1. `borders`: an `sf` object containing shared borders between EUs and bordering countries.
 #' The table is containing the following columns:
-#'
-#' - `eu_id`: ID of the epidemiological unit.
-#' - `bc_id`: ISO3 of the bordering country.
-#' - `border_length`: Length of the shared border, use [units::units] to get
+#'    - `eu_id`: ID of the epidemiological unit.
+#'    - `bc_id`: ISO3 of the bordering country.
+#'    - `border_length`: Length of the shared border, use [units::units] to get
 #' the units. It is expected in km.
-#' - `geometry`: The geometry column containing the shared border, a `MULTILINESTRING` or a
+#'    - `geometry`: The geometry column containing the shared border, a `MULTILINESTRING` or a
 #' `LINESTRING`.
-#' - TO BE COMPLETED
+#'
+#' 1. `table_name = "border_risk"`: the name of the table in the riskintroanalysis
+#' data model. This is used by other functions in  `riskintroanalysis`, such as `plot_risk`.
+#'
+#' 1. `risk_col = "border_risk"`: the name of the risk score column in the dataset.
+#' This is used by other functions in  `riskintroanalysis`, such as `plot_risk`.
+#'
+#' 1. `scale = c(0,12)`: the scale of `risk_col` used for other functions such
+#' as `rescale_risk_score` and `plot_risk`.
+#'
 #' @export
 calc_border_risk <- function(
     epi_units,
     shared_borders,
-    emission_risk,
-    ...,
-    add_html_lables = FALSE
+    emission_risk
 ) {
-  check_dots_empty()
   borders <- label_borders(
     borders = shared_borders,
     epi_units = epi_units,
@@ -287,10 +291,6 @@ calc_border_risk <- function(
         ) |> map(HTML)
     ) |>
     select(-all_of("sources_label"))
-
-  if (!add_html_lables) {
-    dataset <- select(dataset, -all_of("risk_sources_label"))
-  }
 
   attr(dataset, "risk_col") <- "border_risk"
   attr(dataset, "table_name") <- "border_risk"

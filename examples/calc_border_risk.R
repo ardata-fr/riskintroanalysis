@@ -43,9 +43,10 @@ wahis_factors <- riskintrodata::get_wahis_erf(
 
 emission_risk_table <- calc_emission_risk(wahis_factors)
 
-calc_border_risk(
+ri_border <- calc_border_risk(
   epi_units = tunisia,
   shared_borders = shared_borders,
   emission_risk = emission_risk_table
 )
+ri_border
 }
