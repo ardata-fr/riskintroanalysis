@@ -5,13 +5,18 @@
 #' Calculate the risk of introduction associated with legal international animal
 #' commerce entering epidemiological units.
 #'
-#' The animal mobility dataset contains a single legal animal commerce route per
-#' row. Each row has the starting points and arrival point. Emission risk is
-#' weighted by quantity if provided.
+#' Firstly, an aggregated  emission risk is calculated for each destination point.
+#'  This is because a destination point can have multiple sources (countries)
+#'  giving emission risk.
 #'
-#' Once each arrival point has an averaged emission risk based on the emission score
-#' from each source country the `method` argument is used to aggregate that further,
-#' giving a risk of introduction for each epidemiological unit.
+#' Then, each destination point is allocated to an epidemiological unit. This is done
+#' by geospatial means, if an destination point is located inside an epidemiological unit's
+#' area it is thus allocated to it.
+#'
+#' Finally, now that each destination point has an emission risk and has been paired
+#' with an epidemiological unit, the aggregated risk score for each epidemiological
+#' unit is calculated, giving the final risk of introduction by animal mobility for
+#' each epidemiological unit.
 #'
 #' @param animal_mobility animal moblity dataset as formatted and validated by
 #' [apply_mapping()] and [mapping_animal_mobility()]
@@ -19,7 +24,31 @@
 #' @param epi_units epidemiological units dataset
 #' @param method aggregation method for eu risk
 #'
+#' @returns an `sf` dataset containing the risk of introduction for each of
+#' the epidemiological units. The dataset has the following columns:
+#' -  `eu_id`: epidemiological units identifier
+#' -  `eu_name`: epidemiological units name
+#' -  `animal_mobility_risk`: risk of introduction through animal mobility
+#' -  `geometry`: epidemiological units geometry `MULTIPOLYGONS`
+#'
+#' This dataset also has a **number of attributes** that are used in other
+#' functions from `riskintroanalysis` to make passing dataset metadata between
+#' functions more user-friendly.
+#'
+#' 1. `flows`: an `sf` dataset containing the flow destination points, each point
+#' has an aggregated emission risk score that is weighted by `quantity`. It contains
+#' the following columns:
+#'    - `d_name`: destination name
+#'    - `emission_risk_weighted`: weighted emission risk for that point
+#'    - `source_label`: HTLM label to be used in leaflet tooltips.
+#'    - `geometry`: destination point geometries `POINTS`
+#'
+#' 2. `risk_col = "animal_mobility_risk"` used by [plot_risk()]
+#' 3. `table_name = "table_name"`used by [plot_risk()]
+#' 4. `scale = c(0, 12)` used by [plot_risk()] and [rescale_risk_scores()]
+#'
 #' @export
+#' @example examples/calc_animal_mobility_risk.R
 calc_animal_mobility_risk <- function(
     animal_mobility,
     emission_risk,
@@ -94,8 +123,24 @@ calc_animal_mobility_flows_risk <- function(
       weight = .data$quantity / sum(.data$quantity)
     )
 
-  weighted_inflow_risk <- weighted_inflows |>
-    left_join(emission_risk, by = c("o_iso3" = "iso3")) |>
+  weighted_inflows_er <- weighted_inflows |>
+    left_join(emission_risk, by = c("o_iso3" = "iso3"))
+
+  # Warn if missing emission risk
+  missing_emission_risk <- weighted_inflows_er[is.na(weighted_inflows_er$emission_risk), "o_iso3", drop = TRUE]
+  if (length(missing_emission_risk > 0)) {
+    counts_list <- split(missing_emission_risk, missing_emission_risk) |>
+      map(length)
+    msg <- paste0(names(counts_list), " missing for ", counts_list, " animal mobility flows.")
+    warn_msg <- setNames(msg, rep("*", length(msg)))
+    cli_warn(c(
+      "!" = "There are missing emission risk scores for the following countries:",
+      warn_msg,
+      "Create new entries in the emission risk factor table using {.help [{.fun erf_row}](riskintrodata::erf_row)}."
+    ))
+  }
+
+  weighted_inflow_risk <- weighted_inflows_er |>
     mutate(
       emission_risk_weighted = .data$emission_risk * .data$weight,
       country = if_else(

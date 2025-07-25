@@ -83,7 +83,8 @@
 #'
 #' This dataset also has a **number of attributes** that are used in other
 #' functions from `riskintroanalysis` to make passing dataset metadata between
-#' functions more user-friendly.
+#' functions more user-friendly. Used mainly in used by [plot_risk()] and
+#'  [rescale_risk_scores()].
 #'
 #' -  `table_name = "emission_risk_scores"`
 #' -  `risk_col = "emission_risk"`

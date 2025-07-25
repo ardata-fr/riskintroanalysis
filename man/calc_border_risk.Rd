@@ -61,7 +61,7 @@ shared borders.
 library(sf)
 library(dplyr)
 
-tunisia_raw <- read_sf(system.file(
+tunisia_raw <- sf::read_sf(system.file(
   package = "riskintrodata",
   "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
 ))

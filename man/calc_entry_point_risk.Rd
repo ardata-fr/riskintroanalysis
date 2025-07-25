@@ -63,7 +63,7 @@ and has the following columns:
 Calculating the entry point risk associated with each epidemiological unit.
 
 Firstly, an aggregated (\code{points_agg_fun}) emission risk is calculated for each entry point. This is
-because on entry point can have multiple sources (countries) giving emission
+because an entry point can have multiple sources (countries) giving emission
 risk.
 
 Then, each entry point is allocated to an epidemiological unit. This is done
@@ -73,7 +73,8 @@ unit are allocated to the nearest one.
 
 Finally, now that each entry point has an emission risk and has been paired
 with an epidemiological unit, the aggregated (\code{eu_agg_fun}) risk score for each epidemiological
-unit is calculated.
+unit is calculated. Giving the final risk of introduction by entry points for
+each epidemiological unit.
 }
 \examples{
 library(riskintroanalysis)
