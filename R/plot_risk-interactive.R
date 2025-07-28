@@ -1,0 +1,275 @@
+plot_risk_interactive <- function(
+    dataset,
+    risk_name = NULL,
+    risk_col = NULL,
+    scale = NULL,
+    ll = new_leaflet()
+){
+
+  table_name <- risk_name %||% attr(dataset, "table_name")
+
+  risk_col <- risk_col %||% attr(dataset, "risk_col")
+  scale <- scale %||% attr(dataset, "scale")
+
+  plot_interactive_fun <- switch(
+    table_name,
+    "entry_points" = plot_entry_points_interactive,
+    "animal_mobility" = plot_animal_mobility_interactive,
+    "road_access" = plot_road_access_interactive,
+    "border_risk" = plot_border_risk_interactive,
+    "epi_units" = plot_epi_units_interactive,
+    "risk_table" = plot_risk_table_interactive,
+    cli_abort("This risk is not supported.")
+  )
+
+  plot_interactive_fun(
+    dataset = dataset,
+    scale = scale,
+    risk_col = risk_col,
+    ll = ll
+  )
+}
+
+ll_scale <- function(scale = c(0,100)){
+  pal <- leaflet::colorNumeric(
+    palette = "viridis",
+    domain = scale,
+    reverse = TRUE
+  )
+  pal
+}
+
+ll_legend <- function(ll, pal, scale, title, opacity = 0.7){
+  leaflet::addLegend(
+    map = ll,
+    pal = pal,
+    values = scale,
+    opacity = opacity,
+    title = title,
+    position = "bottomright"
+  )
+}
+
+#' Interactive leaflet plotting for entry points
+#'
+#' @param dataset sf object with entry point risk data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet leaflet addTiles addPolygons addCircleMarkers colorNumeric addLegend
+plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+
+  pal <- ll_scale(scale)
+
+  ll <- ll |> leaflet::addPolygons(
+    data = dataset,
+    fillColor = ~pal(get(risk_col)),
+    weight = 1,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.75,
+    label = dataset$entry_points_risk_label
+  )
+
+  if (!is.null(extract_point_risk(dataset))) {
+    points_data <- extract_point_risk(dataset)
+    ll <- ll |>
+      leaflet::addCircleMarkers(
+        data = points_data,
+        radius = 6,
+        color = "black",
+        weight = 2,
+        fillColor = ~pal(points_data$point_emission_risk),
+        fillOpacity = 0.8,
+        label = points_data$points_label
+      )
+  } else {
+    cli_warn("No point data provided, it will not be plotted.")
+  }
+
+  ll <- ll |>
+    ll_legend(pal, scale, title = risk_col)
+  ll
+}
+
+#' Interactive leaflet plotting for animal mobility
+#'
+#' @param dataset sf object with animal mobility risk data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @param ll leaflet object to add layers to
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet addPolygons addCircleMarkers
+plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+
+  pal <- ll_scale(scale)
+  ll <- ll |> leaflet::addPolygons(
+    data = dataset,
+    fillColor = ~pal(get(risk_col)),
+    weight = 1,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.75,
+    label = ~get(paste0(gsub("_risk$", "", risk_col), "_risk_label"))
+  )
+
+  if (!is.null(extract_flow_risk(dataset))) {
+    flows_data <- extract_flow_risk(dataset)
+
+    ll <- ll |>
+      leaflet::addCircleMarkers(
+        data = flows_data,
+        radius = 6,
+        color = "black",
+        weight = 2,
+        fillColor = ~pal(flows_data$emission_risk_weighted),
+        fillOpacity = 0.8,
+        label = flows_data$source_label
+      )
+  } else {
+    cli_warn("No flows data provided, it will not be plotted.")
+  }
+
+  ll <- ll |>
+    ll_legend(pal, scale, title = risk_col)
+  ll
+}
+
+#' Interactive leaflet plotting for road access
+#'
+#' @param dataset sf object with road access risk data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @param ll leaflet object to add layers to
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet addPolygons
+plot_road_access_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+
+  pal <- ll_scale(scale)
+
+  ll <- ll |> leaflet::addPolygons(
+    data = dataset,
+    fillColor = ~pal(get(risk_col)),
+    weight = 1,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.75,
+    label = ~get(paste0(gsub("_risk$", "", risk_col), "_risk_label"))
+  )
+
+  ll <- ll |>
+    ll_legend(pal, scale, title = risk_col)
+  ll
+}
+
+#' Interactive leaflet plotting for border risk
+#'
+#' @param dataset sf object with border risk data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @param ll leaflet object to add layers to
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet addPolygons addPolylines
+plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+
+  pal <- ll_scale(scale)
+
+  ll <- clearShapes(ll)
+
+  ll <- ll |> leaflet::addPolygons(
+    data = dataset,
+    fillColor = ~pal(dataset[[risk_col]]),
+    weight = 1,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.8,
+    label = paste0(
+      "<strong>", dataset$eu_name, "</strong>", "<br>",
+      "<strong>", "Border risk score: ", fmt_num(dataset$border_risk), "/", scale[[2]], "</strong>"
+    ) |> map(HTML)
+  )
+
+  if (!is.null(extract_border(dataset))) {
+    borders_data <- extract_border(dataset)
+    ll <- ll |>
+      leaflet::addPolylines(
+        data = borders_data,
+        color = ~pal(borders_data$border_risk),
+        weight = 4,
+        opacity = 1,
+        label = borders_data$border_label
+      )
+  } else {
+    cli_warn("No border data provided, it will not be plotted.")
+  }
+
+  ll <- ll |>
+    ll_legend(pal, scale, title = risk_col)
+  ll
+}
+
+#' Interactive leaflet plotting for epidemiological units
+#'
+#' @param dataset sf object with epidemiological units data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @param ll leaflet object to add layers to
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet addPolygons
+plot_epi_units_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+
+  ll <- ll |> leaflet::addPolygons(
+    data = dataset,
+    weight = 2,
+    opacity = 1,
+    color = "black",
+    fillOpacity = 0,
+    label = ~get(names(dataset)[1])
+  )
+
+  ll
+}
+
+#' Interactive leaflet plotting for risk table
+#'
+#' @param dataset sf object with risk table data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @param ll leaflet object to add layers to
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet addPolygons
+plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+
+  pal <- ll_scale(scale)
+
+  ll <- ll |> leaflet::addPolygons(
+    data = dataset,
+    fillColor = ~pal(get(risk_col)),
+    weight = 1,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.75,
+    label = ~get(paste0(gsub("_risk$", "", risk_col), "_risk_label"))
+  )
+
+  ll <- ll |>
+    ll_legend(pal, scale, title = risk_col)
+  ll
+}
