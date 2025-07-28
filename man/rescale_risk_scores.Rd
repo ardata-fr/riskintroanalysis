@@ -66,7 +66,7 @@ Below are the equations used for each method:
 library(riskintrodata)
 library(riskintroanalysis)
 
-dat <- data.frame(RISK = seq(0, 12, by = 0.01))
+dat <- tibble::tibble(RISK = seq(0, 12, by = 0.01))
 
 dat_scaled <- rescale_risk_scores(
   dataset = dat,

@@ -46,7 +46,7 @@ rescale_risk_scores <- function(
     names_prefix = NULL,
     names_to = NULL,
     keep_cols = FALSE
-    ) {
+) {
 
   if (!is.null(cols) && is.null(attr(dataset, "risk_col"))) {
     cols <- cols
@@ -89,17 +89,43 @@ rescale_risk_scores <- function(
 
   new_cols <- names_to %||% names(cols) %||% cols
   new_cols <- paste0(names_prefix, new_cols)
+  table_name <- attr(dataset, "table_name")
 
   method <- match.arg(method)
-  table_name <- attr(dataset, "table_name")
-  dat <- dataset
 
+  dataset <- rescale_risk(
+    dataset = dataset,
+    cols = cols,
+    new_cols = new_cols,
+    method = method,
+    from = from,
+    to = to,
+    inverse = inverse,
+    keep_cols = keep_cols
+  )
+
+  if (any(c("borders", "points", "flows") %in% names(attributes(dataset)))) {
+    dataset <- rescale_secondary_datasets(
+      dataset = dataset,
+      method = method,
+      from = from,
+      to = to,
+      inverse = inverse,
+      keep_cols = keep_cols
+    )
+  }
+  attr(dataset, "scale") <- to
+  attr(dataset, "risk_col") <- unique(new_cols)
+  attr(dataset, "table_name") <- table_name
+  dataset
+}
+
+rescale_risk <- function(dataset, cols, new_cols, method, from, to, inverse, keep_cols){
 
   old_min <- from[[1]] # existing min
   old_max <- from[[2]]
   new_min <- to[[1]] # new min
   new_max <- to[[2]]
-
   if (!inverse) {
     transformation <- switch(method,
                              linear = function(x) x,
@@ -134,9 +160,78 @@ rescale_risk_scores <- function(
     dataset <- dataset |> dplyr::select(-all_of(cols))
   }
 
-  attr(dataset, "scale") = to
-  attr(dataset, "risk_col") = unique(new_cols)
-  attr(dataset, "table_name") = table_name
+  dataset
+}
+
+
+
+#' Rescale secondary datasets stored as attributes
+#'
+#' Helper function to rescale risk columns in secondary datasets (borders, points, flows)
+#' that are stored as attributes of the main dataset.
+#'
+#' @param dataset Main dataset with secondary datasets as attributes
+#' @param from Original scale range
+#' @param to New scale range
+#' @param method Scaling method
+#' @param inverse Whether to apply inverse transformation
+#' @return Dataset with rescaled secondary datasets as attributes
+#' @noRd
+rescale_secondary_datasets <- function(
+    dataset,
+    method,
+    from,
+    to,
+    inverse,
+    keep_cols
+) {
+
+  if (!is.null(attr(dataset, "borders"))) {
+    borders <- attr(dataset, "borders")
+    borders_rescaled <- rescale_risk(
+      borders,
+      cols = attr(borders, "risk_col"),
+      from = attr(borders, "scale"),
+      to = to,
+      method = method,
+      new_cols = attr(borders, "risk_col"),
+      inverse = inverse,
+      keep_cols = FALSE
+    )
+    attr(borders_rescaled, "scale") <- to
+    attr(dataset, "borders") <- borders_rescaled
+
+  } else if (!is.null(attr(dataset, "points"))) {
+    points <- attr(dataset, "points")
+    points_rescaled <- rescale_risk(
+      points,
+      cols = attr(points, "risk_col"),
+      from = from,
+      to = to,
+      new_cols = attr(points, "risk_col"),
+      method = method,
+      inverse = inverse,
+      keep_cols = FALSE
+    )
+    attr(points_rescaled, "scale") <- to
+    attr(dataset, "points") <- points_rescaled
+
+  } else if (!is.null(attr(dataset, "flows"))) {
+    flows <- attr(dataset, "flows")
+    flows_rescaled <- rescale_risk(
+      flows,
+      cols = attr(flows, "risk_col"),
+      from = from,
+      to = to,
+      new_cols = attr(flows, "risk_col"),
+      method = method,
+      inverse = inverse,
+      keep_cols = FALSE
+    )
+    attr(flows_rescaled, "scale") <- to
+    attr(dataset, "flows") <- flows_rescaled
+  }
+
   dataset
 }
 
@@ -178,141 +273,142 @@ inv_sigmoid <- function(x) {
   qlogis((x + 1)/2)
 }
 
-plot_rescale_risk_density <- function(dat,
-                                      linear_col = "emission_risk_linear",
-                                      rescaled_col = "emission_risk_scaled",
-                                      scaling_label = "new scaling") {
 
-  pre <- dat |>
-    select(y = .data[[linear_col]])|>
-    mutate(cat = "linear")
-
-  post <- dat |>
-    select(y = .data[[rescaled_col]]) |>
-    mutate(cat = scaling_label)
-
-  prepost <- bind_rows(pre, post) |>
-    mutate(x = row_number(), .by = cat) |>
-    mutate(cat = factor(cat, levels = c("linear", scaling_label)))
-
-  ggplot() +
-    geom_density(
-      data = prepost,
-      mapping = aes(
-        x = .data[["y"]],
-        color = .data[["cat"]],
-        fill = .data[["cat"]],
-        linetype = .data[["cat"]]
-      ),
-      position = "identity",
-      alpha = 0.5,
-      size = 0.5
-    ) +
-    scale_linetype_manual(values = c("solid", "dashed")) +
-    scale_x_continuous(name = "Risk scores", limits = c(0, 100), expand = c(0, 0))+
-    scale_y_continuous(name = "Density", expand = c(0, 0)) +
-    theme(
-      legend.position = c(.95, .95),
-      legend.justification = c("right", "top"),
-      legend.box.just = "right",
-      legend.margin = margin(6, 6, 6, 6),
-      legend.title=element_blank(),
-      legend.box.background = element_rect(color="grey", size=0.5)
-    )
-
-}
-
-plot_rescale_risk_points <- function(dat, fun, inverse, raw_col, scaled_col, from, to, is_road_access_risk = FALSE){
-
-  if(is_road_access_risk) {
-    from <- c(0, 100)
-    raw_col <- "linear_risk"
-  }
-
-  lines_df <- rescale_risk_scores(
-    dataset = data.frame(x = seq(from[1], from[2], 0.25)),
-    cols = "x",
-    names_to = "y",
-    method = fun,
-    inverse = inverse,
-    from = from,
-    to = to
-    )
-
-  gg_obj <- ggplot(
-    data = dat,
-    mapping = aes(
-      x = .data[[raw_col]],
-      y = .data[[scaled_col]]
-    )
-  )
-
-  gg_obj <- gg_obj+
-    geom_smooth(data = lines_df, aes(x=.data$x, y =.data$y), method = 'loess', formula = 'y ~ x', na.rm = TRUE)
-
-  gg_obj <- gg_obj +
-    geom_point(alpha = 0.20, color = "black", size = 4, na.rm = TRUE)
-
-  gg_obj <- gg_obj +
-    scale_x_continuous(
-      breaks = seq(from[1], from[2], round(from[2] * 0.10, 0)),
-      limits = c(from[1], from[2])
-      )
-
-  gg_obj <- gg_obj +
-    scale_y_continuous(
-      limits = to,
-      breaks = seq(to[1], to[2], to[2]/10)
-      )
-
-
-  if(is_road_access_risk) {
-    gg_obj <- gg_obj +
-      labs(
-        x = "Unscaled risk score (before)",
-        y = "Scaled risk score (after)"
-      )
-  } else {
-    gg_obj <- gg_obj +
-      labs(
-        x = "Linear scaling",
-        y = "New scaling"
-      )
-  }
-
-  gg_obj
-}
-
-
-plot_rescale_raster_points <- function(dat, fun, inverse, raw_col, scaled_col, from, to = c(0,100)){
-
-  xmax <- from[2]
-
-  lines_df <- rescale_risk_scores(
-    dataset = data.frame(x = seq(0, xmax + 25, 0.25)),
-    cols = "x", names_to = "y",
-    method = fun, inverse = inverse, from = from, to = to
-  )
-
-  ggplot(
-    data = dat,
-    mapping = aes(
-      x = .data[[raw_col]],
-      y = .data[[scaled_col]]
-    )
-  ) +
-    geom_smooth(data = lines_df, aes(x=.data$x, y =.data$y), method = 'loess', formula = 'y ~ x', na.rm = TRUE) +
-
-    geom_point(alpha = 0.20, color = "black", size = 4) +
-    scale_x_continuous(
-      name = "Unscaled risk score (before)",
-      expand = c(0, 0),
-      limits = c(from[1] - 1, xmax + 1)
-    )+
-    scale_y_continuous(
-      name = "Scaled risk score (after)",
-      limits = c(to[1]-0.5, to[2] + 10),
-      breaks = seq(to[1], to[2], to[2]/10),
-      expand = c(0, 0)
-    )
-}
+# plot_rescale_risk_density <- function(dat,
+#                                       linear_col = "emission_risk_linear",
+#                                       rescaled_col = "emission_risk_scaled",
+#                                       scaling_label = "new scaling") {
+#
+#   pre <- dat |>
+#     select(y = .data[[linear_col]])|>
+#     mutate(cat = "linear")
+#
+#   post <- dat |>
+#     select(y = .data[[rescaled_col]]) |>
+#     mutate(cat = scaling_label)
+#
+#   prepost <- bind_rows(pre, post) |>
+#     mutate(x = row_number(), .by = cat) |>
+#     mutate(cat = factor(cat, levels = c("linear", scaling_label)))
+#
+#   ggplot() +
+#     geom_density(
+#       data = prepost,
+#       mapping = aes(
+#         x = .data[["y"]],
+#         color = .data[["cat"]],
+#         fill = .data[["cat"]],
+#         linetype = .data[["cat"]]
+#       ),
+#       position = "identity",
+#       alpha = 0.5,
+#       size = 0.5
+#     ) +
+#     scale_linetype_manual(values = c("solid", "dashed")) +
+#     scale_x_continuous(name = "Risk scores", limits = c(0, 100), expand = c(0, 0))+
+#     scale_y_continuous(name = "Density", expand = c(0, 0)) +
+#     theme(
+#       legend.position = c(.95, .95),
+#       legend.justification = c("right", "top"),
+#       legend.box.just = "right",
+#       legend.margin = margin(6, 6, 6, 6),
+#       legend.title=element_blank(),
+#       legend.box.background = element_rect(color="grey", size=0.5)
+#     )
+#
+# }
+#
+# plot_rescale_risk_points <- function(dat, fun, inverse, raw_col, scaled_col, from, to, is_road_access_risk = FALSE){
+#
+#   if(is_road_access_risk) {
+#     from <- c(0, 100)
+#     raw_col <- "linear_risk"
+#   }
+#
+#   lines_df <- rescale_risk_scores(
+#     dataset = data.frame(x = seq(from[1], from[2], 0.25)),
+#     cols = "x",
+#     names_to = "y",
+#     method = fun,
+#     inverse = inverse,
+#     from = from,
+#     to = to
+#   )
+#
+#   gg_obj <- ggplot(
+#     data = dat,
+#     mapping = aes(
+#       x = .data[[raw_col]],
+#       y = .data[[scaled_col]]
+#     )
+#   )
+#
+#   gg_obj <- gg_obj+
+#     geom_smooth(data = lines_df, aes(x=.data$x, y =.data$y), method = 'loess', formula = 'y ~ x', na.rm = TRUE)
+#
+#   gg_obj <- gg_obj +
+#     geom_point(alpha = 0.20, color = "black", size = 4, na.rm = TRUE)
+#
+#   gg_obj <- gg_obj +
+#     scale_x_continuous(
+#       breaks = seq(from[1], from[2], round(from[2] * 0.10, 0)),
+#       limits = c(from[1], from[2])
+#     )
+#
+#   gg_obj <- gg_obj +
+#     scale_y_continuous(
+#       limits = to,
+#       breaks = seq(to[1], to[2], to[2]/10)
+#     )
+#
+#
+#   if(is_road_access_risk) {
+#     gg_obj <- gg_obj +
+#       labs(
+#         x = "Unscaled risk score (before)",
+#         y = "Scaled risk score (after)"
+#       )
+#   } else {
+#     gg_obj <- gg_obj +
+#       labs(
+#         x = "Linear scaling",
+#         y = "New scaling"
+#       )
+#   }
+#
+#   gg_obj
+# }
+#
+#
+# plot_rescale_raster_points <- function(dat, fun, inverse, raw_col, scaled_col, from, to = c(0,100)){
+#
+#   xmax <- from[2]
+#
+#   lines_df <- rescale_risk_scores(
+#     dataset = data.frame(x = seq(0, xmax + 25, 0.25)),
+#     cols = "x", names_to = "y",
+#     method = fun, inverse = inverse, from = from, to = to
+#   )
+#
+#   ggplot(
+#     data = dat,
+#     mapping = aes(
+#       x = .data[[raw_col]],
+#       y = .data[[scaled_col]]
+#     )
+#   ) +
+#     geom_smooth(data = lines_df, aes(x=.data$x, y =.data$y), method = 'loess', formula = 'y ~ x', na.rm = TRUE) +
+#
+#     geom_point(alpha = 0.20, color = "black", size = 4) +
+#     scale_x_continuous(
+#       name = "Unscaled risk score (before)",
+#       expand = c(0, 0),
+#       limits = c(from[1] - 1, xmax + 1)
+#     )+
+#     scale_y_continuous(
+#       name = "Scaled risk score (after)",
+#       limits = c(to[1]-0.5, to[2] + 10),
+#       breaks = seq(to[1], to[2], to[2]/10),
+#       expand = c(0, 0)
+#     )
+# }
