@@ -24,7 +24,8 @@ tun_neighbours <- riskintrodata::neighbours_table |>
   filter(country_id == "TUN")
 
 bordering_countries <- riskintrodata::world_sf |>
-  filter(iso3 %in% tun_neighbours$neighbour_id)
+  filter(iso3 %in% tun_neighbours$neighbour_id) |>
+  filter(iso3 %in% "LBY")
 
 
 # Run function to get shared borders
@@ -49,4 +50,7 @@ ri_border <- calc_border_risk(
   emission_risk = emission_risk_table
 )
 ri_border
+
+border_lines <- extract_border(ri_border)
+border_lines
 }

@@ -35,12 +35,10 @@ calc_border_lengths <- function(
     bordering_countries,
     bc_id_col
     ) {
-  sf_use_s2(TRUE)
-
   out_list <- list()
   epi_units <- st_transform(epi_units, crs = 6933)
   epi_units <- st_make_valid(epi_units)
-  epi_units_sum <- summarise(epi_units) |> st_fill_holes()
+  epi_units_sum <- summarise_quiet(epi_units) |> st_fill_holes()
 
   is_border_eu <- c(st_intersects(epi_units, st_cast(epi_units_sum, "MULTILINESTRING"), sparse = FALSE))
   border_eu <- epi_units[is_border_eu, ]
@@ -72,7 +70,7 @@ calc_border_lengths <- function(
     overlapped_poly <- st_intersection_quiet(bc, epi_units_sum)
 
     # !EU and !BC -> add to BC polygon
-    empty_poly_world <- st_difference(world_polygon, bc) |> st_difference(epi_units_sum)
+    empty_poly_world <- st_difference_quiet(world_polygon, bc) |> st_difference_quiet(epi_units_sum)
 
     # Remove the largest polygon which is the whole world poly so that we have
     # Only the gaps between the BC and EU
@@ -85,7 +83,7 @@ calc_border_lengths <- function(
       ) |>
       arrange(desc(.data$area)) |>
       filter(row_number() != 1) |>
-      rename(geometry = .data$x)
+      rename(geometry = "x")
 
     # # Uncomment to view outcome
     # new_leaflet() |>
@@ -100,7 +98,7 @@ calc_border_lengths <- function(
     updated_bc <- bc
 
     if (nrow(overlapped_poly) > 0) {
-      updated_bc <- st_difference(bc, overlapped_poly)
+      updated_bc <- st_difference_quiet(bc, overlapped_poly)
     }
 
     # Add the empty polygons to BC
@@ -109,7 +107,7 @@ calc_border_lengths <- function(
         select(updated_bc, all_of("geometry")),
         select(empty_poly, all_of("geometry"))
       ) |>
-        summarise() |> # Combine the polygons
+        summarise_quiet() |> # Combine the polygons
         st_make_valid()
     }
 
@@ -163,11 +161,10 @@ calc_border_lengths <- function(
       } else {
         next
       }
-
       # Output is EU to country correspondence table with frontier lines and lengths
       # plus a border ID
       new_row <- st_as_sf(frontiere_line) |>
-        rename(geometry = .data$x) |>
+        rename(geometry = "x") |>
         mutate(
           eu_id = as.character(eu[[eu_id_col]]),
           bc_id = as.character(bc[[bc_id_col]]),
@@ -178,7 +175,6 @@ calc_border_lengths <- function(
       out_list[[paste0(eu[[eu_id_col]], "-", bc[[bc_id_col]])]] <- new_row
     }
   }
-  sf_use_s2(FALSE)
 
   all_borders <- bind_rows(out_list, .id = "border_id") |> st_transform(crs = 4326)
 
@@ -186,7 +182,7 @@ calc_border_lengths <- function(
 
   out <- all_borders |>
     group_by(across(all_of(c("eu_id", "bc_id")))) |>
-    summarise(
+    summarise_quiet(
       border_length = sum(.data[["border_length"]]),
       .groups = "drop"
     ) |>
@@ -248,6 +244,7 @@ calc_border_risk <- function(
     shared_borders,
     emission_risk
 ) {
+
   borders <- label_borders(
     borders = shared_borders,
     epi_units = epi_units,
@@ -275,26 +272,31 @@ calc_border_risk <- function(
       )
     ) |>
     ungroup() |>
-    mutate(
-      risk_sources_label =
-        paste0(
-          "<strong>", .data$eu_name, "</strong>", "<br>",
-          "<strong>", "Border risk score: ", fmt_num(.data$border_risk), "/12", "</strong>", "<br>",
-          if_else(
-            is.na(.data$border_risk),
-            "No sources of border risk",
-            paste(
-              "Risk sources:", "<br>",
-              "<ul>", .data$sources_label, "</ul>"
-            )
-          )
-        ) |> map(HTML)
-    ) |>
+    # mutate(
+    #   risk_sources_label =
+    #     paste0(
+    #       "<strong>", .data$eu_name, "</strong>", "<br>",
+    #       "<strong>", "Border risk score: ", fmt_num(.data$border_risk), "/12", "</strong>", "<br>",
+    #       if_else(
+    #         is.na(.data$border_risk),
+    #         "No sources of border risk",
+    #         paste(
+    #           "Risk sources:", "<br>",
+    #           "<ul>", .data$sources_label, "</ul>"
+    #         )
+    #       )
+    #     )
+    # ) |>
     select(-all_of("sources_label"))
+
+  attr(borders, "risk_col") <- "border_risk"
+  attr(borders, "html_label") <- "border_label"
+  attr(borders, "table_name") <- "shared_borders"
+  attr(borders, "scale") <- c(0, 12)
+  attr(dataset, "borders") <- borders
 
   attr(dataset, "risk_col") <- "border_risk"
   attr(dataset, "table_name") <- "border_risk"
-  attr(dataset, "borders") <- borders
   attr(dataset, "scale") <- c(0,12)
   dataset
 }
@@ -310,7 +312,7 @@ label_borders <- function(borders, epi_units, emission_risk) {
     mutate(
       border_risk = .data$emission_risk * .data$weight,
       border_label = paste0(
-        "<strong>", "&#x61C", .data$eu_name, " - ", .data$country, "</strong>", "<br>",
+        "<strong>",  .data$eu_name, " - ", .data$country, "</strong>", "<br>",
         "Neighbour emission risk: ", fmt_num(.data$emission_risk), "/12<br>",
         "Weighted emission risk: ", fmt_num(.data$border_risk), "/12<br>",
         "Border length (km): ", fmt_num(.data$border_length)
