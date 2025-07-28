@@ -50,4 +50,5 @@ ri_entry_points <- calc_entry_point_risk(
 ) |>
   rescale_risk_scores()
 
-plot_risk(ri_entry_points)
+plot_risk(ri_entry_points, interactive = FALSE)
+plot_risk(ri_entry_points, interactive = TRUE)

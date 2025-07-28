@@ -27,10 +27,18 @@ plot_risk <- function(
 
   table_name <- risk_name %||% attr(dataset, "table_name")
 
-  if (interactive) {
-    cli_abort("{.code interactive = TRUE} is not supported yet.")
-  } else {
+  risk_col <- risk_col %||% attr(dataset, "risk_col")
+  scale <- scale %||% attr(dataset, "scale")
 
+  if (interactive) {
+    plot_risk_interactive(
+      dataset = dataset,
+      risk_name = table_name,
+      risk_col = risk_col,
+      scale = scale,
+      ll = new_leaflet()
+    )
+  } else {
     plot_fun <- switch(
       table_name,
       "entry_points" = plot_entry_points,
@@ -41,10 +49,6 @@ plot_risk <- function(
       "risk_table" = plot_risk_table,
       cli_abort("This risk is not supported.")
     )
-
-    risk_col <- risk_col %||% attr(dataset, "risk_col")
-    scale <- scale %||% attr(dataset, "scale")
-
     plot_fun(
       dataset = dataset,
       scale = scale,
@@ -52,6 +56,8 @@ plot_risk <- function(
     )
   }
 }
+
+
 
 #' @importFrom ggplot2 scale_color_viridis_c scale_fill_viridis_c
 ggplot_risk_scale <- function(limits = c(0, 100)){
@@ -73,11 +79,12 @@ plot_entry_points <- function(dataset, scale, risk_col) {
     )
 
   if (!is.null(extract_point_risk(dataset))) {
+    points_data <- extract_point_risk(dataset)
     gg <- gg +
       geom_sf(
         data = extract_point_risk(dataset),
         size = 1.5, shape = 21,
-        aes(fill = .data$emission_risk)
+        aes(fill = .data[[attr(points_data, "risk_col")]])
       )
   } else {
     cli_warn("No point data provided, it will not be plotted.")
