@@ -27,7 +27,7 @@ jobs:
 
       - name: Install riskintrodata from private repo
         run: |
-          Rscript -e "if (!requireNamespace('pak', quietly = TRUE)) install.packages('remotes')"
+          Rscript -e "if (!requireNamespace('pak', quietly = TRUE)) install.packages('pak')"
           Rscript -e "pak::pak('ardata-fr/riskintrodata')"
 
       - uses: r-lib/actions/setup-r-dependencies@v2
