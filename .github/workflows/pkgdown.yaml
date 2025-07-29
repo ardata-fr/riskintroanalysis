@@ -25,13 +25,15 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v2
 
+      - name: Install riskintrodata from private repo
+        run: |
+          Rscript -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes')"
+          Rscript -e "remotes::install_github('ardata-fr/riskintrodata', auth_token = '${{ secrets.GH_PAT }}')"
+
       - uses: r-lib/actions/setup-r-dependencies@v2
-        env:
-          GITHUB_PAT: ${{ secrets.GH_PAT }}
         with:
           extra-packages:
             any::pkgdown
-            github::ardata-fr/riskintrodata
 
       - name: Install package
         run: R CMD INSTALL .
