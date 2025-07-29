@@ -33,6 +33,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/ri-entry-point-risk.html">Entry points analysis</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -82,8 +88,6 @@
 <!-- README.md is generated from README.Rmd. Please edit that file --><div class="section level1">
 <div class="page-header"><h1 id="id_1-riskintroanalysis">1 riskintroanalysis<a class="anchor" aria-label="anchor" href="#id_1-riskintroanalysis"></a>
 </h1></div>
-<!-- badges: start -->
-<!-- badges: end -->
 <p>The riskintroanalysis R package provides functions to analyse the risk of introduction of animal diseases within a geographic area. It is intended to be useful as a stand-alone package, but also to integrate directly into the riskintro Rshiny app. The motivation behind these projects is to easily conduct geospatial risk analysis using existing data from WAHIS (World Animal Health Information System).</p>
 </div>
 <div class="section level1">
@@ -264,7 +268,7 @@
 </ol>
 <p>The border length method calculates the risk of introduction of an animal disease for a certain species based on shared land borders. In this example, we see Tunisia shares land borders with Algeria and Libya (this is why entries of these two countries were added to the emission risk table above).</p>
 <p>Risk of introduction through land borders is the risk of emission from of bordering countries weighted by the length of the shared border. If an epi unit only has one bordering country with emission risk X, then the epi units risk of introduction is also X. If two bordering countries exist with emission risk Y ans Z, then the risk of introduction is a weighted average of Y and Z, with more importance given to the country with the longer border.</p>
-<p>The analysis method starts with finding shared borders between epi units and bordering countries, which requires an algoithm align borders.</p>
+<p>The analysis method starts with finding shared borders between epidemiological units and bordering countries, which requires an algorithm align borders.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tun_neighbours</span> <span class="op">&lt;-</span> <span class="fu">riskintrodata</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/riskintrodata/man/neighbours_table.html" class="external-link">neighbours_table</a></span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">country_id</span> <span class="op">==</span> <span class="st">"TUN"</span><span class="op">)</span></span>
@@ -442,6 +446,7 @@
 <p><img src="reference/figures/README-display-raster-1.png" width="100%"></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
+<span></span>
 <span><span class="fu"><a href="reference/plot_risk.html">plot_risk</a></span><span class="op">(</span><span class="va">ri_road_access</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-display-raster-2.png" width="100%"></p>
 <p>This shows us what the raster data looks like for Tunisia. Now we will aggragate these values over each administrative area. Here, mean is used.</p>
@@ -615,7 +620,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Eli Daniels, David Gohel.</p>
+  <p>This R package was developed by <a href="https://ardata.fr/" class="external-link">Ardata</a> for CIRAD to provide a tool for analysing geospatial epidemiological.</p>
 </div>
 
 <div class="pkgdown-footer-right">
