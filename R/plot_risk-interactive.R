@@ -108,20 +108,24 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = new_lea
 plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
 
   pal <- ll_scale(scale)
-  ll <- ll |> leaflet::addPolygons(
-    data = dataset,
-    fillColor = ~pal(get(risk_col)),
-    weight = 1,
-    opacity = 1,
-    color = "white",
-    dashArray = "3",
-    fillOpacity = 0.75,
-    label = ~get(paste0(gsub("_risk$", "", risk_col), "_risk_label"))
-  )
+  ll <- ll |>
+    leaflet::addPolygons(
+      data = dataset,
+      fillColor = ~pal(get(risk_col)),
+      weight = 1,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.75,
+      label = paste0(
+        "<strong>", dataset$eu_name, "</strong>", "<br>",
+        "<strong>", "Animal mobility risk score: ",
+        fmt_num(dataset$animal_mobility_risk), "/", scale[[2]], "</strong>"
+      ) |> map(HTML)
+    )
 
   if (!is.null(extract_flow_risk(dataset))) {
     flows_data <- extract_flow_risk(dataset)
-
     ll <- ll |>
       leaflet::addCircleMarkers(
         data = flows_data,
@@ -130,7 +134,13 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = new_
         weight = 2,
         fillColor = ~pal(flows_data$emission_risk_weighted),
         fillOpacity = 0.8,
-        label = flows_data$source_label
+        label = paste0(
+          "<strong>", flows_data$d_name ,"</strong>", "<br>",
+          "Animal flow emission risk score: ",
+          "<strong>", fmt_num(flows_data$emission_risk_weighted), "/", scale[[2]], "</strong>", "<br>",
+          "Countributing risk sources:", "<br>",
+          flows_data$source_label)
+        |> map(HTML)
       )
   } else {
     cli_warn("No flows data provided, it will not be plotted.")

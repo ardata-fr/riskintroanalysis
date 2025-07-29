@@ -23,6 +23,8 @@
 #' @param emission_risk emission risk dataset from [calc_emission_risk]
 #' @param epi_units epidemiological units dataset
 #' @param method aggregation method for eu risk
+#' @param eu_country_iso3 optional parameter to be used when epidemiological units
+#' do not correspond to a country.
 #'
 #' @returns an `sf` dataset containing the risk of introduction for each of
 #' the epidemiological units. The dataset has the following columns:
@@ -53,9 +55,10 @@ calc_animal_mobility_risk <- function(
     animal_mobility,
     emission_risk,
     epi_units,
-    method
+    method,
+    eu_country_iso3 = NULL
 ){
-  epi_units_iso3 <- get_eu_country(epi_units)$country_iso3
+  epi_units_iso3 <- eu_country_iso3 %||% get_eu_country(epi_units)$country_iso3
 
   # Step 1
   flows_risk <- calc_animal_mobility_flows_risk(
@@ -71,9 +74,13 @@ calc_animal_mobility_risk <- function(
     method = method
   )
 
+
+  attr(flows_risk, "risk_col") <- "animal_mobility_flows"
+  attr(flows_risk, "risk_col") <- "emission_risk_weighted"
+  attr(flows_risk, "scale") <- c(0, 12)
+  attr(dataset, "flows") <- flows_risk
   attr(dataset, "risk_col") <- "animal_mobility_risk"
   attr(dataset, "table_name") <- "animal_mobility"
-  attr(dataset, "flows") <- flows_risk
   attr(dataset, "scale") <- c(0,12)
   dataset
 }
@@ -99,7 +106,7 @@ calc_animal_mobility_flows_risk <- function(
     epi_units_iso3
     ) {
   inflow <- animal_mobility |>
-    filter(.data$o_iso3 != epi_units_iso3, .data$d_iso3 == epi_units_iso3) |>
+    filter(.data$o_iso3 != !!epi_units_iso3, .data$d_iso3 == !!epi_units_iso3) |>
     select(all_of(c("o_iso3", "o_name", "o_country", "d_name", "quantity")))
 
   # Manage the geospatial data for each point.
@@ -190,7 +197,11 @@ calc_animal_mobility_intro_risk <- function(
   risk_per_epi_unit <- epi_units_risk |>
     group_by(across(all_of(c("eu_id", "eu_name")))) |>
     summarise_quiet(
-      animal_mobility_risk = method_func(.data$emission_risk_weighted, na.rm = TRUE),
+      animal_mobility_risk = safe_stat(
+        .data$emission_risk_weighted,
+        FUN = method_func,
+        NA_value = NA_real_
+        ),
       .groups = "drop"
     )
 

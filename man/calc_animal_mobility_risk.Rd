@@ -4,7 +4,13 @@
 \alias{calc_animal_mobility_risk}
 \title{Calculate animal mobility risk}
 \usage{
-calc_animal_mobility_risk(animal_mobility, emission_risk, epi_units, method)
+calc_animal_mobility_risk(
+  animal_mobility,
+  emission_risk,
+  epi_units,
+  method,
+  eu_country_iso3 = NULL
+)
 }
 \arguments{
 \item{animal_mobility}{animal moblity dataset as formatted and validated by
@@ -15,6 +21,9 @@ calc_animal_mobility_risk(animal_mobility, emission_risk, epi_units, method)
 \item{epi_units}{epidemiological units dataset}
 
 \item{method}{aggregation method for eu risk}
+
+\item{eu_country_iso3}{optional parameter to be used when epidemiological units
+do not correspond to a country.}
 }
 \value{
 an \code{sf} dataset containing the risk of introduction for each of
