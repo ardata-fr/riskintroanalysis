@@ -357,6 +357,7 @@ library(riskintroanalysis)
 library(dplyr)
 library(terra)
 
+riskintrodata::init_riskintrodata_cache()
 road_raster_fp <- riskintrodata::download_road_access_raster()
 road_raster <- terra::rast(road_raster_fp)
 

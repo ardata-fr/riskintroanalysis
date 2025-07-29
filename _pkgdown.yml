@@ -23,5 +23,14 @@ reference:
   - title: Utilities
     contents:
     - starts_with("extract_")
-    - add_source_labels
     - updateRoadAccessLeaflet
+  - title: Risk table building
+    contents:
+    - risk_table
+    - add_risk
+    - remove_risk
+  - title: Risk plotting
+    contents:
+    - plot_risk
+
+
