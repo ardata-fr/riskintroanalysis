@@ -271,7 +271,45 @@ We can see that Remada has a risk of introduction weighted by border lengths. Th
 numbers shown along the borders are the emission risk weighted by border lengths 
 with neighbouring countries of Algeria and Libya. As on Remada shares borders with both countries, it is the only one with a weighted average.
 
+### Entry point risk
 
+```{r entry-points-analysis}
+library(riskintroanalysis)
+library(dplyr)
+
+entry_points_fp <-
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "entry_points", "BORDER_CROSSING_POINTS.csv"
+    )
+
+entry_points <- readr::read_csv(entry_points_fp)
+
+entry_points <- apply_mapping(
+  dataset = entry_points, 
+  mapping = mapping_entry_points(
+    point_name = "NAME", 
+    lng = "LONGITUDE_X", 
+    lat = "LATITUDE_Y", 
+    mode = "MODE", 
+    type = "TYPE", 
+    sources = "SOURCES"
+  ), 
+  validate = TRUE
+)
+
+ri_entry_points <- calc_entry_point_risk(
+  entry_points = entry_points,
+  epi_units = tunisia,
+  emission_risk = emission_risk_table
+)
+
+plot_risk(ri_entry_points)
+```
+
+All epi units containing an entry point (with an associated weighted emission risk) now have a risk of introduction based on the points within its area.
 
 ### Animal mobility
 
