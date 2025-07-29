@@ -19,6 +19,12 @@ st_intersection_quiet <- function(...){
   suppressWarnings(suppressMessages(st_intersection(...)))
 }
 
+#' @importFrom sf st_difference
+st_difference_quiet <- function(...){
+  suppressWarnings(suppressMessages(st_difference(...)))
+}
+
+
 safe_stat <- function(..., FUN = max, NA_value = NA_real_) {
   x <- na.omit(unlist(list(...)))
   if (length(x) > 0) {

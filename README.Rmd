@@ -268,6 +268,7 @@ ri_borders <- calc_border_risk(
   )
 
 plot_risk(ri_borders)
+plot_risk(ri_borders, interactive = TRUE)
 ```
 
 We can see that Remada has a risk of introduction weighted by border lengths. The 
@@ -310,6 +311,7 @@ ri_entry_points <- calc_entry_point_risk(
 )
 
 plot_risk(ri_entry_points)
+plot_risk(ri_entry_points, interactive = TRUE)
 
 ```
 
@@ -344,6 +346,7 @@ ri_animal_mobility <- calc_animal_mobility_risk(
 )
 
 plot_risk(ri_animal_mobility)
+plot_risk(ri_animal_mobility, interactive = TRUE)
 ```
 
 Some points remain grey indicating that the country from which the flow comes does
@@ -373,6 +376,7 @@ plot(
 )
 
 plot_risk(ri_road_access)
+plot_risk(ri_road_access, interactive = TRUE)
 ```
 
 This shows us what the raster data looks like for Tunisia. Now we will aggragate these values over each administrative area. Here, mean is used.
@@ -524,6 +528,7 @@ rt <- add_risk(
 summarised_risks <- summarise_risk_scores(rt, method = "max")
 
 plot_risk(summarised_risks)
+plot_risk(summarised_risks, , interactive = TRUE)
 ```
 
 

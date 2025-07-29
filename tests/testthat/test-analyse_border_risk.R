@@ -125,7 +125,6 @@ test_that("Complete border risk analysis workflow works", {
   expect_true("eu_id" %in% names(ri_border))
   expect_true("eu_name" %in% names(ri_border))
   expect_true("border_risk" %in% names(ri_border))
-  expect_true("risk_sources_label" %in% names(ri_border))
 
   # Test attributes
   expect_equal(attr(ri_border, "risk_col"), "border_risk")
@@ -136,10 +135,20 @@ test_that("Complete border risk analysis workflow works", {
   # Test risk values are in valid range
   expect_true(all(ri_border$border_risk >= 0 & ri_border$border_risk <= 12, na.rm = TRUE))
 
-  # Test extract_border function
-  extracted_borders <- extract_border(ri_border)
+  extracted_borders <- expect_no_error(extract_border(ri_border))
+
+  # Test ri_border structure
   expect_s3_class(extracted_borders, "sf")
+  expect_true("eu_id" %in% names(extracted_borders))
+  expect_true("bc_id" %in% names(extracted_borders))
+  expect_true("border_length" %in% names(extracted_borders))
   expect_true("border_risk" %in% names(extracted_borders))
+  expect_true("border_label" %in% names(extracted_borders))
+
+  # Test extract_border function
+  expect_equal(attr(extracted_borders, "risk_col"), "border_risk")
+  expect_equal(attr(extracted_borders, "table_name"), "shared_borders")
+  expect_equal(attr(extracted_borders, "scale"), c(0, 12))
 
   # Step 3: Test plotting functionality
   # Test static plotting

@@ -115,9 +115,10 @@ calc_emission_risk <- function(
 
   cli_abort_if_not(
     "{.arg emission_risk_factors} dataset is not validated" = attr(emission_risk_factors, "table_validated"),
-    "{.arg emission_risk_factors} dataset does not have" = !is.null(attr(emission_risk_factors, "table_name")),
+    "{.arg emission_risk_factors} dataset does not have {.val table_name} attribute" = !is.null(attr(emission_risk_factors, "table_name")),
     "{.arg weights} should sum to 5, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = sum(unlist(weights)) == 5L,
-    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = length(weights) == 9L
+    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = length(weights) == 9L,
+    "{.arg emission_risk_factors} has no rows" = nrow(emission_risk_factors) > 0
   )
   if (attr(emission_risk_factors, "table_name") != "emission_risk_factors") {
     cli_abort(paste(
