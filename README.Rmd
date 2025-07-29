@@ -292,7 +292,7 @@ entry_points <- apply_mapping(
   mapping = mapping_entry_points(
     point_name = "NAME", 
     lng = "LONGITUDE_X", 
-    lat = "LATITUDE_Y", 
+    lat = "LATITUDE_Y",
     mode = "MODE", 
     type = "TYPE", 
     sources = "SOURCES"

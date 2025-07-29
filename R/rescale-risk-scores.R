@@ -104,6 +104,7 @@ rescale_risk_scores <- function(
     keep_cols = keep_cols
   )
 
+  # Rescale secondary datasets as well
   if (any(c("borders", "points", "flows") %in% names(attributes(dataset)))) {
     dataset <- rescale_secondary_datasets(
       dataset = dataset,
@@ -185,7 +186,6 @@ rescale_secondary_datasets <- function(
     inverse,
     keep_cols
 ) {
-
   if (!is.null(attr(dataset, "borders"))) {
     borders <- attr(dataset, "borders")
     borders_rescaled <- rescale_risk(

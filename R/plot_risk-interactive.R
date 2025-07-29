@@ -160,24 +160,62 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = new_
 #' @return leaflet map object
 #' @export
 #' @rdname plot_risk
-#' @importFrom leaflet addPolygons
+#' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions
 plot_road_access_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
 
   pal <- ll_scale(scale)
+  # Create label content for polygons
+  label_content <- paste0(
+    "<strong>", dataset$eu_name, "</strong>", "<br>",
+    "Index average: ", fmt_num(dataset$road_access_risk), "<br>",
+    "Risk score: ", fmt_num(dataset[[risk_col]]), "/", scale[[2]]
+  ) |>
+    map(HTML)
 
-  ll <- ll |> leaflet::addPolygons(
-    data = dataset,
-    fillColor = ~pal(get(risk_col)),
-    weight = 1,
-    opacity = 1,
-    color = "white",
-    dashArray = "3",
-    fillOpacity = 0.75,
-    label = ~get(paste0(gsub("_risk$", "", risk_col), "_risk_label"))
-  )
-
+  # Add polygons with group name for layer control
   ll <- ll |>
-    ll_legend(pal, scale, title = risk_col)
+    leaflet::addPolygons(
+      data = dataset,
+      fillColor = ~pal(get(risk_col)),
+      weight = 2,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.7,
+      label = label_content,
+      group = "polygons"
+    )
+
+  # # Add raster if available
+  # raster_data <- attr(dataset, "raster")
+  # if (!is.null(raster_data)) {
+  #   ll <- ll |>
+  #     addRasterImage(
+  #       x = raster_data,
+  #       opacity = 0.7,
+  #       group = "raster"
+  #     )
+  #
+  #   # Add layer control to toggle between polygons and raster
+  #   ll <- ll |>
+  #     addLayersControl(
+  #       baseGroups = c("polygons", "raster"),
+  #       options = layersControlOptions(
+  #         collapsed = FALSE,
+  #         autoZIndex = FALSE
+  #       ),
+  #       position = "bottomright"
+  #     )
+  # } else {
+  #   cli_warn("No raster data found in dataset attributes - showing polygons only")
+  # }
+
+  # Add legend
+  if (!is.null(scale)){
+    ll <- ll |>
+      ll_legend(pal, scale, title = risk_col)
+  }
+
   ll
 }
 

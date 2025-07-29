@@ -6,4 +6,6 @@
 ^pkgdown$
 ^examples$
 ^LICENSE\.md$
-^.github\.
+^.github$
+^README_cache$
+
