@@ -8,6 +8,14 @@ template:
     base_font:
       google: "Open Sans"
 
+footer:
+  structure:
+    left: [developed_by]
+  components:
+    developed_by: |
+      This R package was developed by [Ardata](https://ardata.fr/) for CIRAD to provide a tool for
+      analysing geospatial epidemiological.
+
 reference:
   - title: Standardize Datasets for 'Riskintro' Analysis
     contents:
