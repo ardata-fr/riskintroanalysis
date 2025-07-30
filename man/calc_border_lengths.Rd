@@ -4,16 +4,19 @@
 \alias{calc_border_lengths}
 \title{Get Shared Borders Between EUs and Bordering Countries}
 \usage{
-calc_border_lengths(epi_units, eu_id_col, bordering_countries, bc_id_col)
+calc_border_lengths(epi_units, eu_country_iso3 = NULL, neighbours = NULL)
 }
 \arguments{
-\item{epi_units}{An \code{sf} object containing the epidemiological units. Should containg only polygons.}
+\item{epi_units}{An \code{sf} object containing the epidemiological units dataset.}
 
-\item{eu_id_col}{A string specifying the column name in \code{epi_units} that identifies each EU.}
+\item{eu_country_iso3}{A string specifying the iso3 code of the epidemiological units
+country. \code{NULL} by default, this argument is found by locating \code{epi_units} on a
+world map. Only required when \code{epi_units} does not correspond to an actual country.}
 
-\item{bordering_countries}{An \code{sf} object containing the bordering countries.}
-
-\item{bc_id_col}{A string specifying the column name in \code{bordering_countries} that identifies each country.}
+\item{neighbours}{A string vector of iso3 codes corresponding to neighbouring
+countries of the \code{epi_units}. \code{NULL} by default, neighbours are found using
+the \link[riskintrodata:neighbours_table]{riskintrodata::neighbours_table}. If values are provide for this parameter,
+then any argument for \code{eu_country_iso3} is not used.}
 }
 \value{
 An \code{sf} object containing shared borders between EUs and bordering countries,
@@ -42,46 +45,49 @@ This is the first step in the border risk analysis method, the outputs of this
 function should be passed on to \code{\link[=calc_border_risk]{calc_border_risk()}}.
 }
 \examples{
+
+
+\donttest{
+
 library(sf)
+library(dplyr)
 
-# Create example epidemiological units (epi_units)
-epi_units <- st_as_sf(
-  data.frame(
-    EU_ID = c("EU1", "EU2"),
-    geometry = st_sfc(
-      st_polygon(list(matrix(c(0, 0, 2, 0, 2, 2, 0, 2, 0, 0), ncol = 2, byrow = TRUE))),
-      st_polygon(list(matrix(c(2, 0, 4, 0, 4, 2, 2, 2, 2, 0), ncol = 2, byrow = TRUE)))
-    ),
-    stringsAsFactors = FALSE
-  ),
-  crs = 4326
-)
+tunisia_raw <- sf::read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
 
-# Create example bordering countries (bordering_countries)
-bordering_countries <- st_as_sf(
-  data.frame(
-    BC_ID = c("BC1"),
-    geometry = st_sfc(
-      st_polygon(list(matrix(c(2, 0, 6, 0, 6, 4, 2, 4, 2, 0), ncol = 2, byrow = TRUE)))
-    ),
-    stringsAsFactors = FALSE
+# Apply mapping to prepare colnames and validate dataset
+tunisia <- apply_mapping(
+  tunisia_raw,
+  mapping = mapping_epi_units(
+    eu_name = "NAME_2",
+    geometry = "geom"
   ),
-  crs = 4326
+  validate = TRUE
 )
 
 # Run function to get shared borders
 shared_borders <- calc_border_lengths(
-  epi_units = epi_units,
-  eu_id_col = "EU_ID",
-  bordering_countries = bordering_countries,
-  bc_id_col = "BC_ID"
+  epi_units = tunisia
 )
 
-# Print output
-print(shared_borders)
+wahis_factors <- riskintrodata::get_wahis_erf(
+  disease = "Anthrax",
+  species = "Cattle",
+  animal_category = "Domestic"
+)
 
-# Visualize using a simple plot
-plot(st_geometry(epi_units), col = "lightblue", border = "blue", main = "Shared Borders")
-plot(st_geometry(bordering_countries), col = "pink", border = "red", add = TRUE)
-plot(st_geometry(shared_borders), col = "black", lwd = 2, add = TRUE)
+emission_risk_table <- calc_emission_risk(wahis_factors)
+
+ri_border <- calc_border_risk(
+  epi_units = tunisia,
+  shared_borders = shared_borders,
+  emission_risk = emission_risk_table
+)
+ri_border
+
+border_lines <- extract_border(ri_border)
+border_lines
+}
 }

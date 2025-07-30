@@ -3,54 +3,32 @@ test_that("Complete border risk analysis workflow works", {
   library(dplyr)
   library(riskintrodata)
 
-  # Create simple test epidemiological units
-  epi_units_raw <- st_as_sf(
-    data.frame(
-      EU_ID = c("EU1", "EU2", "EU3"),
-      EU_NAME = c("Epi Unit 1", "Epi Unit 2", "Epi Unit 3"),
-      geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE)))
-      ),
-      stringsAsFactors = FALSE
-    ),
-    crs = 4326
+  skip_if_not(
+    system.file(package = "riskintrodata", "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg") != "",
+    "Sample data not available"
   )
-  plot(epi_units_raw)
+
+  # Use real sample data for more realistic testing
+  tunisia_raw <- sf::read_sf(system.file(
+    package = "riskintrodata",
+    "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+  ))
 
   # Apply mapping to prepare and validate dataset
   epi_units <- apply_mapping(
-    epi_units_raw,
+    tunisia_raw,
     mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
+      eu_name = "NAME_2",
+      geometry = "geom"
     ),
     validate = TRUE
   )
 
-  # Create test bordering countries
-  bordering_countries <- st_as_sf(
-    data.frame(
-      iso3 = c("BC1", "BC2"),
-      country = c("Border Country 1", "Border Country 2"),
-      geometry = st_sfc(
-        # BC1: borders all three units along the top (y=1 to y=2)
-        st_polygon(list(matrix(c(0, 1, 3, 1, 3, 2, 0, 2, 0, 1), ncol = 2, byrow = TRUE))),
-        # BC2: borders only EU1 and EU2 along the bottom (y=-1 to y=0)
-        st_polygon(list(matrix(c(0, -1, 2, -1, 2, 0, 0, 0, 0, -1), ncol = 2, byrow = TRUE)))
-      ),
-      stringsAsFactors = FALSE
-    ),
-    crs = 4326
-  )
-
-  # Create test emission risk factors
+  # Create test emission risk factors for neighboring countries
   emission_risk_factors <- bind_rows(
     erf_row(
-      iso3 = "BC1",
-      country = "Border Country 1",
+      iso3 = "DZA",
+      country = "Algeria",
       disease = "Avian infectious laryngotracheitis",
       animal_category = "Domestic",
       species = "Birds",
@@ -68,8 +46,8 @@ test_that("Complete border risk analysis workflow works", {
       commerce_legal = 0L
     ),
     erf_row(
-      iso3 = "BC2",
-      country = "Border Country 2",
+      iso3 = "LBY",
+      country = "Libya",
       disease = "Avian infectious laryngotracheitis",
       animal_category = "Domestic",
       species = "Birds",
@@ -90,12 +68,10 @@ test_that("Complete border risk analysis workflow works", {
 
   emission_risk_table <- calc_emission_risk(emission_risk_factors)
 
-  # Step 1: Calculate border lengths
+  # Step 1: Calculate border lengths using real Tunisia data
   shared_borders <- calc_border_lengths(
     epi_units = epi_units,
-    eu_id_col = "eu_id",
-    bordering_countries = bordering_countries,
-    bc_id_col = "iso3"
+    neighbours = c("LBY")
   )
 
   # Test shared_borders structure
@@ -106,7 +82,7 @@ test_that("Complete border risk analysis workflow works", {
   expect_true("weight" %in% names(shared_borders))
   expect_true(all(shared_borders$weight >= 0 & shared_borders$weight <= 1))
 
-  # Test that weights sum to 1 for each EU
+  # Test that weights sum to 1 for each EU (only for EUs that have borders)
   weight_sums <- shared_borders |>
     st_drop_geometry() |>
     group_by(eu_id) |>
@@ -245,9 +221,8 @@ test_that("Border risk analysis works with real sample data", {
   # Calculate shared borders (this may take a while)
   shared_borders <- calc_border_lengths(
     epi_units = tunisia,
-    eu_id_col = "eu_id",
-    bordering_countries = bordering_countries,
-    bc_id_col = "iso3"
+    eu_country_iso3 = "TUN",
+    neighbours = test_neighbours
   )
 
   # Calculate border risk

@@ -52,7 +52,8 @@ test_that("Complete road access risk analysis workflow works", {
     ncol = 33,
     byrow = FALSE
   )
-  values(road_access_raster) <- as.vector(road_values)
+
+  suppressWarnings(values(road_access_raster) <- as.vector(road_values))
 
   # Step 1: Calculate road access risk with default aggregation (mean)
   ri_road_access <- calc_road_access_risk(
