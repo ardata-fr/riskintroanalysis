@@ -232,20 +232,23 @@ shared_borders <- calc_border_lengths(
   epi_units = tunisia
 )
 
+# Get bordering countries to display on ggplot
+# (This is internal to calc_border_lengths() function)
+bordering_countries <- riskintrodata::neighbours_table |> filter(country_id == "TUN") |> 
+  right_join(riskintrodata::world_sf, by = c("neighbour_id" = "iso3"))
+            
 ggplot() +
-  geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5) +
+  geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5, aes(geometry = geometry)) +
   geom_sf(data = tunisia, fill = "lightblue", colour = "blue", alpha = 0.5) +
   geom_sf(data = shared_borders, colour = "black") +
   geom_sf_label(data = shared_borders, aes(label = sprintf("%.fkm", border_length)), size = 1.5) +
   coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE)
 ```
-The main purpose of the function is to correct misaligned borders, as can be seen in
-the overlaps and divergent borders. The epidemiological units data is used for the "true" border as
+
+The main purpose of the function is to correct misaligned borders, as can be seen in the overlaps and divergent borders. The epidemiological units data is used for the "true" border as
 geospatial data from different sources are rarely well aligned.
 
-A border length has been calculated for each epi unit that a foreign country. 
-For most of these areas, the risk of introduction will simply equal the emission risk
-of the neighbouring country, with the exception of Tunisia's southern most governorate. Which will have an emission risk weighed by the border lengths or each neighbour.
+A border length has been calculated for each epi unit that a foreign country. For most of these areas, the risk of introduction will simply equal the emission risk of the neighbouring country, with the exception of Tunisia's southern most governorate. Which will have an emission risk weighed by the border lengths or each neighbour.
 
 ```{r border-risk-analysis}
 ri_borders <- calc_border_risk(

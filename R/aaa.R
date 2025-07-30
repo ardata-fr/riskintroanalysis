@@ -26,6 +26,8 @@
 #'  cli_abort cli_warn cli_inform cli_ul cli_ol cli_li
 #' @importFrom stats
 #'  setNames median
+#' @importFrom riskintrodata
+#'  check_dataset_valid
 NULL
 
 

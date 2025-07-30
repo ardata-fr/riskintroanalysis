@@ -8,7 +8,7 @@ calc_animal_mobility_risk(
   animal_mobility,
   emission_risk,
   epi_units,
-  method,
+  method = c("mean", "min", "max"),
   eu_country_iso3 = NULL
 )
 }

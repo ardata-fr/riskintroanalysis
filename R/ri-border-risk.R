@@ -9,11 +9,14 @@
 #'
 #' Distances are calculated using projection crs 6933 and uses s2. However, output remains WGS84.
 #'
-#' @param epi_units An `sf` object containing the epidemiological units. Should containg only polygons.
-#' @param eu_id_col A string specifying the column name in `epi_units` that identifies each EU.
-#' @param bordering_countries An `sf` object containing the bordering countries.
-#' @param bc_id_col A string specifying the column name in `bordering_countries` that identifies each country.
-#'
+#' @param epi_units An `sf` object containing the epidemiological units dataset.
+#' @param eu_country_iso3 A string specifying the iso3 code of the epidemiological units
+#' country. `NULL` by default, this argument is found by locating `epi_units` on a
+#' world map. Only required when `epi_units` does not correspond to an actual country.
+#' @param neighbours A string vector of iso3 codes corresponding to neighbouring
+#' countries of the `epi_units`. `NULL` by default, neighbours are found using
+#' the [riskintrodata::neighbours_table]. If values are provide for this parameter,
+#' then any argument for `eu_country_iso3` is not used.
 #' @details
 #' This is the first step in the border risk analysis method, the outputs of this
 #' function should be passed on to [calc_border_risk()].
@@ -28,13 +31,42 @@
 #' or `LINESTRING`.
 #' - `weight`: The risk weighting coefficient based on the length of the border.
 #' @export
-#' @example examples/border-risk.R
+#' @example examples/calc_border_risk.R
 calc_border_lengths <- function(
     epi_units,
-    eu_id_col,
-    bordering_countries,
-    bc_id_col
+    eu_country_iso3 = NULL,
+    neighbours = NULL
     ) {
+
+  check_dataset_valid(epi_units)
+  nt <- riskintrodata::neighbours_table
+  epi_units_iso3 <- eu_country_iso3 %||% get_eu_country(epi_units)$country_iso3
+  cli_abort_if_not(
+    "{.arg eu_country_iso3} must be character vector of length 1" = rlang::is_scalar_character(epi_units_iso3),
+    "{.arg eu_country_iso3} must be a valid ISO3 country code" = epi_units_iso3 %in% nt$country_id
+  )
+
+  # Unsure if still needed.
+  eu_id_col <- "eu_id"
+  bc_id_col <- "iso3"
+
+  world <- riskintrodata::world_sf
+  if (is.null(neighbours)) {
+
+    eu_neighbours <- filter(nt, .data$country_id == !!epi_units_iso3)
+    bordering_countries <- filter(world, .data$iso3 %in% eu_neighbours$neighbour_id)
+  } else {
+    bordering_countries <- filter(world, .data$iso3 %in% !!neighbours)
+    if (nrow(bordering_countries) == 0) {
+      cli_abort(paste(
+        "{.arg neighbours} values have no matches with the internal {.val riskintrodata::world_sf} dataset.",
+        "Please check values are valide ISO3 country codes."
+      ))
+    }
+  }
+
+  # Setup alogorithm ----
+
   out_list <- list()
   epi_units <- st_transform(epi_units, crs = 6933)
   epi_units <- st_make_valid(epi_units)
@@ -58,7 +90,7 @@ calc_border_lengths <- function(
     st_make_valid()
 
   # for each bordering_countries check each border_eu
-
+  # Start algo ----
   for (i in seq_len(nrow(bordering_countries))) {
     bc <- bordering_countries[i, ]
 
@@ -192,6 +224,8 @@ calc_border_lengths <- function(
     ) |>
     ungroup()
 
+  attr(out, "table_name") <- "shared_borders"
+
   out
 }
 
@@ -244,6 +278,14 @@ calc_border_risk <- function(
     shared_borders,
     emission_risk
 ) {
+
+  if (attr(shared_borders, "table_name") != "shared_borders") {
+    cli_abort(
+      "{.arg {shared_borders}} should be the output of {.help [{.fun calc_border_lengths}](calc_border_lengths)}"
+    )}
+
+  check_dataset_valid(emission_risk)
+  check_dataset_valid(epi_units)
 
   borders <- label_borders(
     borders = shared_borders,
@@ -322,71 +364,6 @@ label_borders <- function(borders, epi_units, emission_risk) {
     select(-all_of("eu_name"))
   border_risks
 }
-
-# Leaflet ---------------------------------------------------------------
-
-#' @importFrom leaflet addPolygons
-updateBorderRisk <- function(ll, dat, borders) {
-  pal <- risk_palette()
-  pal12 <- risk_palette_12()
-
-  ll <- ll |>
-    leaflet::clearShapes()
-
-  ll <- ll |>
-
-    addPolygons(
-      data = dat,
-      stroke = TRUE,
-      weight = 1,
-      opacity = 0.6,
-      color = "white",
-      fillColor = ~ pal(dat$ri_border_risk), # from 0 to 100
-      fillOpacity = 0.7,
-      label = ~risk_sources_label,
-      layerId = dat$eu_id,
-      labelOptions = riLabelOptions()
-    )
-
-  ll <- ll |>
-    addMapPane(name = "borders", zIndex = 401) |>
-    addPolylines(
-      data = borders,
-      color = ~ pal12(emission_risk), # from 0 to 12
-      weight = 10,
-      opacity = 0.9,
-      label = ~border_label,
-      layerId = paste(borders$bc_id, "-", borders$eu_id),
-      options = pathOptions(pane = "borders"),
-      labelOptions = riLabelOptions()
-    )
-
-  ll <- ll |>
-    addRiskLegend() |>
-
-    # 0 to 12 legend.
-    addLegend(
-      data = data.frame(
-        labels = c(
-          "High [9, 12]",
-          "Medium [6, 9)",
-          "Low [3, 6)",
-          "Negligable [0, 3)",
-          "No information"
-        ),
-        colors = pal12(c(11, 8, 3, 1, NA))
-      ),
-      title = "Frontier risk",
-      colors = ~colors,
-      labels = ~labels,
-      layerId = "frontier_risk"
-    )
-
-
-  ll
-}
-
-
 
 # Method used in data-raw ------------------------------------------------------
 
@@ -590,33 +567,4 @@ get_a_neighbour <- function(pISO3, sISO3, countries_sf_linestring) {
 
 get_country_neighbours <- function(eu_country_code) {
   filter(riskintrodata::neighbours_table, .data[["country_id"]] == eu_country_code)
-}
-
-# static plot -------
-borderRiskStaticPlot <- function(epi_units_border_risk, borders_labeled, bounds) {
-
-  ggout <- ggplot(epi_units_border_risk) +
-    geom_sf(aes(fill = .data[["ri_border_risk"]]), alpha = .6, color = "white") +
-    coord_sf()
-
-  ggout <- ggout +
-    geom_sf(
-      data = borders_labeled,
-      mapping = aes(color = .data[["emission_risk_scaled"]]),
-      linewidth = 2, show.legend = FALSE)
-
-  if (isTruthy(bounds)) {
-    ggout <- ggout +
-      xlim(c(bounds$west, bounds$east)) +
-      ylim(c(bounds$south, bounds$north))
-  }
-  ggout <- ggout  +
-    theme(
-      legend.position = c(0.85, 0.8)
-    )
-  ggout <- ggout +
-    labs(
-      title = "Borders risks"
-    )
-  ggout
 }

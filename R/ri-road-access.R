@@ -34,9 +34,10 @@ calc_road_access_risk <- function(
     road_access_raster,
     aggregate_fun = c("mean", "max", "min", "sum")
 ){
+  check_dataset_valid(epi_units)
   aggregate_fun <- match.arg(aggregate_fun)
-  cropped_raster <- crop(road_access_raster, epi_units, mask = TRUE)
 
+  cropped_raster <- crop(road_access_raster, epi_units, mask = TRUE)
   dataset <- augment_epi_units_with_raster(
     epi_units = epi_units,
     raster = cropped_raster,
@@ -82,87 +83,4 @@ augment_epi_units_with_raster <- function(
   aggs <- zonal(r, p_splat, fun = aggregate_fun, na.rm=TRUE)[[1]]
   p[[risk_name]] <- aggs
   p
-}
-
-
-# Leaflet ----------------------------------------------------------------
-
-#' Plot risk access
-#'
-#' @param ll leaflet or leaflet proxy to add polygons and raster to
-#' @param dat sf dataset with risks
-#' @param r splatRaster obj
-#'
-#' @return leaflet plot with legend
-#' @importFrom leaflet addLegend addPolygons colorBin leafletProxy
-updateRoadAccessLeaflet <- function(ll, dat, r) {
-
-  pal <- risk_palette()
-
-  label_content <- paste0(
-    "<strong>", dat$eu_name, "</strong>", "<br>",
-    "Index average: ", fmt_num(dat$road_access_risk),"<br>",
-    "Risk score: ", fmt_num(dat$ri_road_access), "/100"
-  ) |>
-    map(HTML)
-
-  ll <- ll |>
-    addPolygons(
-      data = dat,
-      fillColor = ~pal(dat$ri_road_access),
-      weight = 2,
-      opacity = 1,
-      color = "white",
-      dashArray = "3",
-      fillOpacity = 0.7,
-      label = label_content,
-      labelOptions = riLabelOptions(),
-      group = "polygons"
-    ) |>
-    addRiskLegend()
-
-  ll <- ll |>
-    addRasterImage(
-      x = r,
-      opacity = 0.7,
-      group = "raster"
-    )
-
-  ll <- ll |>
-    addLayersControl(
-      baseGroups = c( "polygons", "raster"),
-      overlayGroups = c("Stadia", "Esri"),
-      options = layersControlOptions(
-        collapsed = FALSE,
-        autoZIndex = FALSE),
-      position = "bottomright"
-    )
-
-  ll
-}
-
-# static plot -------
-roadAccessRiskStaticPlot <- function(epi_units_agg_scaled, bounds) {
-
-  ggout <- ggplot(epi_units_agg_scaled) +
-    geom_sf(aes(fill = .data[["ri_road_access"]]), color = "white") +
-    coord_sf()
-
-  if (isTruthy(bounds)) {
-    ggout <- ggout +
-      xlim(c(bounds$west, bounds$east)) +
-      ylim(c(bounds$south, bounds$north))
-  }
-
-  ggout <- ggout  +
-    theme(
-      legend.position = c(0.85, 0.8)
-    )
-
-  ggout <- ggout  +
-    labs(
-      title = "Road access risks"
-    )
-
-  ggout
 }

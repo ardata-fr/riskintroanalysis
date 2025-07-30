@@ -26,19 +26,18 @@ reference:
     contents:
     - starts_with("calc_")
     - augment_epi_units_with_raster
-    - rescale_risk_scores
-    - summarise_risk_scores
-  - title: Utilities
+  - title: Risk score rescaling
     contents:
-    - starts_with("extract_")
-    - updateRoadAccessLeaflet
-  - title: Risk table building
+    - rescale_risk_scores
+  - title: Risk table building and analysis
     contents:
     - risk_table
     - add_risk
     - remove_risk
+    - summarise_risk_scores
   - title: Risk plotting
     contents:
     - plot_risk
-
-
+  - title: Helper functions
+    contents:
+    - starts_with("extract_")
