@@ -46,7 +46,7 @@ These two datasets are used along with other data to calculate risk scores for t
   2. **Border entry points**: using an additional dataset that defines broder entry points, risk of introduction is weighted by legality of entry point.
   3. **Animal mobility**: using an additional dataset defining legal animal commerce flows, risk of introduction is weighed based on the number of animals entering the area.
   
-The forth analysis method does not use emission risk data, just data from a road accesibility raster and the epidemiological units: 
+The forth analysis method does not use emission risk data, just data from a road accesibility raster and the epidemiological units:  
 
   4. **Road access risk**: using raster data of the world, applied to the area of interest, risk of introdcution is infered through road acces. An area more accessible by road is considered higher risk.
   
