@@ -8,8 +8,6 @@
 <url><loc>/index.html</loc></url>
 <url><loc>/reference/add_risk.html</loc></url>
 <url><loc>/reference/augment_epi_units_with_raster.html</loc></url>
-<url><loc>/reference/calc_animal_mobility_flows_risk.html</loc></url>
-<url><loc>/reference/calc_animal_mobility_intro_risk.html</loc></url>
 <url><loc>/reference/calc_animal_mobility_risk.html</loc></url>
 <url><loc>/reference/calc_border_lengths.html</loc></url>
 <url><loc>/reference/calc_border_risk.html</loc></url>
@@ -24,6 +22,5 @@
 <url><loc>/reference/rescale_risk_scores.html</loc></url>
 <url><loc>/reference/risk_table.html</loc></url>
 <url><loc>/reference/summarise_risk_scores.html</loc></url>
-<url><loc>/reference/updateRoadAccessLeaflet.html</loc></url>
 </urlset>
 

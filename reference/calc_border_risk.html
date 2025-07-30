@@ -11,7 +11,7 @@ shared borders."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">riskintroanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.012</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,14 +102,6 @@ as <code>rescale_risk_score</code> and <code>plot_risk</code>.</p></li>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘dplyr’</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:stats’:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     filter, lag</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:base’:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     intersect, setdiff, setequal, union</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">tunisia_raw</span> <span class="op">&lt;-</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_read.html" class="external-link">read_sf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  package <span class="op">=</span> <span class="st">"riskintrodata"</span>,</span></span>
@@ -127,20 +119,9 @@ as <code>rescale_risk_score</code> and <code>plot_risk</code>.</p></li>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> All data in "epi_units" valided.</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">tun_neighbours</span> <span class="op">&lt;-</span> <span class="fu">riskintrodata</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/riskintrodata/man/neighbours_table.html" class="external-link">neighbours_table</a></span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">country_id</span> <span class="op">==</span> <span class="st">"TUN"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">bordering_countries</span> <span class="op">&lt;-</span> <span class="fu">riskintrodata</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/riskintrodata/man/world_sf.html" class="external-link">world_sf</a></span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">iso3</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="va">tun_neighbours</span><span class="op">$</span><span class="va">neighbour_id</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">iso3</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="st">"LBY"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Run function to get shared borders</span></span></span>
 <span class="r-in"><span><span class="va">shared_borders</span> <span class="op">&lt;-</span> <span class="fu"><a href="calc_border_lengths.html">calc_border_lengths</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  epi_units <span class="op">=</span> <span class="va">tunisia</span>,</span></span>
-<span class="r-in"><span>  eu_id_col <span class="op">=</span> <span class="st">"eu_id"</span>,</span></span>
-<span class="r-in"><span>  bordering_countries <span class="op">=</span> <span class="va">bordering_countries</span>,</span></span>
-<span class="r-in"><span>  bc_id_col <span class="op">=</span> <span class="st">"iso3"</span></span></span>
+<span class="r-in"><span>  epi_units <span class="op">=</span> <span class="va">tunisia</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">wahis_factors</span> <span class="op">&lt;-</span> <span class="fu">riskintrodata</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/riskintrodata/man/get_wahis_erf.html" class="external-link">get_wahis_erf</a></span><span class="op">(</span></span></span>
@@ -181,19 +162,33 @@ as <code>rescale_risk_score</code> and <code>plot_risk</code>.</p></li>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">border_lines</span> <span class="op">&lt;-</span> <span class="fu"><a href="extract-analysis.html">extract_border</a></span><span class="op">(</span><span class="va">ri_border</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">border_lines</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 3 features and 9 fields</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 17 features and 9 fields</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Geometry type: GEOMETRY</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dimension:     XY</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Bounding box:  xmin: 9.557298 ymin: 30.23681 xmax: 11.59826 ymax: 33.15514</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Bounding box:  xmin: 7.530076 ymin: 30.23681 xmax: 11.59826 ymax: 36.91043</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Geodetic CRS:  WGS 84</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 10</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   eu_id bc_id border_length                  geometry weight country data_source</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;GEOMETRY [°]&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> eu-0… LBY            130. LINESTRING (11.56026 33.…      1 <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> eu-0… LBY            143. MULTILINESTRING ((10.615…      1 <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> eu-0… LBY            176. LINESTRING (10.13751 31.…      1 <span style="color: #BB0000;">NA</span>      <span style="color: #BB0000;">NA</span>         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 3 more variables: emission_risk &lt;dbl&gt;, border_risk &lt;dbl&gt;,</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   border_label &lt;list&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 17 × 10</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    eu_id    bc_id border_length                          geometry weight country</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;GEOMETRY [°]&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 1</span> eu-00061 DZA            45.7 LINESTRING (8.130428 34.52643, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 2</span> eu-00065 DZA            51.1 MULTILINESTRING ((8.486515 36.69…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 3</span> eu-00068 DZA            10.4 LINESTRING (8.448809 36.62249, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 4</span> eu-00069 DZA            73.6 MULTILINESTRING ((8.309212 36.43…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 5</span> eu-00087 DZA            42.4 MULTILINESTRING ((8.272714 34.86…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 6</span> eu-00088 DZA            48.9 MULTILINESTRING ((8.314248 35.31…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 7</span> eu-00090 DZA            17.5 LINESTRING (8.388037 35.48045, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 8</span> eu-00094 DZA            13.5 LINESTRING (8.296709 34.74977, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> eu-00099 DZA           126.  LINESTRING (8.354745 32.52821, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> eu-00107 DZA            44.2 LINESTRING (8.360878 35.63451, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">11</span> eu-00112 DZA            53.2 LINESTRING (8.291536 35.95223, 8…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">12</span> eu-00133 LBY           130.  LINESTRING (11.56026 33.15514, 1…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">13</span> eu-00229 LBY           143.  MULTILINESTRING ((10.61585 31.84…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">14</span> eu-00231 DZA           293.  LINESTRING (9.557298 30.23681, 9…  0.625 <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">15</span> eu-00231 LBY           176.  LINESTRING (10.13751 31.47516, 1…  0.375 <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">16</span> eu-00236 DZA            85.0 LINESTRING (7.753589 33.42955, 7…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">17</span> eu-00238 DZA            86.5 LINESTRING (7.587045 34.09025, 7…  1     <span style="color: #BB0000;">NA</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: data_source &lt;chr&gt;, emission_risk &lt;dbl&gt;,</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   border_risk &lt;dbl&gt;, border_label &lt;list&gt;</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

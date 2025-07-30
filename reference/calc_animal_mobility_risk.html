@@ -29,7 +29,7 @@ each epidemiological unit."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">riskintroanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.012</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,7 +74,13 @@ each epidemiological unit.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calc_animal_mobility_risk</span><span class="op">(</span><span class="va">animal_mobility</span>, <span class="va">emission_risk</span>, <span class="va">epi_units</span>, <span class="va">method</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calc_animal_mobility_risk</span><span class="op">(</span></span>
+<span>  <span class="va">animal_mobility</span>,</span>
+<span>  <span class="va">emission_risk</span>,</span>
+<span>  <span class="va">epi_units</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"min"</span>, <span class="st">"max"</span><span class="op">)</span>,</span>
+<span>  eu_country_iso3 <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -96,6 +102,11 @@ each epidemiological unit.</p>
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>aggregation method for eu risk</p></dd>
+
+
+<dt id="arg-eu-country-iso-">eu_country_iso3<a class="anchor" aria-label="anchor" href="#arg-eu-country-iso-"></a></dt>
+<dd><p>optional parameter to be used when epidemiological units
+do not correspond to a country.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -297,12 +308,6 @@ the following columns:</p><ul><li><p><code>d_name</code>: destination name</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span>                 &lt;NA&gt;                 &lt;NA&gt;                 &lt;NA&gt; </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Levels: constant aggregate identity</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $risk_col</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "animal_mobility_risk"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $table_name</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "animal_mobility"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $flows</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 40 features and 3 fields</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Geometry type: POINT</span>
@@ -323,6 +328,12 @@ the following columns:</p><ul><li><p><code>d_name</code>: destination name</p></
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;"> 9</span> ES-SRAIA          (8.46223 36.6186)                   4.25 &lt;li&gt;Algeria (4.2/…</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">10</span> KHMAIRIA        (8.597894 36.76643)                   4.25 &lt;li&gt;Algeria (4.2/…</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 30 more rows</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $risk_col</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "animal_mobility_risk"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $table_name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "animal_mobility"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $scale</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1]  0 12</span>

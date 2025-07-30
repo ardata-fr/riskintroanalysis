@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">riskintroanalysis</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.012</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -270,29 +270,26 @@
 <p>Risk of introduction through land borders is the risk of emission from of bordering countries weighted by the length of the shared border. If an epi unit only has one bordering country with emission risk X, then the epi units risk of introduction is also X. If two bordering countries exist with emission risk Y ans Z, then the risk of introduction is a weighted average of Y and Z, with more importance given to the country with the longer border.</p>
 <p>The analysis method starts with finding shared borders between epidemiological units and bordering countries, which requires an algorithm align borders.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tun_neighbours</span> <span class="op">&lt;-</span> <span class="fu">riskintrodata</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/riskintrodata/man/neighbours_table.html" class="external-link">neighbours_table</a></span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">country_id</span> <span class="op">==</span> <span class="st">"TUN"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">bordering_countries</span> <span class="op">&lt;-</span> <span class="va">world</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">iso3</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">tun_neighbours</span><span class="op">$</span><span class="va">neighbour_id</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Run function to get shared borders</span></span>
+<code class="sourceCode R"><span><span class="co"># Run function to get shared borders</span></span>
 <span><span class="va">shared_borders</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/calc_border_lengths.html">calc_border_lengths</a></span><span class="op">(</span></span>
-<span>  epi_units <span class="op">=</span> <span class="va">tunisia</span>,</span>
-<span>  eu_id_col <span class="op">=</span> <span class="st">"eu_id"</span>,</span>
-<span>  bordering_countries <span class="op">=</span> <span class="va">bordering_countries</span>,</span>
-<span>  bc_id_col <span class="op">=</span> <span class="st">"iso3"</span></span>
+<span>  epi_units <span class="op">=</span> <span class="va">tunisia</span></span>
 <span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># Get bordering countries to display on ggplot</span></span>
+<span><span class="co"># (This is internal to calc_border_lengths() function)</span></span>
+<span><span class="va">bordering_countries</span> <span class="op">&lt;-</span> <span class="fu">riskintrodata</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/riskintrodata/man/neighbours_table.html" class="external-link">neighbours_table</a></span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">country_id</span> <span class="op">==</span> <span class="st">"TUN"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">right_join</a></span><span class="op">(</span><span class="fu">riskintrodata</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/riskintrodata/man/world_sf.html" class="external-link">world_sf</a></span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"neighbour_id"</span> <span class="op">=</span> <span class="st">"iso3"</span><span class="op">)</span><span class="op">)</span></span>
+<span>            </span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bordering_countries</span>, colour <span class="op">=</span> <span class="st">"red"</span>, fill <span class="op">=</span> <span class="st">"pink"</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bordering_countries</span>, colour <span class="op">=</span> <span class="st">"red"</span>, fill <span class="op">=</span> <span class="st">"pink"</span>, alpha <span class="op">=</span> <span class="fl">0.5</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>geometry <span class="op">=</span> <span class="va">geometry</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">tunisia</span>, fill <span class="op">=</span> <span class="st">"lightblue"</span>, colour <span class="op">=</span> <span class="st">"blue"</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">shared_borders</span>, colour <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf_label</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">shared_borders</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.fkm"</span>, <span class="va">border_length</span><span class="op">)</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">7</span>, <span class="fl">12</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>,<span class="fl">38</span><span class="op">)</span>, expand <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning in st_point_on_surface.sfc(sf::st_zm(x)): st_point_on_surface may not</span></span>
 <span><span class="co">#&gt; give correct results for longitude/latitude data</span></span></code></pre></div>
-<p><img src="reference/figures/README-shared-borders-1.png" width="100%"> The main purpose of the function is to correct misaligned borders, as can be seen in the overlaps and divergent borders. The epidemiological units data is used for the “true” border as geospatial data from different sources are rarely well aligned.</p>
+<p><img src="reference/figures/README-shared-borders-1.png" width="100%"></p>
+<p>The main purpose of the function is to correct misaligned borders, as can be seen in the overlaps and divergent borders. The epidemiological units data is used for the “true” border as geospatial data from different sources are rarely well aligned.</p>
 <p>A border length has been calculated for each epi unit that a foreign country. For most of these areas, the risk of introduction will simply equal the emission risk of the neighbouring country, with the exception of Tunisia’s southern most governorate. Which will have an emission risk weighed by the border lengths or each neighbour.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ri_borders</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/calc_border_risk.html">calc_border_risk</a></span><span class="op">(</span></span>
@@ -335,7 +332,7 @@
 <span>  mapping <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/riskintrodata/man/mapping_entry_points.html" class="external-link">mapping_entry_points</a></span><span class="op">(</span></span>
 <span>    point_name <span class="op">=</span> <span class="st">"NAME"</span>, </span>
 <span>    lng <span class="op">=</span> <span class="st">"LONGITUDE_X"</span>, </span>
-<span>    lat <span class="op">=</span> <span class="st">"LATITUDE_Y"</span>, </span>
+<span>    lat <span class="op">=</span> <span class="st">"LATITUDE_Y"</span>,</span>
 <span>    mode <span class="op">=</span> <span class="st">"MODE"</span>, </span>
 <span>    type <span class="op">=</span> <span class="st">"TYPE"</span>, </span>
 <span>    sources <span class="op">=</span> <span class="st">"SOURCES"</span></span>
