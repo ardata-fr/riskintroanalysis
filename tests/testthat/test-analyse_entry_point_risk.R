@@ -31,7 +31,7 @@ test_that("Complete entry point risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -59,7 +59,7 @@ test_that("Complete entry point risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate entry points
-  entry_points <- validate_dataset_content(
+  entry_points <- validate_dataset(
     x = entry_points_raw,
     table_name = "entry_points",
     point_name = "POINT_NAME",
@@ -232,7 +232,7 @@ test_that("Entry point risk analysis aggregation functions work correctly", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -254,7 +254,7 @@ test_that("Entry point risk analysis aggregation functions work correctly", {
     stringsAsFactors = FALSE
   )
 
-  entry_points <- validate_dataset_content(
+  entry_points <- validate_dataset(
     x = entry_points_raw,
     table_name = "entry_points",
     point_name = "POINT_NAME",
@@ -405,7 +405,7 @@ test_that("Entry point risk analysis works with real sample data", {
     "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- validate_dataset_content(
+  tunisia <- validate_dataset(
     x = tunisia_raw,
     table_name = "epi_units",
     eu_name = "NAME_2",
@@ -425,7 +425,7 @@ test_that("Entry point risk analysis works with real sample data", {
     show_col_types = FALSE
   )
 
-  entry_points <- validate_dataset_content(
+  entry_points <- validate_dataset(
     x = entry_points_raw,
     table_name = "entry_points",
     point_name = "NAME",
@@ -547,7 +547,7 @@ test_that("Entry point risk analysis handles missing emission risk gracefully", 
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -568,7 +568,7 @@ test_that("Entry point risk analysis handles missing emission risk gracefully", 
     stringsAsFactors = FALSE
   )
 
-  entry_points <- validate_dataset_content(
+  entry_points <- validate_dataset(
     x = entry_points_raw,
     table_name = "entry_points",
     point_name = "POINT_NAME",
@@ -652,7 +652,7 @@ test_that("Entry point allocation to epidemiological units works correctly", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -673,7 +673,7 @@ test_that("Entry point allocation to epidemiological units works correctly", {
     stringsAsFactors = FALSE
   )
 
-  entry_points <- validate_dataset_content(
+  entry_points <- validate_dataset(
     x = entry_points_raw,
     table_name = "entry_points",
     point_name = "POINT_NAME",

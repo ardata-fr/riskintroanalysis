@@ -167,7 +167,10 @@ wahis_erf <- get_wahis_erf(
   animal_category = "Domestic",
   species = "Birds"
 )
-#> ✔ WAHIS emission risk factors dataset has 62 entries for `disease = Avian infectious laryngotracheitis`, `species = Birds`, and `animal_category = Domestic`.
+#> WAHIS emission risk factors dataset has 62 entries for
+#> • `disease` = "Avian infectious laryngotracheitis"
+#> • `species` = "Birds"
+#> • `animal_category` = "Domestic"
 
 emission_risk_factors <- dplyr::bind_rows(
   algeria,
@@ -225,7 +228,7 @@ tunisia_raw <- read_sf(system.file(
 ))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- validate_dataset_content(
+tunisia <- validate_dataset(
   x = tunisia_raw,
   table_name = "epi_units",
   eu_name = "NAME_2",
@@ -238,9 +241,9 @@ plot(sf::st_geometry(tunisia))
 <img src="man/figures/README-epi-units-1.png" width="100%" />
 
 What’s left after using
-`validate_dataset_content(..., table_name = "epi_units")` is the
-required “epi_units” dataset that is compatible with the rest of the
-analysis going forward.
+`validate_dataset(..., table_name = "epi_units")` is the required
+“epi_units” dataset that is compatible with the rest of the analysis
+going forward.
 
 ## 4.2 Analysis
 
@@ -352,7 +355,7 @@ entry_points <- readr::read_csv(entry_points_fp)
 #> ℹ Use `spec()` to retrieve the full column specification for this data.
 #> ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
-entry_points <- validate_dataset_content(
+entry_points <- validate_dataset(
   x = entry_points,
   table_name = "entry_points",
   point_name = "NAME",
@@ -410,7 +413,7 @@ animal_mobility_raw <- readr::read_csv(animal_mobility_fp)
 #> ℹ Use `spec()` to retrieve the full column specification for this data.
 #> ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
-animal_mobility <- validate_dataset_content(
+animal_mobility <- validate_dataset(
   x = animal_mobility_raw,
   table_name = "animal_mobility",
   o_name = "ORIGIN_NAME",
@@ -453,11 +456,10 @@ aggregated over each epidemiological unit of Tunisia.
 library(riskintroanalysis)
 library(dplyr)
 library(terra)
-#> Warning: package 'terra' was built under R version 4.5.1
 #> terra 1.8.60
 
 riskintrodata::init_riskintrodata_cache()
-#> [1] "/Users/davidgohel/Library/Application Support/org.R-project.R/R/riskintrodata"
+#> [1] "C:\\Users\\EliDaniels\\AppData\\Roaming/R/data/R/riskintrodata"
 road_raster_fp <- riskintrodata::download_road_access_raster()
 road_raster <- terra::rast(road_raster_fp)
 

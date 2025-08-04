@@ -11,7 +11,7 @@ tunisia_raw <- sf::read_sf(system.file(
 ))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- validate_dataset_content(
+tunisia <- validate_dataset(
   x = tunisia_raw,
   table_name = "epi_units",
   eu_name = "NAME_2",
@@ -33,7 +33,7 @@ entry_points_fp <-
   )
 
 entry_points <- readr::read_csv(entry_points_fp)
-entry_points <- validate_dataset_content(
+entry_points <- validate_dataset(
   x = entry_points,
   table_name = "entry_points",
   point_name = "NAME",

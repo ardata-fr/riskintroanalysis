@@ -32,7 +32,7 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
       eu_id = "EU_ID",
@@ -59,7 +59,7 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   )
 
   # Apply mapping to prepare and validate entry points
-  entry_points <- validate_dataset_content(
+  entry_points <- validate_dataset(
     x = entry_points_raw,
     table_name = "entry_points",
       point_name = "POINT_NAME",

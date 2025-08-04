@@ -31,7 +31,7 @@ test_that("Complete animal mobility risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -63,7 +63,7 @@ test_that("Complete animal mobility risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate animal mobility data
-  animal_mobility <- validate_dataset_content(
+  animal_mobility <- validate_dataset(
     x = animal_mobility_raw,
     table_name = "animal_mobility",
     o_iso3 = "O_ISO3",
@@ -233,7 +233,7 @@ test_that("Animal mobility risk aggregation methods work correctly", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -257,7 +257,7 @@ test_that("Animal mobility risk aggregation methods work correctly", {
     stringsAsFactors = FALSE
   )
 
-  animal_mobility <- validate_dataset_content(
+  animal_mobility <- validate_dataset(
     x = animal_mobility_raw,
     table_name = "animal_mobility",
     o_iso3 = "O_ISO3",
@@ -411,7 +411,7 @@ test_that("Animal mobility risk analysis works with real sample data", {
     "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- validate_dataset_content(
+  tunisia <- validate_dataset(
     x = tunisia_raw,
     table_name = "epi_units",
     eu_name = "NAME_2",
@@ -431,7 +431,7 @@ test_that("Animal mobility risk analysis works with real sample data", {
     show_col_types = FALSE
   )
 
-  animal_mobility <- validate_dataset_content(
+  animal_mobility <- validate_dataset(
     x = animal_mobility_raw,
     table_name = "animal_mobility",
     o_name = "ORIGIN_NAME",
@@ -554,7 +554,7 @@ test_that("Animal mobility quantity weighting works correctly", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -578,7 +578,7 @@ test_that("Animal mobility quantity weighting works correctly", {
     stringsAsFactors = FALSE
   )
 
-  animal_mobility <- validate_dataset_content(
+  animal_mobility <- validate_dataset(
     x = animal_mobility_raw,
     table_name = "animal_mobility",
     o_iso3 = "O_ISO3",

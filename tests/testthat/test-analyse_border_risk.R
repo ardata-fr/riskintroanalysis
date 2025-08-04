@@ -25,7 +25,7 @@ test_that("Complete border risk analysis workflow works", {
   ))
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = tunisia_raw,
     table_name = "epi_units",
     eu_name = "NAME_2",
@@ -205,7 +205,7 @@ test_that("Border risk analysis works with real sample data", {
     "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- validate_dataset_content(
+  tunisia <- validate_dataset(
     x = tunisia_raw,
     table_name = "epi_units",
     eu_name = "NAME_2",

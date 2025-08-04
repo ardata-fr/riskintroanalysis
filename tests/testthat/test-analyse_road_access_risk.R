@@ -32,7 +32,7 @@ test_that("Complete road access risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -165,7 +165,7 @@ test_that("Road access risk aggregation methods work correctly", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -261,7 +261,7 @@ test_that("Road access risk analysis works with real sample data", {
     "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- validate_dataset_content(
+  tunisia <- validate_dataset(
     x = tunisia_raw,
     table_name = "epi_units",
     eu_name = "NAME_2",
@@ -353,7 +353,7 @@ test_that("Road access risk handles edge cases correctly", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     x = epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
@@ -465,7 +465,7 @@ test_that("augment_epi_units_with_raster function works independently", {
     crs = 4326
   )
 
-  epi_units <- validate_dataset_content(
+  epi_units <- validate_dataset(
     epi_units_raw,
     table_name = "epi_units",
     eu_id = "EU_ID",
