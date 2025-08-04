@@ -1,7 +1,7 @@
 Type: Package
 Package: riskintroanalysis
 Title: Analysis Methods for Managing Animal Disease Introduction Risk
-Version: 0.1.2.002
+Version: 0.1.2.003
 Authors@R: c(
     person("Eli", "Daniels", , "eli.daniels@ardata.fr", role = c("aut", "cre")),
     person("David", "Gohel", , "david.gohel@ardata.fr", role = "aut"),
@@ -12,6 +12,7 @@ Description: The riskintroanalysis R package provides functions to analyse
     the risk of introduction of animal diseases within a geographic area.
 License: MIT + file LICENSE
 Depends:
+    riskintrodata,
     ggplot2 (>= 3.5.2),
     R (>= 4.4.0)
 Imports:
@@ -20,7 +21,6 @@ Imports:
     dplyr,
     leaflet,
     purrr,
-    riskintrodata,
     rlang,
     sf,
     stringr,

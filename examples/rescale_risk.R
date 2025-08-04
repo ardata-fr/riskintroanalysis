@@ -13,5 +13,5 @@ dat_scaled <- rescale_risk_scores(
   keep_cols = TRUE
 )
 
-ggplot(dat_scaled, aes(x = RISK, y  = quadratic_RISK)) +
+ggplot(dat_scaled, aes(x = RISK, y = quadratic_RISK)) +
   geom_point()

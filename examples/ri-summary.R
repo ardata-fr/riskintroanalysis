@@ -5,8 +5,12 @@ library(sf)
 epi_units <- st_as_sf(
   data.frame(
     eu_id = c(1, 2, 3, 4),
-    geometry = st_sfc(st_point(c(0, 0)), st_point(c(1, 1)),
-                      st_point(c(2, 2)), st_point(c(3, 3))),
+    geometry = st_sfc(
+      st_point(c(0, 0)),
+      st_point(c(1, 1)),
+      st_point(c(2, 2)),
+      st_point(c(3, 3))
+    ),
     stringsAsFactors = FALSE
   )
 )

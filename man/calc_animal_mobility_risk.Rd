@@ -14,7 +14,7 @@ calc_animal_mobility_risk(
 }
 \arguments{
 \item{animal_mobility}{animal moblity dataset as formatted and validated by
-\code{\link[=apply_mapping]{apply_mapping()}} and \code{\link[=mapping_animal_mobility]{mapping_animal_mobility()}}}
+\code{\link[riskintrodata:mapping_animal_mobility]{riskintrodata::mapping_animal_mobility()}}}
 
 \item{emission_risk}{emission risk dataset from \link{calc_emission_risk}}
 
@@ -75,40 +75,44 @@ library(riskintroanalysis)
 library(riskintrodata)
 
 animal_mobility_fp <- system.file(
-  package = "riskintrodata", "samples",
-  "tunisia", "animal_mobility", "ANIMAL_MOBILITY_raw.csv"
-  )
+  package = "riskintrodata",
+  "samples",
+  "tunisia",
+  "animal_mobility",
+  "ANIMAL_MOBILITY_raw.csv"
+)
 
 animal_mobility_raw <- readr::read_csv(animal_mobility_fp)
 
-animal_mobility <- apply_mapping(
-  animal_mobility_raw,
-  mapping = mapping_animal_mobility(
-    o_name = "ORIGIN_NAME",
-    o_lng = "ORIGIN_LONGITUDE_X",
-    o_lat = "ORIGIN_LATITUDE_Y",
-    d_name = "DESTINATION_NAME",
-    d_lng = "DESTINATION_LONGITUDE_X",
-    d_lat = "DESTINATION_LATITUDE_Y",
-    quantity = "HEADCOUNT"
-  )
-)
+animal_mobility <- validate_dataset_content(
+  x = animal_mobility_raw,
+  table_name = "animal_mobility",
+  o_name = "ORIGIN_NAME",
+  o_lng = "ORIGIN_LONGITUDE_X",
+  o_lat = "ORIGIN_LATITUDE_Y",
+  d_name = "DESTINATION_NAME",
+  d_lng = "DESTINATION_LONGITUDE_X",
+  d_lat = "DESTINATION_LATITUDE_Y",
+  quantity = "HEADCOUNT"
+) |>
+  extract_dataset()
 
 tunisia_raw <- sf::read_sf(system.file(
   package = "riskintrodata",
-  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+  "samples",
+  "tunisia",
+  "epi_units",
+  "tunisia_adm2_raw.gpkg"
 ))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- apply_mapping(
-  tunisia_raw,
-  mapping = mapping_epi_units(
-    eu_name = "NAME_2",
-    geometry = "geom"
-  ),
-  validate = TRUE
-)
-
+tunisia <- validate_dataset_content(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |>
+  extract_dataset()
 
 algeria <- erf_row(
   iso3 = "DZA",
@@ -162,7 +166,9 @@ emission_risk_factors <- dplyr::bind_rows(
   wahis_erf
 )
 
-emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
+emission_risk_table <- calc_emission_risk(
+  emission_risk_factors = emission_risk_factors
+)
 
 ri_animal_mobility <- calc_animal_mobility_risk(
   animal_mobility = animal_mobility,
@@ -175,5 +181,4 @@ plot_risk(ri_animal_mobility)
 
 extract_flow_risk(ri_animal_mobility)
 attributes(ri_animal_mobility)
-
 }

@@ -9,9 +9,21 @@ test_that("Complete animal mobility risk analysis workflow works", {
       EU_ID = c("EU1", "EU2", "EU3"),
       EU_NAME = c("Epi Unit 1", "Epi Unit 2", "Epi Unit 3"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
@@ -19,22 +31,27 @@ test_that("Complete animal mobility risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create test animal mobility data
   # Flows from external countries (SRC1, SRC2) to destinations within study area (TUN)
   animal_mobility_raw <- data.frame(
     O_ISO3 = c("SRC1", "SRC1", "SRC2", "SRC2", "SRC1"),
     O_NAME = c("Origin 1", "Origin 1", "Origin 2", "Origin 2", "Origin 1"),
-    O_COUNTRY = c("Source Country 1", "Source Country 1", "Source Country 2", "Source Country 2", "Source Country 1"),
+    O_COUNTRY = c(
+      "Source Country 1",
+      "Source Country 1",
+      "Source Country 2",
+      "Source Country 2",
+      "Source Country 1"
+    ),
     O_LNG = c(-1.0, -1.0, -2.0, -2.0, -1.0),
     O_LAT = c(0.5, 0.5, 0.5, 0.5, 0.5),
     D_ISO3 = c("TUN", "TUN", "TUN", "TUN", "TUN"),
@@ -46,21 +63,20 @@ test_that("Complete animal mobility risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate animal mobility data
-  animal_mobility <- apply_mapping(
-    animal_mobility_raw,
-    mapping = mapping_animal_mobility(
-      o_iso3 = "O_ISO3",
-      o_name = "O_NAME",
-      o_lng = "O_LNG",
-      o_lat = "O_LAT",
-      d_iso3 = "D_ISO3",
-      d_name = "D_NAME",
-      d_lng = "D_LNG",
-      d_lat = "D_LAT",
-      quantity = "QUANTITY"
-    ),
-    validate = TRUE
-  )
+  animal_mobility <- validate_dataset_content(
+    x = animal_mobility_raw,
+    table_name = "animal_mobility",
+    o_iso3 = "O_ISO3",
+    o_name = "O_NAME",
+    o_lng = "O_LNG",
+    o_lat = "O_LAT",
+    d_iso3 = "D_ISO3",
+    d_name = "D_NAME",
+    d_lng = "D_LNG",
+    d_lat = "D_LAT",
+    quantity = "QUANTITY"
+  ) |>
+    extract_dataset()
 
   # Create test emission risk factors
   emission_risk_factors <- bind_rows(
@@ -129,7 +145,11 @@ test_that("Complete animal mobility risk analysis workflow works", {
   expect_s3_class(attr(ri_animal_mobility, "flows"), "sf")
 
   # Test risk values are in valid range
-  expect_true(all(ri_animal_mobility$animal_mobility_risk >= 0 & ri_animal_mobility$animal_mobility_risk <= 12, na.rm = TRUE))
+  expect_true(all(
+    ri_animal_mobility$animal_mobility_risk >= 0 &
+      ri_animal_mobility$animal_mobility_risk <= 12,
+    na.rm = TRUE
+  ))
 
   # Test extract_flow_risk function
   extracted_flows <- expect_no_error(extract_flow_risk(ri_animal_mobility))
@@ -164,7 +184,11 @@ test_that("Complete animal mobility risk analysis workflow works", {
     method = "linear"
   )
 
-  expect_true(all(ri_animal_mobility_scaled$animal_mobility_risk >= 0 & ri_animal_mobility_scaled$animal_mobility_risk <= 100, na.rm = TRUE))
+  expect_true(all(
+    ri_animal_mobility_scaled$animal_mobility_risk >= 0 &
+      ri_animal_mobility_scaled$animal_mobility_risk <= 100,
+    na.rm = TRUE
+  ))
   expect_equal(attr(ri_animal_mobility_scaled, "scale"), c(0, 100))
 
   # Check that secondary dataset (flows) has been scaled
@@ -172,11 +196,17 @@ test_that("Complete animal mobility risk analysis workflow works", {
   expect_equal(attr(scaled_flows, "scale"), c(0, 100))
 
   # Test static plotting with scaled data
-  static_plot_scaled <- plot_risk(ri_animal_mobility_scaled, interactive = FALSE)
+  static_plot_scaled <- plot_risk(
+    ri_animal_mobility_scaled,
+    interactive = FALSE
+  )
   expect_s3_class(static_plot_scaled, "ggplot")
 
   # Test interactive plotting with scaled data
-  interactive_plot_scaled <- plot_risk(ri_animal_mobility_scaled, interactive = TRUE)
+  interactive_plot_scaled <- plot_risk(
+    ri_animal_mobility_scaled,
+    interactive = TRUE
+  )
   expect_s3_class(interactive_plot_scaled, c("leaflet", "htmlwidget"))
 })
 
@@ -192,22 +222,25 @@ test_that("Animal mobility risk aggregation methods work correctly", {
       EU_ID = c("EU1"),
       EU_NAME = c("Epi Unit 1"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 2, 0, 2, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 2, 0, 2, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create animal mobility with multiple destinations in same EU - testing aggregation
   animal_mobility_raw <- data.frame(
@@ -224,21 +257,20 @@ test_that("Animal mobility risk aggregation methods work correctly", {
     stringsAsFactors = FALSE
   )
 
-  animal_mobility <- apply_mapping(
-    animal_mobility_raw,
-    mapping = mapping_animal_mobility(
-      o_iso3 = "O_ISO3",
-      o_name = "O_NAME",
-      o_lng = "O_LNG",
-      o_lat = "O_LAT",
-      d_iso3 = "D_ISO3",
-      d_name = "D_NAME",
-      d_lng = "D_LNG",
-      d_lat = "D_LAT",
-      quantity = "QUANTITY"
-    ),
-    validate = TRUE
-  )
+  animal_mobility <- validate_dataset_content(
+    x = animal_mobility_raw,
+    table_name = "animal_mobility",
+    o_iso3 = "O_ISO3",
+    o_name = "O_NAME",
+    o_lng = "O_LNG",
+    o_lat = "O_LAT",
+    d_iso3 = "D_ISO3",
+    d_name = "D_NAME",
+    d_lng = "D_LNG",
+    d_lat = "D_LAT",
+    quantity = "QUANTITY"
+  ) |>
+    extract_dataset()
 
   # Create emission risk factors with different risk levels
   emission_risk_factors <- bind_rows(
@@ -347,49 +379,70 @@ test_that("Animal mobility risk analysis works with real sample data", {
   library(riskintrodata)
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "epi_units",
+      "tunisia_adm2_raw.gpkg"
+    ) !=
+      "",
     "Sample data not available"
   )
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "animal_mobility", "ANIMAL_MOBILITY_raw.csv") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "animal_mobility",
+      "ANIMAL_MOBILITY_raw.csv"
+    ) !=
+      "",
     "Sample animal mobility data not available"
   )
 
   # Load real sample epidemiological units
   tunisia_raw <- sf::read_sf(system.file(
     package = "riskintrodata",
-    "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+    "samples",
+    "tunisia",
+    "epi_units",
+    "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- apply_mapping(
-    tunisia_raw,
-    mapping = mapping_epi_units(
-      eu_name = "NAME_2",
-      geometry = "geom"
-    ),
-    validate = TRUE
-  )
+  tunisia <- validate_dataset_content(
+    x = tunisia_raw,
+    table_name = "epi_units",
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ) |>
+    extract_dataset()
 
   # Load real sample animal mobility data
-  animal_mobility_raw <- readr::read_csv(system.file(
-    package = "riskintrodata",
-    "samples", "tunisia", "animal_mobility", "ANIMAL_MOBILITY_raw.csv"
-  ), show_col_types = FALSE)
-
-  animal_mobility <- apply_mapping(
-    animal_mobility_raw,
-    mapping = mapping_animal_mobility(
-      o_name = "ORIGIN_NAME",
-      o_lng = "ORIGIN_LONGITUDE_X",
-      o_lat = "ORIGIN_LATITUDE_Y",
-      d_name = "DESTINATION_NAME",
-      d_lng = "DESTINATION_LONGITUDE_X",
-      d_lat = "DESTINATION_LATITUDE_Y",
-      quantity = "HEADCOUNT"
+  animal_mobility_raw <- readr::read_csv(
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "animal_mobility",
+      "ANIMAL_MOBILITY_raw.csv"
     ),
-    validate = TRUE
+    show_col_types = FALSE
   )
+
+  animal_mobility <- validate_dataset_content(
+    x = animal_mobility_raw,
+    table_name = "animal_mobility",
+    o_name = "ORIGIN_NAME",
+    o_lng = "ORIGIN_LONGITUDE_X",
+    o_lat = "ORIGIN_LATITUDE_Y",
+    d_name = "DESTINATION_NAME",
+    d_lng = "DESTINATION_LONGITUDE_X",
+    d_lat = "DESTINATION_LATITUDE_Y",
+    quantity = "HEADCOUNT"
+  ) |>
+    extract_dataset()
 
   # Create test emission risk for Algeria and Libya (common neighbors)
   emission_risk_factors <- bind_rows(
@@ -446,11 +499,14 @@ test_that("Animal mobility risk analysis works with real sample data", {
     )
   )
 
-
   # Test with real data
   expect_s3_class(ri_animal_mobility, "sf")
   expect_gt(nrow(ri_animal_mobility), 0)
-  expect_true(all(ri_animal_mobility$animal_mobility_risk >= 0 & ri_animal_mobility$animal_mobility_risk <= 12, na.rm = TRUE))
+  expect_true(all(
+    ri_animal_mobility$animal_mobility_risk >= 0 &
+      ri_animal_mobility$animal_mobility_risk <= 12,
+    na.rm = TRUE
+  ))
 
   # Test extract_flow_risk with real data
   extracted_flows <- extract_flow_risk(ri_animal_mobility)
@@ -470,7 +526,10 @@ test_that("Animal mobility risk analysis works with real sample data", {
     to = c(0, 100),
     method = "linear"
   )
-  expect_true(all(ri_scaled$animal_mobility_risk >= 0 & ri_scaled$animal_mobility_risk <= 100, na.rm = TRUE))
+  expect_true(all(
+    ri_scaled$animal_mobility_risk >= 0 & ri_scaled$animal_mobility_risk <= 100,
+    na.rm = TRUE
+  ))
 })
 
 test_that("Animal mobility quantity weighting works correctly", {
@@ -484,22 +543,25 @@ test_that("Animal mobility quantity weighting works correctly", {
       EU_ID = c("EU1"),
       EU_NAME = c("Epi Unit 1"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create animal mobility where same destination receives from different sources with different quantities
   animal_mobility_raw <- data.frame(
@@ -516,21 +578,19 @@ test_that("Animal mobility quantity weighting works correctly", {
     stringsAsFactors = FALSE
   )
 
-  animal_mobility <- apply_mapping(
-    animal_mobility_raw,
-    mapping = mapping_animal_mobility(
-      o_iso3 = "O_ISO3",
-      o_name = "O_NAME",
-      o_lng = "O_LNG",
-      o_lat = "O_LAT",
-      d_iso3 = "D_ISO3",
-      d_name = "D_NAME",
-      d_lng = "D_LNG",
-      d_lat = "D_LAT",
-      quantity = "QUANTITY"
-    ),
-    validate = TRUE
-  )
+  animal_mobility <- validate_dataset_content(
+    x = animal_mobility_raw,
+    table_name = "animal_mobility",
+    o_iso3 = "O_ISO3",
+    o_name = "O_NAME",
+    o_lng = "O_LNG",
+    o_lat = "O_LAT",
+    d_iso3 = "D_ISO3",
+    d_name = "D_NAME",
+    d_lng = "D_LNG",
+    d_lat = "D_LAT",
+    quantity = "QUANTITY"
+  ) |> extract_dataset()
 
   # Create emission risk factors with very different risk levels
   emission_risk_factors <- bind_rows(
@@ -593,9 +653,21 @@ test_that("Animal mobility quantity weighting works correctly", {
   # Weight for HIGH = 100/(900+100) = 0.1
   # Expected weighted risk = (LOW_risk * 0.9) + (HIGH_risk * 0.1)
 
-  low_risk <- emission_risk_table[emission_risk_table$iso3 == "LOW", "emission_risk", drop = TRUE]
-  high_risk <- emission_risk_table[emission_risk_table$iso3 == "HIGH", "emission_risk", drop = TRUE]
+  low_risk <- emission_risk_table[
+    emission_risk_table$iso3 == "LOW",
+    "emission_risk",
+    drop = TRUE
+  ]
+  high_risk <- emission_risk_table[
+    emission_risk_table$iso3 == "HIGH",
+    "emission_risk",
+    drop = TRUE
+  ]
   expected_weighted_risk <- (low_risk * 0.9) + (high_risk * 0.1)
 
-  expect_equal(flows$emission_risk_weighted, expected_weighted_risk, tolerance = 0.01)
+  expect_equal(
+    flows$emission_risk_weighted,
+    expected_weighted_risk,
+    tolerance = 0.01
+  )
 })

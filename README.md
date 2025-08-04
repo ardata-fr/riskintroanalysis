@@ -20,9 +20,6 @@
 
 # 1 riskintroanalysis
 
-<!-- badges: start -->
-<!-- badges: end -->
-
 The riskintroanalysis R package provides functions to analyse the risk
 of introduction of animal diseases within a geographic area. It is
 intended to be useful as a stand-alone package, but also to integrate
@@ -119,7 +116,6 @@ increased risk of emission. Therefore a 1 means there is additional risk
 associated with this score, and a 0 means no additional risk.
 
 ``` r
-
 library(dplyr)
 library(riskintrodata)
 library(riskintroanalysis)
@@ -145,7 +141,6 @@ algeria <- erf_row(
   commerce_illegal = 0L,
   commerce_legal = 0L
 )
-#> ✔ All data in "emission_risk_factors" valided.
 
 libya <- erf_row(
   iso3 = "LBY",
@@ -166,21 +161,19 @@ libya <- erf_row(
   commerce_illegal = 0L,
   commerce_legal = 1
 )
-#> ✔ All data in "emission_risk_factors" valided.
 
 wahis_erf <- get_wahis_erf(
-    disease = "Avian infectious laryngotracheitis",
-    animal_category = "Domestic",
-    species = "Birds"
-  )
-#> ✔ All data in "emission_risk_factors" valided.
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds"
+)
 #> ✔ WAHIS emission risk factors dataset has 62 entries for `disease = Avian infectious laryngotracheitis`, `species = Birds`, and `animal_category = Domestic`.
 
 emission_risk_factors <- dplyr::bind_rows(
-  algeria, 
+  algeria,
   libya,
   wahis_erf
-  )
+)
 
 emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
 
@@ -200,12 +193,13 @@ risk for later.
 world <- riskintrodata::world_sf
 
 emission_risk_sf <- dplyr::left_join(
-  x = world, y = emission_risk_table, 
+  x = world, y = emission_risk_table,
   by = c("iso3" = "iso3")
 )
 
-plot(select(emission_risk_sf, emission_risk), 
-     main = "Emission risk scores")
+plot(select(emission_risk_sf, emission_risk),
+  main = "Emission risk scores"
+)
 ```
 
 <img src="man/figures/README-display-world-1.png" width="100%" />
@@ -228,25 +222,25 @@ library(sf)
 tunisia_raw <- read_sf(system.file(
   package = "riskintrodata",
   "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
-   ))
+))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- apply_mapping(
-  tunisia_raw,
-  mapping = mapping_epi_units(
-    eu_name = "NAME_2",
-    geometry = "geom"
-  ),
-  validate = TRUE
-)
-#> ✔ All data in "epi_units" valided.
+tunisia <- validate_dataset_content(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |> extract_dataset()
 
 plot(sf::st_geometry(tunisia))
 ```
 
-<img src="man/figures/README-epi-units-1.png" width="100%" /> What’s
-left after using `apply_mapping()` is the required “epi_units” dataset
-that is compatible with the rest of the analysis going forward.
+<img src="man/figures/README-epi-units-1.png" width="100%" />
+
+What’s left after using
+`validate_dataset_content(..., table_name = "epi_units")` is the
+required “epi_units” dataset that is compatible with the rest of the
+analysis going forward.
 
 ## 4.2 Analysis
 
@@ -277,46 +271,38 @@ exist with emission risk Y ans Z, then the risk of introduction is a
 weighted average of Y and Z, with more importance given to the country
 with the longer border.
 
-The analysis method starts with finding shared borders between epi units
-and bordering countries, which requires an algoithm align borders.
+The analysis method starts with finding shared borders between
+epidemiological units and bordering countries, which requires an
+algorithm align borders.
 
 ``` r
-tun_neighbours <- riskintrodata::neighbours_table |> 
-  filter(country_id == "TUN")
-
-bordering_countries <- world |> 
-  filter(iso3 %in% tun_neighbours$neighbour_id)
-
 # Run function to get shared borders
 shared_borders <- calc_border_lengths(
-  epi_units = tunisia,
-  eu_id_col = "eu_id",
-  bordering_countries = bordering_countries,
-  bc_id_col = "iso3"
+  epi_units = tunisia
 )
-#> Warning: attribute variables are assumed to be spatially constant throughout
-#> all geometries
-#> Warning: attribute variables are assumed to be spatially constant throughout
-#> all geometries
-#> Spherical geometry (s2) switched off
-#> although coordinates are longitude/latitude, st_union assumes that they are
-#> planar
+
+# Get bordering countries to display on ggplot
+# (This is internal to calc_border_lengths() function)
+bordering_countries <- riskintrodata::neighbours_table |>
+  filter(country_id == "TUN") |>
+  right_join(riskintrodata::world_sf, by = c("neighbour_id" = "iso3"))
 
 ggplot() +
-  geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5) +
+  geom_sf(data = bordering_countries, colour = "red", fill = "pink", alpha = 0.5, aes(geometry = geometry)) +
   geom_sf(data = tunisia, fill = "lightblue", colour = "blue", alpha = 0.5) +
   geom_sf(data = shared_borders, colour = "black") +
   geom_sf_label(data = shared_borders, aes(label = sprintf("%.fkm", border_length)), size = 1.5) +
-  coord_sf(xlim = c(7, 12), ylim = c(30,38), expand = FALSE)
+  coord_sf(xlim = c(7, 12), ylim = c(30, 38), expand = FALSE)
 #> Warning in st_point_on_surface.sfc(sf::st_zm(x)): st_point_on_surface may not
 #> give correct results for longitude/latitude data
 ```
 
-<img src="man/figures/README-shared-borders-1.png" width="100%" /> The
-main purpose of the function is to correct misaligned borders, as can be
-seen in the overlaps and divergent borders. The epidemiological units
-data is used for the “true” border as geospatial data from different
-sources are rarely well aligned.
+<img src="man/figures/README-shared-borders-1.png" width="100%" />
+
+The main purpose of the function is to correct misaligned borders, as
+can be seen in the overlaps and divergent borders. The epidemiological
+units data is used for the “true” border as geospatial data from
+different sources are rarely well aligned.
 
 A border length has been calculated for each epi unit that a foreign
 country. For most of these areas, the risk of introduction will simply
@@ -326,10 +312,10 @@ weighed by the border lengths or each neighbour.
 
 ``` r
 ri_borders <- calc_border_risk(
-  epi_units = tunisia, 
+  epi_units = tunisia,
   shared_borders = shared_borders,
   emission_risk = emission_risk_table
-  )
+)
 
 plot_risk(ri_borders)
 ```
@@ -349,12 +335,12 @@ library(riskintroanalysis)
 library(dplyr)
 
 entry_points_fp <-
-    system.file(
-      package = "riskintrodata",
-      "samples",
-      "tunisia",
-      "entry_points", "BORDER_CROSSING_POINTS.csv"
-    )
+  system.file(
+    package = "riskintrodata",
+    "samples",
+    "tunisia",
+    "entry_points", "BORDER_CROSSING_POINTS.csv"
+  )
 
 entry_points <- readr::read_csv(entry_points_fp)
 #> Rows: 110 Columns: 6
@@ -366,26 +352,23 @@ entry_points <- readr::read_csv(entry_points_fp)
 #> ℹ Use `spec()` to retrieve the full column specification for this data.
 #> ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
-entry_points <- apply_mapping(
-  dataset = entry_points, 
-  mapping = mapping_entry_points(
-    point_name = "NAME", 
-    lng = "LONGITUDE_X", 
-    lat = "LATITUDE_Y", 
-    mode = "MODE", 
-    type = "TYPE", 
-    sources = "SOURCES"
-  ), 
-  validate = TRUE
-)
-#> ✔ All data in "entry_points" valided.
+entry_points <- validate_dataset_content(
+  x = entry_points,
+  table_name = "entry_points",
+  point_name = "NAME",
+  lng = "LONGITUDE_X",
+  lat = "LATITUDE_Y",
+  mode = "MODE",
+  type = "TYPE",
+  sources = "SOURCES"
+) |> extract_dataset()
 
 ri_entry_points <- calc_entry_point_risk(
   entry_points = entry_points,
   epi_units = tunisia,
   emission_risk = emission_risk_table
 )
-#> ! There are missing emission risk scores for the following countries:
+#> Warning: ! There are missing emission risk scores for the following countries:
 #> • BIH missing for 1 entry points.
 #> • BRN missing for 1 entry points.
 #> • ESP missing for 1 entry points.
@@ -427,26 +410,30 @@ animal_mobility_raw <- readr::read_csv(animal_mobility_fp)
 #> ℹ Use `spec()` to retrieve the full column specification for this data.
 #> ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
-animal_mobility <- apply_mapping(
-  animal_mobility_raw,
-  mapping = mapping_animal_mobility(
-    o_name = "ORIGIN_NAME",
-    o_lng = "ORIGIN_LONGITUDE_X",
-    o_lat = "ORIGIN_LATITUDE_Y",
-    d_name = "DESTINATION_NAME",
-    d_lng = "DESTINATION_LONGITUDE_X",
-    d_lat = "DESTINATION_LATITUDE_Y",
-    quantity = "HEADCOUNT"
-  )
-)
-#> ✔ All data in "animal_mobility" valided.
+animal_mobility <- validate_dataset_content(
+  x = animal_mobility_raw,
+  table_name = "animal_mobility",
+  o_name = "ORIGIN_NAME",
+  o_lng = "ORIGIN_LONGITUDE_X",
+  o_lat = "ORIGIN_LATITUDE_Y",
+  d_name = "DESTINATION_NAME",
+  d_lng = "DESTINATION_LONGITUDE_X",
+  d_lat = "DESTINATION_LATITUDE_Y",
+  quantity = "HEADCOUNT"
+) |> extract_dataset()
 
 ri_animal_mobility <- calc_animal_mobility_risk(
-  animal_mobility = animal_mobility, 
-  emission_risk = emission_risk_table, 
+  animal_mobility = animal_mobility,
+  emission_risk = emission_risk_table,
   epi_units = tunisia,
   method = "mean"
 )
+#> Warning: ! There are missing emission risk scores for the following countries:
+#> • CAN missing for 1 animal mobility flows.
+#> • PER missing for 1 animal mobility flows.
+#> • SEN missing for 1 animal mobility flows.
+#> Create new entries in the emission risk factor table using `erf_row()`
+#> (`?riskintrodata::erf_row()`).
 
 plot_risk(ri_animal_mobility)
 ```
@@ -466,20 +453,22 @@ aggregated over each epidemiological unit of Tunisia.
 library(riskintroanalysis)
 library(dplyr)
 library(terra)
-#> terra 1.8.54
+#> Warning: package 'terra' was built under R version 4.5.1
+#> terra 1.8.60
 
+riskintrodata::init_riskintrodata_cache()
+#> [1] "/Users/davidgohel/Library/Application Support/org.R-project.R/R/riskintrodata"
 road_raster_fp <- riskintrodata::download_road_access_raster()
-#> Warning: `destfile` cannot be NULL, if you want to `use_cache = TRUE`.
 road_raster <- terra::rast(road_raster_fp)
 
 ri_road_access <- calc_road_access_risk(
-  epi_units = tunisia, 
-  road_access_raster = road_raster, 
+  epi_units = tunisia,
+  road_access_raster = road_raster,
   aggregate_fun = "mean"
 )
 
 plot(
-  extract_raster(ri_road_access), 
+  extract_raster(ri_road_access),
   main = "Raster cropped to epidemiological units"
 )
 ```
@@ -487,6 +476,7 @@ plot(
 <img src="man/figures/README-display-raster-1.png" width="100%" />
 
 ``` r
+
 
 plot_risk(ri_road_access)
 ```
@@ -525,7 +515,7 @@ rescaled <- rescale_risk_scores(
   cols = "road_access_risk",
   from = c(0, max(ri_road_access$road_access_risk)),
   to = c(0, 100),
-  method = "linear", 
+  method = "linear",
   names_to = "scaled_road_access_risk",
   keep_cols = TRUE
 )
@@ -545,7 +535,7 @@ are not required.
 ri_road_access_scaled <- rescale_risk_scores(
   data = ri_road_access,
   from = c(0, max(ri_road_access$road_access_risk)),
-  method = "sigmoid", 
+  method = "sigmoid",
   keep_cols = FALSE
 )
 ```
@@ -570,15 +560,16 @@ wkt_lines <- c(
   "LINESTRING (8.5 33.5, 9.0 33.0, 10.0 32.5)"
 )
 water_sv <- vect(data.frame(wkt = wkt_lines),
-                 geom = "wkt",
-                 crs  = "EPSG:4326")
+  geom = "wkt",
+  crs  = "EPSG:4326"
+)
 water_sv$water <- 1
 water_rast <- rasterize(
   water_sv,
   r_tun,
   field      = "water",
   background = 0
-  )
+)
 plot(water_rast, main = "Example watercourses")
 plot(tunisia, add = TRUE, color = "red")
 ```
@@ -587,15 +578,15 @@ plot(tunisia, add = TRUE, color = "red")
 
 ``` r
 ri_water <- augment_epi_units_with_raster(
-  epi_units = tunisia, 
-  raster = water_rast, 
-  risk_name = "water_risk", 
+  epi_units = tunisia,
+  raster = water_rast,
+  risk_name = "water_risk",
   aggregate_fun = "mean"
-) |> 
+) |>
   rescale_risk_scores(
-    cols = "water_risk", 
-    from = c(0,1),
-    to = c(0,100), 
+    cols = "water_risk",
+    from = c(0, 1),
+    to = c(0, 100),
     method = "quadratic"
   )
 
@@ -618,12 +609,12 @@ risk table assuming that:
 Here we generate a dataset from a random uniform distribution
 
 ``` r
-ri_random <- tunisia |> 
-  select(my_key = eu_id) |> 
+ri_random <- tunisia |>
+  select(my_key = eu_id) |>
   mutate(
     ri_random = runif(nrow(tunisia), min = 0, max = 100)
-         ) |> 
-  filter(row_number() <= 30) |> 
+  ) |>
+  filter(row_number() <= 30) |>
   rescale_risk_scores(
     cols = "ri_random",
     from = c(0, 100), to = c(0, 100), method = "sigmoid"
@@ -637,7 +628,7 @@ can be handy to have them all in one table. Each row is an
 epidemiological unit and its various risks scores.
 
 ``` r
-# initialise the risk_table 
+# initialise the risk_table
 rt <- risk_table(tunisia, scale = c(0, 100))
 # Add risks that have already been rescaled
 rt <- add_risk(risk_table = rt, risk_data = ri_road_access_scaled)
@@ -648,23 +639,23 @@ rt <- add_risk(risk_table = rt, risk_data = ri_random, join_by = "my_key")
 rt <- add_risk(
   risk_table = rt,
   risk_data = rescale_risk_scores(
-    dataset = ri_entry_points, 
+    dataset = ri_entry_points,
     method = "sigmoid"
-    )
+  )
 )
 
 rt <- add_risk(
   risk_table = rt,
   risk_data = rescale_risk_scores(
     dataset = ri_borders
-    )
+  )
 )
 
 rt <- add_risk(
   risk_table = rt,
   risk_data = rescale_risk_scores(
     dataset = ri_animal_mobility
-    )
+  )
 )
 summarised_risks <- summarise_risk_scores(rt, method = "max")
 

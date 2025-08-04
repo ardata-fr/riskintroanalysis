@@ -1,5 +1,3 @@
-
-\dontrun{
 library(riskintroanalysis)
 library(riskintrodata)
 library(dplyr)
@@ -9,18 +7,20 @@ library(ggplot2)
 # Example with raw sf files, previously downloaded with geodata::gadm()
 tunisia_raw <- read_sf(system.file(
   package = "riskintrodata",
-  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+  "samples",
+  "tunisia",
+  "epi_units",
+  "tunisia_adm2_raw.gpkg"
 ))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- apply_mapping(
-  tunisia_raw,
-  mapping = mapping_epi_units(
-    eu_name = "NAME_2",
-    geometry = "geom"
-  ),
-  validate = TRUE
-)
+tunisia <- validate_dataset_content(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |>
+  extract_dataset()
 
 road_raster_fp <- download_road_access_raster()
 road_raster <- rast(road_raster_fp)
@@ -36,6 +36,4 @@ raster <- extract_raster(road_access_risk)
 plot(raster)
 
 # plotting the risk of introduction dataset
-ggplot(data=road_access_risk, aes(fill = road_access_risk)) + geom_sf()
-
-}
+ggplot(data = road_access_risk, aes(fill = road_access_risk)) + geom_sf()

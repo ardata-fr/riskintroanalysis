@@ -10,9 +10,21 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
       EU_ID = c("EU1", "EU2", "EU3"),
       EU_NAME = c("Epi Unit 1", "Epi Unit 2", "Epi Unit 3"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
@@ -20,20 +32,24 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
       eu_id = "EU_ID",
       eu_name = "EU_NAME",
       geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  ) |> extract_dataset()
 
   # Create test entry points - one row per source
   entry_points_raw <- data.frame(
     POINT_ID = c("EP1", "EP2", "EP3", "EP3", "EP4"),
-    POINT_NAME = c("Entry Point 1", "Entry Point 2", "Entry Point 3", "Entry Point 3", "Entry Point 4"),
+    POINT_NAME = c(
+      "Entry Point 1",
+      "Entry Point 2",
+      "Entry Point 3",
+      "Entry Point 3",
+      "Entry Point 4"
+    ),
     LONGITUDE = c(0.5, 1.5, 2.5, 2.5, 0.2), # EP1 in EU1, EP2 in EU2, EP3 in EU3 (2 rows), EP4 in EU1
     LATITUDE = c(0.5, 0.5, 0.5, 0.5, 0.8),
     MODE = c("C", "NC", "C", "C", "NC"), # Legal/Illegal
@@ -43,18 +59,16 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   )
 
   # Apply mapping to prepare and validate entry points
-  entry_points <- apply_mapping(
-    entry_points_raw,
-    mapping = mapping_entry_points(
+  entry_points <- validate_dataset_content(
+    x = entry_points_raw,
+    table_name = "entry_points",
       point_name = "POINT_NAME",
       lng = "LONGITUDE",
       lat = "LATITUDE",
       mode = "MODE",
       type = "TYPE",
       sources = "SOURCES"
-    ),
-    validate = TRUE
-  )
+  ) |> extract_dataset()
 
   # Create test emission risk factors
   emission_risk_factors <- bind_rows(
@@ -125,18 +139,24 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
 
   # Test that secondary dataset (borders attribute) is also rescaled
   extracted_borders_scaled <- extract_point_risk(entry_points_scaled)
-  expect_true(all(extracted_borders_scaled$point_emission_risk <= 100, na.rm = TRUE))
+  expect_true(all(
+    extracted_borders_scaled$point_emission_risk <= 100,
+    na.rm = TRUE
+  ))
 
   # Test that the scale attributes on the secondary dataset are updated
   expect_equal(attr(extracted_borders_scaled, "scale"), c(0, 100))
 
   # Test that the relationship between main and secondary data is preserved
   # (i.e., both should be scaled by the same factor)
-  if (any(entry_points_original$entry_points_risk > 0, na.rm = TRUE) &&
-      any(extracted_borders_original$point_emission_risk > 0, na.rm = TRUE)) {
-
-    original_ratio <- entry_points_original$entry_points_risk[1] / extracted_borders_original$point_emission_risk[1]
-    scaled_ratio <- entry_points_scaled$entry_points_risk[1] / extracted_borders_scaled$point_emission_risk[1]
+  if (
+    any(entry_points_original$entry_points_risk > 0, na.rm = TRUE) &&
+      any(extracted_borders_original$point_emission_risk > 0, na.rm = TRUE)
+  ) {
+    original_ratio <- entry_points_original$entry_points_risk[1] /
+      extracted_borders_original$point_emission_risk[1]
+    scaled_ratio <- entry_points_scaled$entry_points_risk[1] /
+      extracted_borders_scaled$point_emission_risk[1]
 
     expect_equal(original_ratio, scaled_ratio, tolerance = 1e-10)
   }

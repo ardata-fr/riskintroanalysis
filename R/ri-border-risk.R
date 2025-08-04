@@ -31,6 +31,8 @@
 #' or `LINESTRING`.
 #' - `weight`: The risk weighting coefficient based on the length of the border.
 #' @export
+#' @examples
+#' #
 #' @example examples/calc_border_risk.R
 calc_border_lengths <- function(
     epi_units,
@@ -238,6 +240,8 @@ calc_border_lengths <- function(
 #' @param epi_units epidemiological units dataset
 #' @param shared_borders shared borders dataset as outputted by [calc_border_lengths()]
 #' @param emission_risk emission risk dataset,
+#' @examples
+#' #
 #' @example examples/calc_border_risk.R
 #' @return An `sf` object containing the border risk score associated with each
 #' epidemiological unit. The table is containing the following columns:

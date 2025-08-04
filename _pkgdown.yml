@@ -17,9 +17,6 @@ footer:
       analysing geospatial epidemiological.
 
 reference:
-  - title: Standardize Datasets for 'Riskintro' Analysis
-    contents:
-    - apply_mapping
   - title: Calculate risks
     desc: >
      These functions are to be used for calculations of risks of introduction

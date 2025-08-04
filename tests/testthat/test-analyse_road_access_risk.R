@@ -10,9 +10,21 @@ test_that("Complete road access risk analysis workflow works", {
       EU_ID = c("EU1", "EU2", "EU3"),
       EU_NAME = c("Epi Unit 1", "Epi Unit 2", "Epi Unit 3"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
@@ -20,15 +32,14 @@ test_that("Complete road access risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create synthetic road access raster data
   # Create a raster that covers the epidemiological units area
@@ -100,12 +111,18 @@ test_that("Complete road access risk analysis workflow works", {
   # Step 3: Test risk rescaling
   ri_road_access_scaled <- rescale_risk_scores(
     ri_road_access,
-    from = c(min(ri_road_access$road_access_risk), max(ri_road_access$road_access_risk)),
+    from = c(
+      min(ri_road_access$road_access_risk),
+      max(ri_road_access$road_access_risk)
+    ),
     to = c(0, 100),
     method = "linear"
   )
 
-  expect_true(all(ri_road_access_scaled$road_access_risk >= 0 & ri_road_access_scaled$road_access_risk <= 100))
+  expect_true(all(
+    ri_road_access_scaled$road_access_risk >= 0 &
+      ri_road_access_scaled$road_access_risk <= 100
+  ))
   expect_equal(attr(ri_road_access_scaled, "scale"), c(0, 100))
 
   # Check that secondary dataset (raster) is preserved during scaling
@@ -117,7 +134,10 @@ test_that("Complete road access risk analysis workflow works", {
   expect_s3_class(static_plot_scaled, "ggplot")
 
   # Test interactive plotting with scaled data
-  interactive_plot_scaled <- plot_risk(ri_road_access_scaled, interactive = TRUE)
+  interactive_plot_scaled <- plot_risk(
+    ri_road_access_scaled,
+    interactive = TRUE
+  )
   expect_s3_class(interactive_plot_scaled, c("leaflet", "htmlwidget"))
 })
 
@@ -134,22 +154,25 @@ test_that("Road access risk aggregation methods work correctly", {
       EU_ID = c("EU1"),
       EU_NAME = c("Epi Unit 1"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 2, 0, 2, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 2, 0, 2, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create raster with varying values to test aggregation
   raster_extent <- st_bbox(epi_units)
@@ -164,7 +187,14 @@ test_that("Road access risk aggregation methods work correctly", {
   )
 
   # Fill with values: 10, 20, 30, 40, 50 - mix of low and high values
-  values(road_access_raster) <- c(10, 20, 30, 40, 50, rep(25, ncell(road_access_raster) - 5))
+  values(road_access_raster) <- c(
+    10,
+    20,
+    30,
+    40,
+    50,
+    rep(25, ncell(road_access_raster) - 5)
+  )
 
   # Test different aggregation methods
   ri_mean <- calc_road_access_risk(
@@ -211,24 +241,33 @@ test_that("Road access risk analysis works with real sample data", {
   library(riskintrodata)
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "epi_units",
+      "tunisia_adm2_raw.gpkg"
+    ) !=
+      "",
     "Sample data not available"
   )
 
   # Load real sample epidemiological units
   tunisia_raw <- sf::read_sf(system.file(
     package = "riskintrodata",
-    "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+    "samples",
+    "tunisia",
+    "epi_units",
+    "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- apply_mapping(
-    tunisia_raw,
-    mapping = mapping_epi_units(
-      eu_name = "NAME_2",
-      geometry = "geom"
-    ),
-    validate = TRUE
-  )
+  tunisia <- validate_dataset_content(
+    x = tunisia_raw,
+    table_name = "epi_units",
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ) |>
+    extract_dataset()
 
   # Create synthetic raster data for Tunisia extent since we can't download in tests
   tunisia_extent <- st_bbox(tunisia)
@@ -245,7 +284,11 @@ test_that("Road access risk analysis works with real sample data", {
 
   # Fill with random but reasonable road access values (0-100 range)
   set.seed(123) # For reproducible tests
-  values(road_access_raster) <- runif(ncell(road_access_raster), min = 0, max = 100)
+  values(road_access_raster) <- runif(
+    ncell(road_access_raster),
+    min = 0,
+    max = 100
+  )
 
   # Calculate road access risk
   ri_road_access <- calc_road_access_risk(
@@ -274,11 +317,16 @@ test_that("Road access risk analysis works with real sample data", {
   # Test rescaling with real data
   ri_scaled <- rescale_risk_scores(
     ri_road_access,
-    from = c(min(ri_road_access$road_access_risk), max(ri_road_access$road_access_risk)),
+    from = c(
+      min(ri_road_access$road_access_risk),
+      max(ri_road_access$road_access_risk)
+    ),
     to = c(0, 100),
     method = "linear"
   )
-  expect_true(all(ri_scaled$road_access_risk >= 0 & ri_scaled$road_access_risk <= 100))
+  expect_true(all(
+    ri_scaled$road_access_risk >= 0 & ri_scaled$road_access_risk <= 100
+  ))
 })
 
 
@@ -294,22 +342,25 @@ test_that("Road access risk handles edge cases correctly", {
       EU_ID = c("EU1"),
       EU_NAME = c("Epi Unit 1"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Test with raster containing NA values
   raster_extent <- st_bbox(epi_units)
@@ -324,7 +375,14 @@ test_that("Road access risk handles edge cases correctly", {
   )
 
   # Mix of values and NAs
-  values(road_access_raster_na) <- c(10, 20, NA, 40, NA, rep(25, ncell(road_access_raster_na) - 5))
+  values(road_access_raster_na) <- c(
+    10,
+    20,
+    NA,
+    40,
+    NA,
+    rep(25, ncell(road_access_raster_na) - 5)
+  )
 
   # Should handle NA values gracefully (na.rm = TRUE in zonal function)
   ri_with_na <- expect_no_error(
@@ -349,7 +407,10 @@ test_that("Road access risk handles edge cases correctly", {
     crs = "EPSG:4326"
   )
 
-  values(road_access_raster_uniform) <- rep(42, ncell(road_access_raster_uniform))
+  values(road_access_raster_uniform) <- rep(
+    42,
+    ncell(road_access_raster_uniform)
+  )
 
   ri_uniform <- calc_road_access_risk(
     epi_units = epi_units,
@@ -388,23 +449,30 @@ test_that("augment_epi_units_with_raster function works independently", {
       EU_ID = c("EU1", "EU2"),
       EU_NAME = c("Epi Unit 1", "Epi Unit 2"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
+  epi_units <- validate_dataset_content(
     epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create test raster
   raster_extent <- st_bbox(epi_units)
@@ -419,7 +487,11 @@ test_that("augment_epi_units_with_raster function works independently", {
   )
 
   # Create gradient: EU1 gets lower values, EU2 gets higher values
-  values(test_raster) <- c(rep(10, 11), rep(30, 11), rep(20, ncell(test_raster) - 22))
+  values(test_raster) <- c(
+    rep(10, 11),
+    rep(30, 11),
+    rep(20, ncell(test_raster) - 22)
+  )
 
   # Test the augment function directly
   augmented_epi_units <- augment_epi_units_with_raster(

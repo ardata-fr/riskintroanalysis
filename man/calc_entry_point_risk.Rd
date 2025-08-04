@@ -13,11 +13,11 @@ calc_entry_point_risk(
 )
 }
 \arguments{
-\item{entry_points}{The entry points dataset as formatted and validated by \code{\link[=apply_mapping]{apply_mapping()}} and
-\code{\link[=mapping_entry_points]{mapping_entry_points()}}. This should be an \code{sf} object containing points and emission risks.}
+\item{entry_points}{The entry points dataset as formatted and validated by
+\code{\link[riskintrodata:mapping_entry_points]{riskintrodata::mapping_entry_points()}}. This should be an \code{sf} object containing points and emission risks.}
 
-\item{epi_units}{The epidemiological units dataset as formatted and validated by \code{\link[=apply_mapping]{apply_mapping()}} and
-\code{\link[=mapping_epi_units]{mapping_epi_units()}}. This should be an \code{sf} object with polygons.}
+\item{epi_units}{The epidemiological units dataset as formatted and validated by
+\code{\link[riskintrodata:mapping_epi_units]{riskintrodata::mapping_epi_units()}}. This should be an \code{sf} object with polygons.}
 
 \item{emission_risk}{The emission risk dataset as returned by the \code{\link[=calc_emission_risk]{calc_emission_risk()}}
 function.}
@@ -77,6 +77,7 @@ unit is calculated. Giving the final risk of introduction by entry points for
 each epidemiological unit.
 }
 \examples{
+library(riskintrodata)
 library(riskintroanalysis)
 library(dplyr)
 
@@ -85,38 +86,40 @@ entry_points_fp <-
     package = "riskintrodata",
     "samples",
     "tunisia",
-    "entry_points", "BORDER_CROSSING_POINTS.csv"
+    "entry_points",
+    "BORDER_CROSSING_POINTS.csv"
   )
 
 entry_points <- readr::read_csv(entry_points_fp)
 
-entry_points <- apply_mapping(
-  dataset = entry_points,
-  mapping = mapping_entry_points(
-    point_name = "NAME",
-    lng = "LONGITUDE_X",
-    lat = "LATITUDE_Y",
-    mode = "MODE",
-    type = "TYPE",
-    sources = "SOURCES"
-  ),
-  validate = TRUE
-)
+entry_points <- validate_dataset_content(
+  x = entry_points,
+  table_name = "entry_points",
+  point_name = "NAME",
+  lng = "LONGITUDE_X",
+  lat = "LATITUDE_Y",
+  mode = "MODE",
+  type = "TYPE",
+  sources = "SOURCES"
+) |>
+  extract_dataset()
 
 tunisia_raw <- sf::read_sf(system.file(
   package = "riskintrodata",
-  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+  "samples",
+  "tunisia",
+  "epi_units",
+  "tunisia_adm2_raw.gpkg"
 ))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- apply_mapping(
-  tunisia_raw,
-  mapping = mapping_epi_units(
-    eu_name = "NAME_2",
-    geometry = "geom"
-  ),
-  validate = TRUE
-)
+tunisia <- validate_dataset_content(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |>
+  extract_dataset()
 
 algeria <- riskintrodata::erf_row(
   iso3 = "DZA",
@@ -170,7 +173,9 @@ emission_risk_factors <- dplyr::bind_rows(
   wahis_erf
 )
 
-emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
+emission_risk_table <- calc_emission_risk(
+  emission_risk_factors = emission_risk_factors
+)
 
 ri_entry_points <- calc_entry_point_risk(
   entry_points = entry_points,
@@ -183,5 +188,4 @@ plot_risk(ri_entry_points)
 extract_point_risk(ri_entry_points)
 
 attributes(ri_entry_points)
-
 }

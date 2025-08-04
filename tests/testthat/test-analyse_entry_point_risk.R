@@ -9,9 +9,21 @@ test_that("Complete entry point risk analysis workflow works", {
       EU_ID = c("EU1", "EU2", "EU3"),
       EU_NAME = c("Epi Unit 1", "Epi Unit 2", "Epi Unit 3"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE))),
-        st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
@@ -19,20 +31,25 @@ test_that("Complete entry point risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create test entry points - one row per source
   entry_points_raw <- data.frame(
     POINT_ID = c("EP1", "EP2", "EP3", "EP3", "EP4"),
-    POINT_NAME = c("Entry Point 1", "Entry Point 2", "Entry Point 3", "Entry Point 3", "Entry Point 4"),
+    POINT_NAME = c(
+      "Entry Point 1",
+      "Entry Point 2",
+      "Entry Point 3",
+      "Entry Point 3",
+      "Entry Point 4"
+    ),
     LONGITUDE = c(0.5, 1.5, 2.5, 2.5, 0.2), # EP1 in EU1, EP2 in EU2, EP3 in EU3 (2 rows), EP4 in EU1
     LATITUDE = c(0.5, 0.5, 0.5, 0.5, 0.8),
     MODE = c("C", "NC", "C", "C", "NC"), # Legal/Illegal
@@ -42,18 +59,17 @@ test_that("Complete entry point risk analysis workflow works", {
   )
 
   # Apply mapping to prepare and validate entry points
-  entry_points <- apply_mapping(
-    entry_points_raw,
-    mapping = mapping_entry_points(
-      point_name = "POINT_NAME",
-      lng = "LONGITUDE",
-      lat = "LATITUDE",
-      mode = "MODE",
-      type = "TYPE",
-      sources = "SOURCES"
-    ),
-    validate = TRUE
-  )
+  entry_points <- validate_dataset_content(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
 
   # Create test emission risk factors
   emission_risk_factors <- bind_rows(
@@ -120,7 +136,11 @@ test_that("Complete entry point risk analysis workflow works", {
   expect_s3_class(attr(ri_entry_points, "points"), "sf")
 
   # Test risk values are in valid range
-  expect_true(all(ri_entry_points$entry_points_risk >= 0 & ri_entry_points$entry_points_risk <= 12, na.rm = TRUE))
+  expect_true(all(
+    ri_entry_points$entry_points_risk >= 0 &
+      ri_entry_points$entry_points_risk <= 12,
+    na.rm = TRUE
+  ))
 
   # Test extract_point_risk function
   extracted_points <- expect_no_error(extract_point_risk(ri_entry_points))
@@ -145,7 +165,10 @@ test_that("Complete entry point risk analysis workflow works", {
   # EU1 should have 2 entry points (EP1 and EP4), EU2 should have 1 (EP2), EU3 should have 1 (EP3)
   extracted_points_df <- st_drop_geometry(extracted_points)
   expect_equal(nrow(extracted_points_df), 4)
-  expect_setequal(extracted_points_df$point_id, c("ep-001","ep-002","ep-003","ep-004"))
+  expect_setequal(
+    extracted_points_df$point_id,
+    c("ep-001", "ep-002", "ep-003", "ep-004")
+  )
 
   # Step 2: Test plotting functionality
   # Test static plotting
@@ -163,7 +186,11 @@ test_that("Complete entry point risk analysis workflow works", {
     method = "linear"
   )
 
-  expect_true(all(ri_entry_points_scaled$entry_points_risk >= 0 & ri_entry_points_scaled$entry_points_risk <= 100, na.rm = TRUE))
+  expect_true(all(
+    ri_entry_points_scaled$entry_points_risk >= 0 &
+      ri_entry_points_scaled$entry_points_risk <= 100,
+    na.rm = TRUE
+  ))
   expect_equal(attr(ri_entry_points_scaled, "scale"), c(0, 100))
 
   # Check that secondary dataset (points) has been scaled
@@ -175,7 +202,10 @@ test_that("Complete entry point risk analysis workflow works", {
   expect_s3_class(static_plot_scaled, "ggplot")
 
   # Test interactive plotting with scaled data
-  interactive_plot_scaled <- plot_risk(ri_entry_points_scaled, interactive = TRUE)
+  interactive_plot_scaled <- plot_risk(
+    ri_entry_points_scaled,
+    interactive = TRUE
+  )
   expect_s3_class(interactive_plot_scaled, c("leaflet", "htmlwidget"))
 })
 
@@ -191,22 +221,25 @@ test_that("Entry point risk analysis aggregation functions work correctly", {
       EU_ID = c("EU1"),
       EU_NAME = c("Epi Unit 1"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create entry points with different risk sources - testing aggregation
   # EP1 has multiple sources (LOW and HIGH), EP2 has single source (MED)
@@ -221,18 +254,17 @@ test_that("Entry point risk analysis aggregation functions work correctly", {
     stringsAsFactors = FALSE
   )
 
-  entry_points <- apply_mapping(
-    entry_points_raw,
-    mapping = mapping_entry_points(
-      point_name = "POINT_NAME",
-      lng = "LONGITUDE",
-      lat = "LATITUDE",
-      mode = "MODE",
-      type = "TYPE",
-      sources = "SOURCES"
-    ),
-    validate = TRUE
-  )
+  entry_points <- validate_dataset_content(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
 
   # Create emission risk factors with different risk levels
   emission_risk_factors <- bind_rows(
@@ -341,48 +373,69 @@ test_that("Entry point risk analysis works with real sample data", {
   library(riskintrodata)
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "epi_units",
+      "tunisia_adm2_raw.gpkg"
+    ) !=
+      "",
     "Sample data not available"
   )
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "entry_points", "BORDER_CROSSING_POINTS.csv") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "entry_points",
+      "BORDER_CROSSING_POINTS.csv"
+    ) !=
+      "",
     "Sample entry points data not available"
   )
 
   # Load real sample epidemiological units
   tunisia_raw <- sf::read_sf(system.file(
     package = "riskintrodata",
-    "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+    "samples",
+    "tunisia",
+    "epi_units",
+    "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- apply_mapping(
-    tunisia_raw,
-    mapping = mapping_epi_units(
-      eu_name = "NAME_2",
-      geometry = "geom"
-    ),
-    validate = TRUE
-  )
+  tunisia <- validate_dataset_content(
+    x = tunisia_raw,
+    table_name = "epi_units",
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ) |>
+    extract_dataset()
 
   # Load real sample entry points
-  entry_points_raw <- readr::read_csv(system.file(
-    package = "riskintrodata",
-    "samples", "tunisia", "entry_points", "BORDER_CROSSING_POINTS.csv"
-  ), show_col_types = FALSE)
-
-  entry_points <- apply_mapping(
-    entry_points_raw,
-    mapping = mapping_entry_points(
-      point_name = "NAME",
-      lng = "LONGITUDE_X",
-      lat = "LATITUDE_Y",
-      mode = "MODE",
-      type = "TYPE",
-      sources = "SOURCES"
+  entry_points_raw <- readr::read_csv(
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "entry_points",
+      "BORDER_CROSSING_POINTS.csv"
     ),
-    validate = TRUE
+    show_col_types = FALSE
   )
+
+  entry_points <- validate_dataset_content(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "NAME",
+    lng = "LONGITUDE_X",
+    lat = "LATITUDE_Y",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
 
   # Create test emission risk for Algeria and Libya (common neighbors)
   emission_risk_factors <- bind_rows(
@@ -441,7 +494,11 @@ test_that("Entry point risk analysis works with real sample data", {
   # Test with real data
   expect_s3_class(ri_entry_points, "sf")
   expect_gt(nrow(ri_entry_points), 0)
-  expect_true(all(ri_entry_points$entry_points_risk >= 0 & ri_entry_points$entry_points_risk <= 12, na.rm = TRUE))
+  expect_true(all(
+    ri_entry_points$entry_points_risk >= 0 &
+      ri_entry_points$entry_points_risk <= 12,
+    na.rm = TRUE
+  ))
 
   # Test extract_point_risk with real data
   extracted_points <- extract_point_risk(ri_entry_points)
@@ -461,7 +518,10 @@ test_that("Entry point risk analysis works with real sample data", {
     to = c(0, 100),
     method = "linear"
   )
-  expect_true(all(ri_scaled$entry_points_risk >= 0 & ri_scaled$entry_points_risk <= 100, na.rm = TRUE))
+  expect_true(all(
+    ri_scaled$entry_points_risk >= 0 & ri_scaled$entry_points_risk <= 100,
+    na.rm = TRUE
+  ))
 })
 
 
@@ -476,22 +536,25 @@ test_that("Entry point risk analysis handles missing emission risk gracefully", 
       EU_ID = c("EU1"),
       EU_NAME = c("Epi Unit 1"),
       geometry = st_sfc(
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create entry points with sources that don't have emission risk data
   entry_points_raw <- data.frame(
@@ -505,18 +568,17 @@ test_that("Entry point risk analysis handles missing emission risk gracefully", 
     stringsAsFactors = FALSE
   )
 
-  entry_points <- apply_mapping(
-    entry_points_raw,
-    mapping = mapping_entry_points(
-      point_name = "POINT_NAME",
-      lng = "LONGITUDE",
-      lat = "LATITUDE",
-      mode = "MODE",
-      type = "TYPE",
-      sources = "SOURCES"
-    ),
-    validate = TRUE
-  )
+  entry_points <- validate_dataset_content(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
 
   # Create emission risk factors for only one source
   emission_risk_factors <- erf_row(
@@ -573,24 +635,31 @@ test_that("Entry point allocation to epidemiological units works correctly", {
       EU_NAME = c("Epi Unit 1", "Epi Unit 2"),
       geometry = st_sfc(
         # EU1: square from (0,0) to (1,1)
-        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
         # EU2: square from (2,0) to (3,1) - separated from EU1
-        st_polygon(list(matrix(c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0), ncol = 2, byrow = TRUE)))
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
       ),
       stringsAsFactors = FALSE
     ),
     crs = 4326
   )
 
-  epi_units <- apply_mapping(
-    epi_units_raw,
-    mapping = mapping_epi_units(
-      eu_id = "EU_ID",
-      eu_name = "EU_NAME",
-      geometry = "geometry"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
 
   # Create entry points: one inside EU1, one inside EU2, one outside both (should go to nearest)
   entry_points_raw <- data.frame(
@@ -604,18 +673,17 @@ test_that("Entry point allocation to epidemiological units works correctly", {
     stringsAsFactors = FALSE
   )
 
-  entry_points <- apply_mapping(
-    entry_points_raw,
-    mapping = mapping_entry_points(
-      point_name = "POINT_NAME",
-      lng = "LONGITUDE",
-      lat = "LATITUDE",
-      mode = "MODE",
-      type = "TYPE",
-      sources = "SOURCES"
-    ),
-    validate = TRUE
-  )
+  entry_points <- validate_dataset_content(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
 
   # Create emission risk
   emission_risk_factors <- erf_row(
