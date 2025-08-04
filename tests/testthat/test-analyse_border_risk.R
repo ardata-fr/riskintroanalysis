@@ -4,25 +4,34 @@ test_that("Complete border risk analysis workflow works", {
   library(riskintrodata)
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "epi_units",
+      "tunisia_adm2_raw.gpkg"
+    ) !=
+      "",
     "Sample data not available"
   )
 
   # Use real sample data for more realistic testing
   tunisia_raw <- sf::read_sf(system.file(
     package = "riskintrodata",
-    "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+    "samples",
+    "tunisia",
+    "epi_units",
+    "tunisia_adm2_raw.gpkg"
   ))
 
   # Apply mapping to prepare and validate dataset
-  epi_units <- apply_mapping(
-    tunisia_raw,
-    mapping = mapping_epi_units(
-      eu_name = "NAME_2",
-      geometry = "geom"
-    ),
-    validate = TRUE
-  )
+  epi_units <- validate_dataset_content(
+    x = tunisia_raw,
+    table_name = "epi_units",
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ) |>
+    extract_dataset()
 
   # Create test emission risk factors for neighboring countries
   emission_risk_factors <- bind_rows(
@@ -109,7 +118,10 @@ test_that("Complete border risk analysis workflow works", {
   expect_s3_class(attr(ri_border, "borders"), "sf")
 
   # Test risk values are in valid range
-  expect_true(all(ri_border$border_risk >= 0 & ri_border$border_risk <= 12, na.rm = TRUE))
+  expect_true(all(
+    ri_border$border_risk >= 0 & ri_border$border_risk <= 12,
+    na.rm = TRUE
+  ))
 
   extracted_borders <- expect_no_error(extract_border(ri_border))
 
@@ -142,17 +154,20 @@ test_that("Complete border risk analysis workflow works", {
     method = "linear"
   )
 
-  expect_true(all(ri_border_scaled$border_risk >= 0 & ri_border_scaled$border_risk <= 100, na.rm = TRUE))
+  expect_true(all(
+    ri_border_scaled$border_risk >= 0 & ri_border_scaled$border_risk <= 100,
+    na.rm = TRUE
+  ))
   expect_equal(attr(ri_border_scaled, "scale"), c(0, 100))
 
   borders <- extract_border(ri_border)
   expect_equal(attr(borders, "risk_col"), "border_risk")
   expect_equal(attr(borders, "table_name"), "shared_borders")
-  expect_equal(attr(borders, "scale"), c(0,12))
+  expect_equal(attr(borders, "scale"), c(0, 12))
 
   # Check secondary dataset has been scaled.
   scaled_borders <- extract_border(ri_border_scaled)
-  expect_equal(attr(scaled_borders, "scale"), c(0,100))
+  expect_equal(attr(scaled_borders, "scale"), c(0, 100))
 
   # Test static plotting
   static_plot <- plot_risk(ri_border_scaled, interactive = FALSE)
@@ -161,7 +176,6 @@ test_that("Complete border risk analysis workflow works", {
   # Test interactive plotting
   interactive_plot <- plot_risk(ri_border_scaled, interactive = TRUE)
   expect_s3_class(interactive_plot, c("leaflet", "htmlwidget"))
-
 })
 
 
@@ -171,24 +185,33 @@ test_that("Border risk analysis works with real sample data", {
   library(riskintrodata)
 
   skip_if_not(
-    system.file(package = "riskintrodata", "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg") != "",
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "epi_units",
+      "tunisia_adm2_raw.gpkg"
+    ) !=
+      "",
     "Sample data not available"
   )
 
   # Load real sample data
   tunisia_raw <- sf::read_sf(system.file(
     package = "riskintrodata",
-    "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+    "samples",
+    "tunisia",
+    "epi_units",
+    "tunisia_adm2_raw.gpkg"
   ))
 
-  tunisia <- apply_mapping(
-    tunisia_raw,
-    mapping = mapping_epi_units(
-      eu_name = "NAME_2",
-      geometry = "geom"
-    ),
-    validate = TRUE
-  )
+  tunisia <- validate_dataset_content(
+    x = tunisia_raw,
+    table_name = "epi_units",
+    eu_name = "NAME_2",
+    geometry = "geom"
+  ) |>
+    extract_dataset()
 
   # Get a subset of neighbouring countries for faster testing
   test_neighbours <- c("LBY")
@@ -235,7 +258,10 @@ test_that("Border risk analysis works with real sample data", {
   # Test with real data
   expect_s3_class(ri_border, "sf")
   expect_gt(nrow(ri_border), 0)
-  expect_true(all(ri_border$border_risk >= 0 & ri_border$border_risk <= 12, na.rm = TRUE))
+  expect_true(all(
+    ri_border$border_risk >= 0 & ri_border$border_risk <= 12,
+    na.rm = TRUE
+  ))
 
   # Test plotting works with real data
   static_plot <- plot_risk(ri_border, interactive = FALSE)

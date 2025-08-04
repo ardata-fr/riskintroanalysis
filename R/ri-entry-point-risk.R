@@ -16,10 +16,10 @@
 #' unit is calculated. Giving the final risk of introduction by entry points for
 #' each epidemiological unit.
 #'
-#' @param entry_points The entry points dataset as formatted and validated by [apply_mapping()] and
-#' [mapping_entry_points()]. This should be an `sf` object containing points and emission risks.
-#' @param epi_units The epidemiological units dataset as formatted and validated by [apply_mapping()] and
-#' [mapping_epi_units()]. This should be an `sf` object with polygons.
+#' @param entry_points The entry points dataset as formatted and validated by
+#' [riskintrodata::mapping_entry_points()]. This should be an `sf` object containing points and emission risks.
+#' @param epi_units The epidemiological units dataset as formatted and validated by
+#' [riskintrodata::mapping_epi_units()]. This should be an `sf` object with polygons.
 #' @param emission_risk The emission risk dataset as returned by the [calc_emission_risk()]
 #' function.
 #' @param points_agg_fun Function used to aggrgate emission risk for each entry

@@ -11,6 +11,4 @@ if (require("rnaturalearth", quietly = TRUE)) {
   plot(st_geometry(africa[africa$name == "Tunisia", ]))
   plot(st_geometry(tunisia), add = TRUE, col = "red")
   plot(st_geometry(africa_rest), col = "lightgrey", add = TRUE)
-
 }
-

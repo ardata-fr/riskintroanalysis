@@ -228,7 +228,7 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = new_leaf
 #' @return leaflet map object
 #' @export
 #' @rdname plot_risk
-#' @importFrom leaflet addPolygons addPolylines
+#' @importFrom leaflet addPolygons addPolylines clearShapes
 plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
 
   pal <- ll_scale(scale)

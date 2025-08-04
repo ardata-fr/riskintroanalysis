@@ -54,27 +54,28 @@ emission of neighbouring countries. The score is weighted based on the length of
 shared borders.
 }
 \examples{
-
-
-\donttest{
-
+#
 library(sf)
 library(dplyr)
+library(riskintrodata)
+library(riskintroanalysis)
 
 tunisia_raw <- sf::read_sf(system.file(
   package = "riskintrodata",
-  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+  "samples",
+  "tunisia",
+  "epi_units",
+  "tunisia_adm2_raw.gpkg"
 ))
 
 # Apply mapping to prepare colnames and validate dataset
-tunisia <- apply_mapping(
-  tunisia_raw,
-  mapping = mapping_epi_units(
-    eu_name = "NAME_2",
-    geometry = "geom"
-  ),
-  validate = TRUE
-)
+tunisia <- validate_dataset_content(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |>
+  extract_dataset()
 
 # Run function to get shared borders
 shared_borders <- calc_border_lengths(
@@ -98,5 +99,4 @@ ri_border
 
 border_lines <- extract_border(ri_border)
 border_lines
-}
 }

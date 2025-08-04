@@ -95,6 +95,7 @@ summarise_risk_scores <- function(
 
 # Visualisation --------------------------------------------------------------
 #' @importFrom stringr str_to_sentence
+#' @importFrom leaflet highlightOptions colorBin
 updateRiskSummaryLeaflet <- function(ll, dat){
 
   name_labels <- list()

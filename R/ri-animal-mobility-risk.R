@@ -19,7 +19,7 @@
 #' each epidemiological unit.
 #'
 #' @param animal_mobility animal moblity dataset as formatted and validated by
-#' [apply_mapping()] and [mapping_animal_mobility()]
+#' [riskintrodata::mapping_animal_mobility()]
 #' @param emission_risk emission risk dataset from [calc_emission_risk]
 #' @param epi_units epidemiological units dataset
 #' @param method aggregation method for eu risk
