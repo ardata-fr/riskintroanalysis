@@ -16,17 +16,17 @@
 \alias{plot_risk_table}
 \title{Interactive leaflet plotting for entry points}
 \usage{
-plot_entry_points_interactive(dataset, scale, risk_col, ll = new_leaflet())
+plot_entry_points_interactive(dataset, scale, risk_col, ll = basemap())
 
-plot_animal_mobility_interactive(dataset, scale, risk_col, ll = new_leaflet())
+plot_animal_mobility_interactive(dataset, scale, risk_col, ll = basemap())
 
-plot_road_access_interactive(dataset, scale, risk_col, ll = new_leaflet())
+plot_road_access_interactive(dataset, scale, risk_col, ll = basemap())
 
-plot_border_risk_interactive(dataset, scale, risk_col, ll = new_leaflet())
+plot_border_risk_interactive(dataset, scale, risk_col, ll = basemap())
 
-plot_epi_units_interactive(dataset, scale, risk_col, ll = new_leaflet())
+plot_epi_units_interactive(dataset, scale, risk_col, ll = basemap())
 
-plot_risk_table_interactive(dataset, scale, risk_col, ll = new_leaflet())
+plot_risk_table_interactive(dataset, scale, risk_col, ll = basemap())
 
 plot_risk(
   dataset,

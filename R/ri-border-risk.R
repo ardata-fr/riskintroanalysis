@@ -120,7 +120,7 @@ calc_border_lengths <- function(
       rename(geometry = "x")
 
     # # Uncomment to view outcome
-    # new_leaflet() |>
+    # basemap() |>
     #   clearShapes() |>
     #   addPolygons(data = st_transform(empty_poly, crs =4326), color = "yellow", label = "empty" ) |>
     #   addPolygons(data = st_transform(overlapped_poly, crs =4326), color = "purple" , label = 'overlapping') |>

@@ -36,7 +36,7 @@ plot_risk <- function(
       risk_name = table_name,
       risk_col = risk_col,
       scale = scale,
-      ll = new_leaflet()
+      ll = basemap()
     )
   } else {
     plot_fun <- switch(

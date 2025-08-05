@@ -3,7 +3,7 @@ plot_risk_interactive <- function(
     risk_name = NULL,
     risk_col = NULL,
     scale = NULL,
-    ll = new_leaflet()
+    ll = basemap()
 ){
 
   table_name <- risk_name %||% attr(dataset, "table_name")
@@ -59,7 +59,7 @@ ll_legend <- function(ll, pal, scale, title, opacity = 0.7){
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet leaflet addTiles addPolygons addCircleMarkers colorNumeric addLegend
-plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- ll_scale(scale)
 
@@ -105,7 +105,7 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = new_lea
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet addPolygons addCircleMarkers
-plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- ll_scale(scale)
   ll <- ll |>
@@ -161,7 +161,7 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = new_
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions
-plot_road_access_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- ll_scale(scale)
   # Create label content for polygons
@@ -229,7 +229,7 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = new_leaf
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet addPolygons addPolylines clearShapes
-plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- ll_scale(scale)
 
@@ -278,7 +278,7 @@ plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = new_leaf
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet addPolygons
-plot_epi_units_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+plot_epi_units_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   ll <- ll |> leaflet::addPolygons(
     data = dataset,
@@ -302,7 +302,7 @@ plot_epi_units_interactive <- function(dataset, scale, risk_col, ll = new_leafle
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet addPolygons
-plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = new_leaflet()) {
+plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- ll_scale(scale)
 

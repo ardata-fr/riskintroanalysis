@@ -1,30 +1,27 @@
-# Leaflet utils ----------------------------------------------------------------
-
-#' Initilise leaflet object (leaflet + addMapTiles)
+#' Initilise leaflet object
 #'
 #' @description
-#' Initialises leaflet object with OpenStreetMap tiles. Use `leaflet_add_*()`
+#' Initialises leaflet object with Stadia.Outdoors tiles and Esri.WorldImagery, and
+#' controls required to switche between them. Also includes the map scale.
+#'
+#' Use `leaflet_add_*()`
 #' functions to add more layers.
 #'
-#' @param ... arguments to pass on to `leaflet()` like `width`, `height` and `padding`
+#' @param ... arguments to pass on to [leaflet::leaflet()]
 #' @return returns an interactive leaflet visualisation
-#' @importFrom leaflet addProviderTiles leaflet
-#' @noRd
 #' @examples
-#' \dontrun{
-#'
-#' # epi_unit contains geometry sf column
-#' plot_leaflet(epi_unit, polygon_label = "fid")
-#' }
-#' @importFrom leaflet addScaleBar
-new_leaflet <- function(...) {
-
-  ll <- leaflet(options = leafletOptions(
+#' basemap()
+#' @importFrom leaflet addScaleBar leaflet addProviderTiles addLayersControl
+#' @seealso [leaflet::leaflet()], [leaflet::addProviderTiles()],
+#' [leaflet::addScaleBar()], [leaflet::addLayersControl]
+#' @export
+basemap <- function(...) {
+  ll <- leaflet(
+    ...,
+    options = leafletOptions(
     doubleClickZoom = FALSE,
     scrollWheelZoom = TRUE
   ))
-
-
   ll <- ll |>
     addProviderTiles(leaflet::providers$Stadia.Outdoors, group = "Stadia") |>
     addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "Esri") |>
@@ -35,9 +32,8 @@ new_leaflet <- function(...) {
       position = "bottomright"
     ) |>
     addScaleBar(position = "bottomleft")
-
+  ll
 }
-
 
 
 # Palette used for the 4 color risk categorisations in Leaflet
