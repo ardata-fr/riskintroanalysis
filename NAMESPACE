@@ -2,6 +2,7 @@
 
 export(add_risk)
 export(augment_epi_units_with_raster)
+export(basemap)
 export(calc_animal_mobility_risk)
 export(calc_border_lengths)
 export(calc_border_risk)
