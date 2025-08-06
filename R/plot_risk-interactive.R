@@ -13,9 +13,9 @@ plot_risk_interactive <- function(
   scale <- scale %||% attr(dataset, "scale")
 
   cli_abort_if_not(
-    "{.arg table_name} is NULL and not in attributes of {.arg dataset}" = !is.null(table_name),
-    "{.arg risk_col} is NULL and not in attributes of {.arg dataset}" = !is.null(risk_col),
-    "{.arg scale} is NULL and not in attributes of {.arg dataset}" = !is.null(scale)
+    "{.arg table_name} is NULL and not in attributes of {.arg dataset}" = is.null(table_name),
+    "{.arg table_name} is NULL and not in attributes of {.arg dataset}" = is.null(risk_col),
+    "{.arg table_name} is NULL and not in attributes of {.arg dataset}" = is.null(scale),
   )
 
   plot_interactive_fun <- switch(
