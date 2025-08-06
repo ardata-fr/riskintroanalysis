@@ -100,12 +100,21 @@ test_that("Complete road access risk analysis workflow works", {
 
   # Step 2: Test plotting functionality
   # Test static plotting
-  static_plot <- plot_risk(ri_road_access, interactive = FALSE)
-  static_plot
+  static_plot <- plot_risk(
+    ri_road_access,
+    scale = c(0, max(ri_road_access$road_access_risk)),
+    interactive = FALSE
+    )
+
   expect_s3_class(static_plot, "ggplot")
 
   # Test interactive plotting
-  interactive_plot <- plot_risk(ri_road_access, interactive = TRUE)
+  interactive_plot <- plot_risk(
+    ri_road_access,
+    scale = c(0, max(ri_road_access$road_access_risk)),
+    interactive = TRUE
+    )
+
   expect_s3_class(interactive_plot, c("leaflet", "htmlwidget"))
 
   # Step 3: Test risk rescaling
@@ -136,6 +145,7 @@ test_that("Complete road access risk analysis workflow works", {
   # Test interactive plotting with scaled data
   interactive_plot_scaled <- plot_risk(
     ri_road_access_scaled,
+    scale = c(0, max(ri_road_access_scaled$road_access_risk)),
     interactive = TRUE
   )
   expect_s3_class(interactive_plot_scaled, c("leaflet", "htmlwidget"))
@@ -308,6 +318,7 @@ test_that("Road access risk analysis works with real sample data", {
   expect_s4_class(extracted_raster, "SpatRaster")
 
   # Test plotting works with real data
+  ri_road_access <- add_scale(ri_road_access, c(0, max(ri_road_access$road_access_risk)))
   static_plot <- plot_risk(ri_road_access, interactive = FALSE)
   expect_s3_class(static_plot, "ggplot")
 
@@ -317,10 +328,6 @@ test_that("Road access risk analysis works with real sample data", {
   # Test rescaling with real data
   ri_scaled <- rescale_risk_scores(
     ri_road_access,
-    from = c(
-      min(ri_road_access$road_access_risk),
-      max(ri_road_access$road_access_risk)
-    ),
     to = c(0, 100),
     method = "linear"
   )

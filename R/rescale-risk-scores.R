@@ -273,142 +273,44 @@ inv_sigmoid <- function(x) {
   qlogis((x + 1)/2)
 }
 
-
-# plot_rescale_risk_density <- function(dat,
-#                                       linear_col = "emission_risk_linear",
-#                                       rescaled_col = "emission_risk_scaled",
-#                                       scaling_label = "new scaling") {
-#
-#   pre <- dat |>
-#     select(y = .data[[linear_col]])|>
-#     mutate(cat = "linear")
-#
-#   post <- dat |>
-#     select(y = .data[[rescaled_col]]) |>
-#     mutate(cat = scaling_label)
-#
-#   prepost <- bind_rows(pre, post) |>
-#     mutate(x = row_number(), .by = cat) |>
-#     mutate(cat = factor(cat, levels = c("linear", scaling_label)))
-#
-#   ggplot() +
-#     geom_density(
-#       data = prepost,
-#       mapping = aes(
-#         x = .data[["y"]],
-#         color = .data[["cat"]],
-#         fill = .data[["cat"]],
-#         linetype = .data[["cat"]]
-#       ),
-#       position = "identity",
-#       alpha = 0.5,
-#       size = 0.5
-#     ) +
-#     scale_linetype_manual(values = c("solid", "dashed")) +
-#     scale_x_continuous(name = "Risk scores", limits = c(0, 100), expand = c(0, 0))+
-#     scale_y_continuous(name = "Density", expand = c(0, 0)) +
-#     theme(
-#       legend.position = c(.95, .95),
-#       legend.justification = c("right", "top"),
-#       legend.box.just = "right",
-#       legend.margin = margin(6, 6, 6, 6),
-#       legend.title=element_blank(),
-#       legend.box.background = element_rect(color="grey", size=0.5)
-#     )
-#
-# }
-#
-# plot_rescale_risk_points <- function(dat, fun, inverse, raw_col, scaled_col, from, to, is_road_access_risk = FALSE){
-#
-#   if(is_road_access_risk) {
-#     from <- c(0, 100)
-#     raw_col <- "linear_risk"
-#   }
-#
-#   lines_df <- rescale_risk_scores(
-#     dataset = data.frame(x = seq(from[1], from[2], 0.25)),
-#     cols = "x",
-#     names_to = "y",
-#     method = fun,
-#     inverse = inverse,
-#     from = from,
-#     to = to
-#   )
-#
-#   gg_obj <- ggplot(
-#     data = dat,
-#     mapping = aes(
-#       x = .data[[raw_col]],
-#       y = .data[[scaled_col]]
-#     )
-#   )
-#
-#   gg_obj <- gg_obj+
-#     geom_smooth(data = lines_df, aes(x=.data$x, y =.data$y), method = 'loess', formula = 'y ~ x', na.rm = TRUE)
-#
-#   gg_obj <- gg_obj +
-#     geom_point(alpha = 0.20, color = "black", size = 4, na.rm = TRUE)
-#
-#   gg_obj <- gg_obj +
-#     scale_x_continuous(
-#       breaks = seq(from[1], from[2], round(from[2] * 0.10, 0)),
-#       limits = c(from[1], from[2])
-#     )
-#
-#   gg_obj <- gg_obj +
-#     scale_y_continuous(
-#       limits = to,
-#       breaks = seq(to[1], to[2], to[2]/10)
-#     )
-#
-#
-#   if(is_road_access_risk) {
-#     gg_obj <- gg_obj +
-#       labs(
-#         x = "Unscaled risk score (before)",
-#         y = "Scaled risk score (after)"
-#       )
-#   } else {
-#     gg_obj <- gg_obj +
-#       labs(
-#         x = "Linear scaling",
-#         y = "New scaling"
-#       )
-#   }
-#
-#   gg_obj
-# }
-#
-#
-# plot_rescale_raster_points <- function(dat, fun, inverse, raw_col, scaled_col, from, to = c(0,100)){
-#
-#   xmax <- from[2]
-#
-#   lines_df <- rescale_risk_scores(
-#     dataset = data.frame(x = seq(0, xmax + 25, 0.25)),
-#     cols = "x", names_to = "y",
-#     method = fun, inverse = inverse, from = from, to = to
-#   )
-#
-#   ggplot(
-#     data = dat,
-#     mapping = aes(
-#       x = .data[[raw_col]],
-#       y = .data[[scaled_col]]
-#     )
-#   ) +
-#     geom_smooth(data = lines_df, aes(x=.data$x, y =.data$y), method = 'loess', formula = 'y ~ x', na.rm = TRUE) +
-#
-#     geom_point(alpha = 0.20, color = "black", size = 4) +
-#     scale_x_continuous(
-#       name = "Unscaled risk score (before)",
-#       expand = c(0, 0),
-#       limits = c(from[1] - 1, xmax + 1)
-#     )+
-#     scale_y_continuous(
-#       name = "Scaled risk score (after)",
-#       limits = c(to[1]-0.5, to[2] + 10),
-#       breaks = seq(to[1], to[2], to[2]/10),
-#       expand = c(0, 0)
-#     )
-# }
+#' Add scale attribute to a dataset
+#'
+#' @description
+#' This function adds a scale attribute to a dataset, which defines the range
+#' of risk values for the dataset. The scale attribute is used by other functions
+#' in the analysis pipeline to understand the value range when performing
+#' operations like rescaling or visualization.
+#'
+#' The scale attribute is then used in other riskintroanalysis functions such as
+#' [plot_risk()] or [rescale_risk_scores()].
+#'
+#' @param dataset A dataset to add the scale attribute to.
+#' @param scale A numeric vector of length 2 specifying the minimum and maximum
+#'   values of the scale range (e.g., c(0, 100) for a 0-100 scale).
+#'
+#' @return The input dataset with the scale attribute added.
+#'
+#' @examples
+#' # Create sample data
+#' risk_data <- data.frame(
+#'   region = c("A", "B", "C"),
+#'   risk_score = c(2.5, 7.8, 4.1)
+#' )
+#'
+#' # Add scale attribute indicating values range from 0 to 12
+#' risk_data_with_scale <- add_scale(risk_data, c(0, 12))
+#'
+#' # Check the scale attribute
+#' attr(risk_data_with_scale, "scale")
+#'
+#' @export
+#' @importFrom rlang inherits_any
+add_scale <- function(dataset, scale){
+  cli_abort_if_not(
+    "{.arg dataset} must be a {.cls data.frame}." = inherits(dataset,"data.frame"),
+    "{.arg scale} must be numeric." = is.numeric(scale),
+    "{.arg scale} must be length 2." = length(scale) == 2
+  )
+  attr(dataset, "scale") <- scale
+  dataset
+}
