@@ -18,21 +18,20 @@ risk_table <- function(
     epi_units,
     scale = c(0,100)
 ) {
-
   cli_abort_if_not(
-    "{.arg epi_units} should have attribute {.arg table_name}, it is NULL" = !is.null(attr(epi_units, "table_name")),
-    "{.arg epi_units} should have attribute {.arg table_name} of {.arg epi_units} " = attr(epi_units, "table_name") == "epi_units"
+    "{.arg epi_units} must have attribute {.arg table_name}, it is NULL" = !is.null(attr(epi_units, "table_name")),
+    "{.arg epi_units} must have attribute {.arg table_name} = {.val epi_units} " = attr(epi_units, "table_name") == "epi_units"
   )
 
   risk_table <- epi_units |>
-    distinct(.data[["eu_id"]], .keep_all = TRUE) |>
     select(all_of(c(
       "eu_id", "eu_name"
     )))
 
   attr(risk_table, "scale") <- scale
-  attr(risk_table, "table") <- "ri_risk_table"
-  attr(risk_table, "risk_cols") <- NULL
+  attr(risk_table, "table_name") <- "risk_table"
+  attr(risk_table, "ri_dataset") <- TRUE
+  attr(risk_table, "risk_cols") <- character(0L)
   risk_table
 }
 
@@ -62,18 +61,15 @@ add_risk <- function(
     scale = NULL,
     join_by = "eu_id"
     ) {
-
-  if (is.null(cols)) {
-    cols <- attr(risk_data, "risk_col")
-  }
+  cols <- cols %||% attr(risk_data, "risk_col")
   if (!is.null(scale) && is.null(attr(risk_data, "scale"))) {
-    cli_warn("Scale attribute of {.arg risk_data} overwritten by {.arg risk_data} argument.")
+    cli_warn("Scale attribute of {.arg risk_data} overwritten by {.arg scale} argument.")
   } else {
     scale <- attr(risk_data, "scale")
   }
 
   cli_abort_if_not(
-    "{.arg risk_table} should be the output of {.fn risk_table}" = attr(risk_table, "table") == "ri_risk_table",
+    "{.arg risk_table} should be the output of {.fn risk_table}" = attr(risk_table, "table_name") == "risk_table",
     "{.arg cols} is NULL, please provided one" = !is.null(cols),
     "{.arg cols} is zero-length" = length(cols) > 0L,
     "{.arg scale} should have length 2" = length(scale) == 2L,
@@ -90,22 +86,23 @@ add_risk <- function(
     ))
   }
 
-  preexisting_cols <- cols[cols %in% risk_table]
+  preexisting_cols <- cols[cols %in% colnames(risk_table)]
   if (length(preexisting_cols) > 0) {
-    risk_table <- select(risk_table, -select(any_of(preexisting_cols)))
+    risk_table <- select(risk_table, -any_of(preexisting_cols))
   }
-  ri_risk <- select(risk_data, all_of(c(join_by, cols))) |>
-    st_drop_geometry()
+
+  prep_risk_data <- dplyr::select(risk_data, all_of(c(join_by, cols)))
+  prep_risk_data <- sf::st_drop_geometry(prep_risk_data)
 
   out <- left_join(
     x = risk_table,
-    y = ri_risk,
+    y = prep_risk_data,
     by = c(eu_id = join_by),
     relationship = "one-to-one"
   )
 
   attr(out, "scale") <- attr(risk_table, "scale")
-  attr(out, "table") <- attr(risk_table, "table")
+  attr(out, "table_name") <- attr(risk_table, "table_name")
   attr(out, "risk_cols") <- unique(c(attr(risk_table, "risk_cols"), cols))
   out
 }
@@ -122,8 +119,17 @@ add_risk <- function(
 #' @importFrom dplyr select all_of
 #' @example examples/add_risk.R
 remove_risk <- function(risk_table, cols) {
-  out <- risk_table |>
-    select(-all_of(cols))
-  attr(out, "risk_cols") <- attr(out, "risk_cols")[!attr(out, "risk_cols") %in% cols]
+  cli_abort_if_not(
+    "{.arg risk_table} should be a risk table." = attr(risk_table, "table_name") == "risk_table",
+    "{.arg cols} is zero-length" = length(cols) > 0L,
+    "{.arg join_by} must be in `risk_data`" = all(cols %in% colnames(risk_table))
+  )
+  out <- risk_table |> select(-all_of(cols))
+  cols_attr <- setdiff(attr(risk_table, "risk_cols"), cols)
+  if (length(cols_attr) > 0) {
+    attr(out, "risk_cols") <- cols_attr
+  } else {
+    attr(out, "risk_cols") <- NULL
+  }
   out
 }
