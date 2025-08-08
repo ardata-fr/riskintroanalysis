@@ -133,3 +133,19 @@ remove_risk <- function(risk_table, cols) {
   }
   out
 }
+
+
+#' Check if a risk table has any risks
+#'
+#' Helper function to check if a risk table has any risks.
+#'
+#' @param x a risk table
+#' @return TRUE or FALSE
+#' @export
+has_risk <- function(x) {
+  table_name <- attr(x, "table_name")
+  if (is.null(table_name) || table_name != "risk_table") {
+    cli::cli_abort("{.arg risk_table} should be a risk table.")
+  }
+  isTruthy(attr(x, "risk_cols"))
+}

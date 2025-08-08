@@ -168,10 +168,6 @@ riLabelOptions <- function(){
 #' @importFrom sf st_drop_geometry
 #' @importFrom purrr pmap map map_df
 #' @importFrom stringr str_to_sentence
-#' @importFrom shiny HTML
-#'
-#' @seealso \code{\link[leaflet]{addPolygons}}, \code{\link[leaflet]{addMarkers}}
-#'
 #' @export
 generate_leaflet_labels <- function(dat,
                                     title_field = NULL,

@@ -94,6 +94,3 @@ leaflet(sf_data) \%>\%
 }
 
 }
-\seealso{
-\code{\link[leaflet]{addPolygons}}, \code{\link[leaflet]{addMarkers}}
-}
