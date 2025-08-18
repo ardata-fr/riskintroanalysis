@@ -671,3 +671,4 @@ test_that("Animal mobility quantity weighting works correctly", {
     tolerance = 0.01
   )
 })
+

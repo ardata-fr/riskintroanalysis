@@ -107,7 +107,7 @@
 #' -  `scale = c(0, 12)`
 #' -  `table_validated = TRUE`
 #'
-#' @section NA values
+#' @section NA values:
 #'
 #' NA values are considered to have the highest level of risk. For example if
 #' `disease_notification` for a country in the emission risk factors dataset is
@@ -170,7 +170,7 @@ calc_emission_risk <- function(
   na_rows <- filter(
     emission_risk_factors,
     if_any(
-      .cols = .emission_score_input_cols,
+      .cols = all_of(.emission_score_input_cols),
       .fns = function(x) any(is.na(x))
       )
     )
@@ -200,8 +200,8 @@ calc_emission_risk <- function(
   mutate(
     # Handle NAs for sc_commerce
     across(
-      .cols = c("targeted_surveillance", "general_surveillance",
-                "screening", "disease_notification"),
+      .cols = all_of(c("targeted_surveillance", "general_surveillance",
+                "screening", "disease_notification")),
       .fns = function(x) if_else(is.na(x), 1, x)
     ),
     sc_survmeasures =
@@ -211,9 +211,9 @@ calc_emission_risk <- function(
       .data[["disease_notification"]],
 
     across(
-      .cols = c("precautions_at_the_borders", "slaughter",
+      .cols = all_of(c("precautions_at_the_borders", "slaughter",
                 "selective_killing_and_disposal", "zoning",
-                "official_vaccination"),
+                "official_vaccination")),
       .fns = function(x) if_else(is.na(x), 1, x)
     ),
     sc_control =
@@ -225,7 +225,7 @@ calc_emission_risk <- function(
 
     # Handle NAs for sc_commerce
     across(
-      .cols = c("commerce_illegal", "commerce_legal"),
+      .cols = all_of(c("commerce_illegal", "commerce_legal")),
       .fns = function(x) if_else(is.na(x), 1, x)
     ),
     # Calc sc_commerce
