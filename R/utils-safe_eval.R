@@ -255,7 +255,6 @@ operation_status <- function(
   x
 }
 
-
 #' @title Quote and Collapse Values into a Single String
 #' @description
 #' Formats a vector of values by surrounding each element with a specified quote character and
@@ -278,16 +277,33 @@ operation_status <- function(
 #' quote_and_collapse(c("A", "B", "C"), quote_char = "'")
 #' # Returns "'A', 'B' and 'C'"
 #' @noRd
-#' @importFrom glue glue_collapse
-quote_and_collapse <- function(value, quote_char = "`") {
-  paste0(
-    quote_char,
-    glue_collapse(
-      x = value,
-      sep = paste0(quote_char, ", ", quote_char),
-      last = paste0(quote_char, " and ", quote_char)
-    ),
-    quote_char
-  )
-}
+quote_and_collapse <- function(value, quote_char = "`", max_out = NULL) {
+  n <- length(value)
+  if (n == 0) return("")
 
+  # Truncate if needed
+  if (!is.null(max_out) && n > max_out) {
+    value_display <- value[seq_len(max_out)]
+    extra <- n - max_out
+  } else {
+    value_display <- value
+    extra <- 0
+  }
+
+  # Apply quoting
+  quoted <- paste0(quote_char, value_display, quote_char)
+
+  # Collapse with oxford-style conjunction
+  collapsed <- glue::glue_collapse(
+    quoted,
+    sep = ", ",
+    last = if (length(quoted) > 1) paste0(" and ") else NULL
+  )
+
+  # Add "... and N more" if truncated
+  if (extra > 0) {
+    collapsed <- paste0(collapsed, " and ", extra, " more")
+  }
+
+  collapsed
+}

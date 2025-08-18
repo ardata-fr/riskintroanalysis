@@ -64,12 +64,6 @@ library(sf)
 library(dplyr)
 ```
 
-```{r echo=FALSE}
-library(sf)
-library(dplyr)
-```
-
-
 ## Core datasets
 
 The two core datasets are emission risk factors and epidemiological units. The

@@ -1,3 +1,19 @@
+
+.emission_score_input_cols <- c(
+  "disease_notification"
+  ,"targeted_surveillance"
+  ,"general_surveillance"
+  ,"screening"
+  , "precautions_at_the_borders"
+  , "slaughter"
+  , "selective_killing_and_disposal"
+  , "zoning"
+  , "official_vaccination"
+  , "last_outbreak_end_date"
+  , "commerce_illegal"
+  , "commerce_legal"
+)
+
 #' @title Build the weighted emission risk table
 #'
 #' @description
@@ -91,6 +107,13 @@
 #' -  `scale = c(0, 12)`
 #' -  `table_validated = TRUE`
 #'
+#' @section NA values
+#'
+#' NA values are considered to have the highest level of risk. For example if
+#' `disease_notification` for a country in the emission risk factors dataset is
+#' `NA` then disease notification will be considered as an unimplemented policy
+#' for the purpose of calculating emission risk scores.
+#'
 #' @examples
 #' library(riskintrodata)
 #' library(riskintroanalysis)
@@ -106,6 +129,7 @@
 #' )
 #' @family emission_risk_calculation
 #' @importFrom riskintrodata get_erf_weights
+#' @importFrom dplyr if_any filter mutate across
 #' @export
 calc_emission_risk <- function(
     emission_risk_factors,
@@ -114,32 +138,59 @@ calc_emission_risk <- function(
 ) {
 
   cli_abort_if_not(
-    "{.arg emission_risk_factors} dataset does not have {.val table_name} attribute" = !is.null(attr(emission_risk_factors, "table_name")),
-    "{.arg weights} should sum to 5, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = sum(unlist(weights)) == 5L,
-    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}" = length(weights) == 9L,
-    "{.arg emission_risk_factors} has no rows" = nrow(emission_risk_factors) > 0
+    "{.arg emission_risk_factors} dataset does not have {.val table_name} attribute." = !is.null(attr(emission_risk_factors, "table_name")),
+    "{.arg emission_risk_factors} dataset {.val table_name} attribute must be {.val emission_risk_factors}." = attr(emission_risk_factors, "table_name") == "emission_risk_factors",
+    "{.arg weights} should sum to 5, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}." = sum(unlist(weights)) == 5L,
+    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}." = length(weights) == 9L,
+    "{.arg emission_risk_factors} has no rows." = nrow(emission_risk_factors) > 0
   )
-  if (attr(emission_risk_factors, "table_name") != "emission_risk_factors") {
-    cli_abort(paste(
-      "{.arg emission_risk_factors} dataset attribute {.arg table_name} is",
-      "\"{attr(emission_risk_factors, \"table_name\")}\" and should be \"emission_risk_factors\""
-      ))
-  }
 
   # Refer to data-raw/emission-risk-defaults.R
-  risk_factor_cols <- names(weights)
+  weight_names <- names(weights)
+  default_weight_names <- names(get_erf_weights())
+  if (all(!weight_names %in% default_weight_names)) {
+    cli_abort("{.arg weights} should be a named list with names: {quote_and_collapse(default_weight_names, quote_char = '\"')}")
+  }
+  if (length(weights) != 9) {
+    cli_abort("{.arg weights} must have length 9")
+  }
 
-  if (any(!risk_factor_cols %in% colnames(emission_risk_factors))) {
-    stop("Weight names should be the names of the `dat` column names")
+  sc_survmeasures_weights <- weights[c("disease_notification", "targeted_surveillance",
+                                       "general_surveillance","screening")]
+  if(sum(unlist(sc_survmeasures_weights)) != 2) {
+    cli_abort("{.arg weights} for surveillence measures must sum to 2.")
+  }
+  sc_control_weights <- weights[c("precautions_at_the_borders", "slaughter",
+                                       "selective_killing_and_disposal", "zoning",
+                                       "official_vaccination")]
+  if(sum(unlist(sc_control_weights)) != 3) {
+    cli_abort("{.arg weights} for control measures must sum to 3.")
+  }
+
+  na_rows <- filter(
+    emission_risk_factors,
+    if_any(
+      .cols = .emission_score_input_cols,
+      .fns = function(x) any(is.na(x))
+      )
+    )
+
+  if (nrow(na_rows)>0) {
+    cli_warn(c(
+      "There are NA values in {.arg emission_risk_factors} dataset.",
+      i = "Missing values identified for the following countries:",
+      quote_and_collapse(na_rows$iso3, quote_char = '"', max_out = 6),
+      "!" = "By default, NA values are considered as having the highest level of risk."
+      ))
   }
 
   # Weighted risk factors ----
   out <- emission_risk_factors |>
   mutate(
     across(
-      all_of(risk_factor_cols),
+      all_of(default_weight_names),
       function(x) {
-        weights[[cur_column()]] * rm_na(x)
+        weights[[cur_column()]] * x
       }
     )
   )
@@ -147,13 +198,37 @@ calc_emission_risk <- function(
   out <- out |>
     # Calculate scores from risk factors ----
   mutate(
+    # Handle NAs for sc_commerce
+    across(
+      .cols = c("targeted_surveillance", "general_surveillance",
+                "screening", "disease_notification"),
+      .fns = function(x) if_else(is.na(x), 1, x)
+    ),
     sc_survmeasures =
-      .data[["targeted_surveillance"]] + .data[["general_surveillance"]] +
-      .data[["screening"]] + .data[["disease_notification"]],
+      .data[["targeted_surveillance"]] +
+      .data[["general_surveillance"]] +
+      .data[["screening"]] +
+      .data[["disease_notification"]],
+
+    across(
+      .cols = c("precautions_at_the_borders", "slaughter",
+                "selective_killing_and_disposal", "zoning",
+                "official_vaccination"),
+      .fns = function(x) if_else(is.na(x), 1, x)
+    ),
     sc_control =
-      .data[["precautions_at_the_borders"]] + .data[["slaughter"]] +
-      .data[["selective_killing_and_disposal"]] + .data[["zoning"]] +
+      .data[["precautions_at_the_borders"]] +
+      .data[["slaughter"]] +
+      .data[["selective_killing_and_disposal"]] +
+      .data[["zoning"]] +
       .data[["official_vaccination"]],
+
+    # Handle NAs for sc_commerce
+    across(
+      .cols = c("commerce_illegal", "commerce_legal"),
+      .fns = function(x) if_else(is.na(x), 1, x)
+    ),
+    # Calc sc_commerce
     sc_commerce = case_when(
       .data[["commerce_illegal"]] == 0 & .data[["commerce_legal"]] == 0 ~ 0,
       .data[["commerce_illegal"]] == 1 & .data[["commerce_legal"]] == 0 ~ 3,
@@ -212,7 +287,7 @@ calc_emission_risk <- function(
 #' To smooth the scoring over the years, an exponential decay model is used:
 #'
 #' \deqn{S = 3 \times \exp\left(-x \frac{\log(2)}{5}\right)}
-#' @param dat data.frame like object to add `sc_epistatus` column to.
+#' @param dataset data.frame like object to add `sc_epistatus` column to.
 #' @param x string of colname, date for last outbreak.
 #' @return same as input data with an extra column containing the surveillence
 #' score, where surveillence is in range \deqn{ S \in  (0, 3]}
@@ -244,16 +319,17 @@ calc_emission_risk <- function(
 #' )
 #'
 #' calc_epistatus(test_data, "date_last_outbreak")
-calc_epistatus <- function(dat, x) {
-  cli_abort_if_not("Column {.var {x}} not found in dataset" = x %in% colnames(dat))
-  dat |>
+calc_epistatus <- function(dataset, x) {
+  if(!x %in% colnames(dataset)) {
+    cli_abort("Column {.var {x}} not found in dataset")
+  }
+  dataset |>
     mutate(
       years_since_outbreak = as.numeric(as.Date(Sys.time()) - as.Date(.data[[x]])) * (1 / 365),
       sc_epistatus = case_when(
-        is.na(.data[["years_since_outbreak"]]) ~ NA,
+        is.na(.data[[x]]) ~ 3,
         .data[["years_since_outbreak"]] <= 0 ~ 3,
         .data[["years_since_outbreak"]] >= 5 ~ 0,
-        # TRUE ~ 3 * exp(-.data[["years_since_outbreak"]] * log(2) / 5)
         TRUE ~ 3 * exp(-.data[["years_since_outbreak"]] * log(2) / 5) * (1 - .data[["years_since_outbreak"]] / 5)
       ),
       years_since_outbreak = NULL
