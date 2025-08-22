@@ -464,7 +464,9 @@ ri_random <- tunisia |>
   filter(row_number() <= 30) |>
   rescale_risk_scores(
     cols = "ri_random",
-    from = c(0, 100), to = c(0, 100), method = "sigmoid"
+    from = c(0, 100),
+    to = c(0, 100),
+    method = "sigmoid"
   )
 ```
 

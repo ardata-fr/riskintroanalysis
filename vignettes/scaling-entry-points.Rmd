@@ -1,0 +1,390 @@
+---
+title: "Risk scaling of entry points"
+format: 
+  html:
+    toc: true
+    html-math-method: mathjax
+execute: 
+  echo: false
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Risk scaling of entry points}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(riskintroanalysis)
+library(tidyverse)
+```
+
+## Introduction
+
+
+__Entry points__ are one of the default risk factors in `riskintroanalysis`.
+They correspond places in the territory known to be risk sources of introduction due to the passage of animals.
+They typically correspond to border posts, or simply routes and paths that cross the border of the target territory, which are known to be used for animal transportation or transhumance.
+
+They can also be interior (i.e. not in the border) locations such as airports or aerodromes.
+But they are distinguished from the desintations of __animal movement__ in that:
+
+1. they represent the introduction of animals outside formal trade flows,
+
+2. the volume of animal flows are not known, nor traceable,
+
+3. the sanitary regulations and controls are weaker or inexistent.
+
+We distinguish __controlled__ and __not-controlled__ entry points.
+For example, a border post with a sanitary control of transhumant herds can be considered a _controlled_ entry point.
+By contrast, a mountain pass known to be used for unauthorised introduction of animals would be considered _not-controlled_ and typically would entail a higher risk of pathogen introduction.
+
+
+## Input data
+
+For each epidemiological unit, the relevant quantities considered are:
+
+1. the number of entry points
+
+2. their status (controlled/not-controlled)
+
+3. the emission scores of the source countries
+
+In practice, you need to provide the entry points with their location and their status.
+Furthermore, for each entry point, you need to identify the countries that are potential sources of animal flows.
+
+
+## Step 1: Point Exposure
+
+![Scematic example of a epidemiological unit with two controlled and one not-controlled entry points.](img/diagram_entry-points.svg){#fig-diagram}
+
+For each entry point, we first compute its value of _exposure_ $e$, which wheights the number and emission scores $\nu_k$ of the source countries.
+
+$$
+e = \sum_k \nu_k / \nu_{\text{max}}
+$$ {#eq-exposure}
+where $\nu_{\text{max}} = 12$ is the maximum possible emission score.
+
+In the example in @fig-diagram, the corresponding exposure values for the entry points, top to bottom, are:
+
+- $e_1 = (12 + 3)/12 = 1.25$
+
+- $e_2 = (3 + 9 + 3)/12 = 1.25$
+
+- $e_3 = 3/12 = 0.25$
+
+These values can be interpreted as a _effective number of __risky__ sources_. 
+The first entry point has 2 sources, but the second has a lower emission score, so it counts as a quarter of a _risky_ source.
+The second entry point has 3 sources, but together, they accumulate to an effective equivalent equal to the exposure of the first entry point.
+The bottom entry point has only one source of animals with a low emission score, resulting in only a quarter of a _risky_ source.
+
+Note that the controlled/not-control status of the entry points do not affect their exposure values.
+
+In summary @eq-exposure reflects the principle of _compensation_: the number of sources can balance out low emission scores.
+This contrasts with the principle of _maximisation_, where the exposure level is equal to the highest emission score, regardless of the number of sources. 
+There are good arguments for both principles, depending on the situation.
+We might decide to implement the [LogSumExp](https://en.wikipedia.org/wiki/LogSumExp) function in the future as a compromise.
+
+
+## Step 2: Effective number of controlled/not-controlled points
+
+In the next step, we aggregate the exposures of the controlled and not-controlled entry points separately.
+The resulting numbers can be interpreted as the _effective number of entry points_, controlled and not-controlled.
+
+Once again, we choose the _addition_ as the aggregation function, although we can eventually switch to _max_ or _LogSumExp_.
+
+For the unit depicted in @fig-diagram, this results in adding the exposure values of $e_1$ and $e_2$ together for the controlled entry points, whereas the only not-controlled entry point is left alone.
+In total, the epidemiological unit is considered to have:
+
+```{r}
+xl_ex <- 2.5
+xi_ex <- 0.25
+```
+- `r xl_ex` effective controlled entry points
+
+- `r xi_ex` effective not-controlled entry points
+
+
+## Step 3: Scaling the risk of introduction
+
+Finally, we need to specify the map from these effective numbers of entry points to a risk scale (i.e. a value from 0 to 100, quantifying the plausibility of disease introduction in a given unit).
+
+For this, we define the following scaling function:
+
+```{r}
+case_dat <- expand.grid(
+  xl = seq(0, 4, length = 51),
+  xi = seq(0, 4, length = 51)
+)
+```
+
+```{r}
+case_annotations <- data.frame(
+  xl = c(0, 4),
+  xi = c(4, 0),
+  label = c("🡑M", "🠂M/𝜆"),
+  hj = c(0, -.2),
+  vj = c(-1, 0)
+)
+```
+
+```{r}
+#| label: fig-bivariate-scaling
+#| fig.cap: "Bivariate risk scaling function of controlled and not-controlled entry points, with a point marker at the effective numbers of entry points in the example."
+case_dat |>
+  transform(
+    risk = riskintroanalysis:::scale_entry_points(xl, xi, 3, 1, 1, 100)
+  ) |> 
+  ggplot(aes(xl, xi)) +
+  geom_raster(
+    aes(fill = risk)
+  ) +
+  geom_point(
+    x = xl_ex, y = xi_ex,
+    colour = 'grey90',
+    size = 2
+  ) +
+  geom_text(
+    data = case_annotations,
+    aes(label = label, hjust = hj, vjust = vj)
+  ) +
+  coord_fixed(clip = 'off') +
+  scale_fill_viridis_c(
+    option = "D",
+    limits = c(0, 100)
+  ) +
+  labs(
+    x = "Controlled points",
+    y = "Not-controlled points",
+    fill = "Risk"
+  ) +
+  theme_minimal()
+
+```
+
+
+The corresponding mathematical expression is:
+
+$$
+f(x_c, x_u) = M s(\beta x_u + s^{-1}(s(\alpha x_c) / \lambda))
+$$ {#eq-scaling}
+where $s(x) = (1 - \exp(-x)) / (1 + \exp(-x))$ is a semi-sigmoid curve on the non-negative reals (@fig-sigmoid).
+
+```{r}
+#| label: fig-sigmoid
+#| fig.width: 3
+#| fig.height: 2
+#| fig.cap: "Semi-sigmoid function $s(x)$."
+ggplot() +
+xlim(0, 5) +
+geom_function(fun = riskintroanalysis:::sigmoid) +
+theme_minimal() +
+labs(x = NULL, y = NULL) +
+theme(
+  panel.grid.minor = element_blank(),
+  panel.grid.major.x = element_blank()
+)
+```
+
+
+For the running example from the previous section, the corresponding location for the epidemiological unit is indicated in @fig-bivariate-scaling with a dot, where the function takes the value of 
+`r riskintroanalysis:::scale_entry_points(xl_ex, xi_ex, 3, 1, 1, 100) |> round(2)`.
+This would be the risk of introduction attributed to entry points, associated to this particular epidemiological unit.
+
+While the general shape of this bivariate smooth function (i.e., a surface) is fixed, you can set a few parameters to adjust the risk values.
+
+The risk is fixed at 0 in the bottom-left corner.
+I.e., when there are no entry points at all, either controlled or not, the risk of introduction due to this factor is 0.
+
+The risk increases progressively when the number of entry points increase in either the horizontal direction of _controlled_ points, or in the vertical direction of _not-controlled_ points.
+Moving up, the risk increases with the number of _not-controlled_ entry points up to an asymptotic limit $M$ (in @fig-bivariate-scaling, $M = 100$).
+By contrast, in the absence of _not-controlled_ entry points, the risk increases with the number of _controlled_ points up to an asymptotic limit of $M/\lambda$, where $\lambda$ represents how much riskier _not-controlled_ points are, with respect to controlled ones. In @fig-bivariate-scaling, $\lambda = 3$.
+
+Furthermore, you can control _how fast_ these asymptotic limits are approached with the parameters $\alpha > 0$ and $\beta > 0$.
+In @fig-bivariate-scaling, $\alpha = \beta = 1$, resulting in risk values very close to the asymptotic limits after 3 or 4 entry points of each type.
+For instance, the risk value at $(0, 4)$ is `r riskintroanalysis:::scale_entry_points(0, 4, 3, 1, 1, 100) |> round(2)`, very close to the limit $M = 100$ for infinite _non-controlled_ entry points.
+On the other hand, the risk value at $(3, 0)$ is `r riskintroanalysis:::scale_entry_points(3, 0, 3, 1, 1, 100) |> round(2)`, very close to the limit $M/\lambda = 100 / 3$ for infinite _controlled_ entry points without any _non-controlled_ point (@fig-marginal-scaling).
+
+```{r}
+#| label: fig-marginal-scaling
+#| fig.cap: "Marginal risk scaling function of controlled and uncontrolled entry points, with default and alternative values of parameters."
+#| fig.height: 4
+case_dat |>
+  transform(
+    risk_1 = riskintroanalysis:::scale_entry_points(xl, xi, 3, 1, 1, 100),
+    risk_2 = riskintroanalysis:::scale_entry_points(xl, xi, 3, 1/2, 2, 100)
+  ) |> 
+  filter(xl == 0 | xi == 0) |>
+  mutate(
+    x = xl + xi,
+    marg = factor(ifelse(xi == 0, "Controlled", "Uncontrolled"))
+  ) |>
+  pivot_longer(
+    cols = starts_with("risk"),
+    names_to = "case",
+    names_prefix = "risk_",
+    names_transform = factor,
+    values_to = "risk"
+  ) |>
+  inner_join(
+    data.frame(
+      marg = rep(factor(c("Controlled", "Uncontrolled")), each = 2),
+      case = rep(factor(1:2), times = 2),
+      ab = c("1", "1/2", "1", "2")
+    ),
+    by = join_by(marg, case)
+  ) |>
+  inner_join(
+    data.frame(
+      case = factor(1:2),
+      alpha_value = c(1, .4)
+    ),
+    by = 'case'
+  ) |>
+  # filter(x == max(x))
+  # filter(x == 2) |>
+  # mutate(lab = paste(rep(c("𝛼 =", "𝛽 ="), each = 2), ab))
+  ggplot(aes(x, risk)) +
+  geom_line(
+    aes(alpha = alpha_value, group = case:marg),
+    show.legend = FALSE
+  ) +
+  ## Controlled / Uncontrolled labels
+  geom_text(
+    data = \(.) filter(., x == max(x), ab == "1"),
+    aes(label = marg, hjust = 1, vjust = 0),
+    nudge_y = c(1, 5)
+  ) +
+  ## Parameter values alpha / beta
+  geom_text(
+    data = \(.) {
+      filter(., x == 2) |>
+      mutate(lab = paste(rep(c("𝛼 =", "𝛽 ="), each = 2), ab))
+    },
+    aes(label = lab, hjust = 1, vjust = 0, alpha = alpha_value),
+    nudge_y = 1,
+    show.legend = FALSE
+  ) +
+  labs(
+    x = "Number of points",
+    y = "Risk"
+  ) +
+  scale_alpha_continuous(limits = c(0, 1)) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+
+```
+
+If you considered, for instance, that one _non-controlled_ entry point is as bad as it can get, and beyond that there is not much of a difference, you would then increase the value of $\alpha$ as in @fig-marginal-scaling.
+By contrast, you could decide that additional _controlled_ entry points increase risk more progressively, and it takes more entry points to make up for any considerable risk of introduction.
+In this case, you could then decrease the value of $\beta$.
+
+Note that the values of $\alpha$ and $\beta$ are independent from each other, as long as are both positive values.
+
+
+## Equivalent effective number of uncontrolled entry points
+
+For convenience, we can reparameterise the @eq-scaling into the following univariate function:
+
+$$
+g(x) = M s(\alpha x)
+$$ {#eq-univariate-scaling}
+where
+$$
+x = x_u + \hat{x}_u
+$$
+and,
+$$
+\hat{x}_u = s^{-1}(s(\beta x_c) / \lambda) / \alpha
+$$
+
+The last expression can be interpreted as the number of equivalent _uncontrolled_ entry points, for a given number of _controlled_ entry points.
+@fig-equivalent-uncontrolled displays the curve for the parameters used previously ($\alpha = \beta = 1$; $\lambda = 3$).
+
+```{r}
+scale_controlled <- function(x, alpha, beta, lambda) {
+  riskintroanalysis:::inv_sigmoid(
+    riskintroanalysis:::sigmoid(beta * x) / lambda)  / alpha
+}
+```
+
+```{r}
+#| label: fig-equivalent-uncontrolled
+#| fig.cap: "Equivalent uncontrolled entry points."
+#| fig.width: 4
+#| fig.height: 3
+data.frame(
+  x = seq(0, 5, length = 51)
+) |>
+  transform(
+    y = scale_controlled(x, alpha = 1, beta = 1, lambda = 3)
+  ) |>
+  ggplot() +
+  aes(x, y) +
+  geom_line() +
+  labs(
+    x = expression("Controlled points"~x[c]),
+    y = expression("Equivalent uncontrolled points"~hat(x)[u])
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+```
+
+
+```{r}
+hatxu_ex <- scale_controlled(xl_ex, alpha = 1, beta = 1, lambda = 3)
+(risk_ex <- 100 * riskintroanalysis:::sigmoid(1 * (xi_ex + hatxu_ex)))
+```
+With this equivalence established, we can consider $x$ as the _equivalent number of effective uncontrolled entry points_ for a given unit.
+In the simple example depicted in @fig-diagram we had obtained $x_u = `r xi_ex`$ effective uncontrolled entry points and $x_c = `r xl_ex`$ effective controlled entry points, that are equivalent to $\hat{x}_u = `r round(hatxu_ex, 2)`$ uncontrolled points, in terms of risk.
+
+In summary this unit would have $x = `r round(xi_ex + hatxu_ex, 2)`$ equivalent effective uncontrolled entry points, that we can run through the function @eq-univariate-scaling to evaluate an associated risk of 
+`r round(risk_ex)`.
+
+The interface will display the univariate risk scaling curve @eq-univariate-scaling, in terms of the equivalent effective number of uncontrolled entry points $x$, allowing to choose between several alternative shapes.
+Points corresponding to the observed values of $x$ for all the epidemiological units will be superposed for reference.
+The location of these points will vary, as a function of the selected parameters $\alpha > 0$, $\beta > 0$ and $\lambda > 1$.
+
+```{r}
+#| label: fig-scaling-univariate
+#| fig.cap: "User interface for the univariate scaling of entry points."
+#| fig.width: 4
+#| fig.height: 3
+data.frame(
+  x = seq(0, 3, length = 51)
+) |>
+  transform(
+    y = 100 * riskintroanalysis:::sigmoid(1 * x)
+  ) |>
+  ggplot() +
+  aes(x, y) +
+  geom_line() +
+  geom_point(
+    x = xi_ex + hatxu_ex,
+    y = risk_ex,
+    size = 4,
+    alpha = 0.5
+  ) +
+  labs(
+    x = expression("Equivalent uncontrolled points"~hat(x)[u]),
+    y = "Risk"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
+```
+
+

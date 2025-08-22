@@ -283,10 +283,12 @@ calc_border_risk <- function(
     emission_risk
 ) {
 
+  if (is.null(attr(shared_borders, "table_name"))) {
+    cli_abort("{.arg shared_borders} should be the output of {.help [{.fun calc_border_lengths}](calc_border_lengths)}")
+  }
   if (attr(shared_borders, "table_name") != "shared_borders") {
-    cli_abort(
-      "{.arg {shared_borders}} should be the output of {.help [{.fun calc_border_lengths}](calc_border_lengths)}"
-    )}
+    cli_abort("{.arg shared_borders} should be the output of {.help [{.fun calc_border_lengths}](calc_border_lengths)}")
+  }
 
   check_dataset_valid(emission_risk)
   check_dataset_valid(epi_units)
