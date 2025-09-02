@@ -21,7 +21,9 @@ knitr:
 #| label: setup
 #| include: false
 library(riskintroanalysis)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
 ```
 
 ## Introduction

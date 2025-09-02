@@ -16,7 +16,7 @@
 #' sigmoid(1:5)
 #' @importFrom stats plogis
 #' @rdname sigmoid
-#' @noRd
+#' @export
 sigmoid <- function(x) {
   2 * plogis(x) - 1
 }
@@ -28,7 +28,7 @@ sigmoid <- function(x) {
 #' @param x Numeric vector with values between -1 and 1.
 #'
 #' @return A numeric vector with real values.
-#' @noRd
+#' @export
 #' @examples
 #' x <- c(0.01, 0.88, 0.247)
 #' inv_sigmoid(x)

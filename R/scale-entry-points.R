@@ -8,7 +8,7 @@
 #'
 #' @param x Numeric vector. Risk of emission scores of source countries.
 #' @param x_max Positive number. Maximum possible emission score for a country
-#' @noRd
+#' @export
 #' @examples
 #' n_eff_sources(c(12, 12), x_max = 12)  # 2 equivalent sources
 #' n_eff_sources(c(6, 6), x_max = 12)    # 2 half-score sources = 1 equivalent source
@@ -52,7 +52,7 @@ n_eff_sources <- function(x, x_max) {
 #'     y = "N illegal eps",
 #'     fill = "Risk"
 #'   )
-#' @noRd
+#' @export
 scale_entry_points <- function(x_legal, x_illegal, illegal_factor, coef_legal, coef_illegal, max_risk) {
 
   stopifnot(
