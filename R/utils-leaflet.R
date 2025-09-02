@@ -23,9 +23,9 @@ basemap <- function(...) {
     scrollWheelZoom = TRUE
   ))
   ll <- ll |>
-    addProviderTiles(leaflet::providers$OpenStreetMap, group = "Stadia") |>
-    addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "Esri") |>
-    # addProviderTiles(leaflet::providers$OpenTopoMap, group = "Open Topo Map") |>
+    addProviderTiles(leaflet::providers$OpenStreetMap, group = "Street map") |>
+    addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "Satelite") |>
+    # addProviderTiles(leaflet::providers$OpenTopoMap, group = "Topo Map") |>
     addLayersControl(
       baseGroups = c("Street map", "Satelite"),
       options = layersControlOptions(collapsed = FALSE),
