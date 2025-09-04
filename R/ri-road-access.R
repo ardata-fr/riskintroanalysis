@@ -61,22 +61,31 @@ calc_road_access_risk <- function(
 #' @param risk_name name of new column containing aggregated raster values
 #' @param aggregate_fun function to use to aggregate raster values over
 #' epi units area, default is `mean`.
+#' @param reproject whether to reproject `raster` to `epi_units` projection, default
+#' is TRUE.
 #'
 #' @return returns the polygon data (sf) with a new column containing the
 #' aggregated values from the raster data for each polygon.
 #' @importFrom stats median
 #' @importFrom sf as_Spatial
-#' @importFrom terra vect zonal
+#' @importFrom terra vect zonal project
 #' @export
 augment_epi_units_with_raster <- function(
     epi_units,
     raster,
     risk_name = "raster_risk",
-    aggregate_fun = c("mean", "max", "min", "sum")
+    aggregate_fun = c("mean", "max", "min", "sum"),
+    reproject = TRUE
     ) {
   aggregate_fun <- match.arg(aggregate_fun)
   p <- epi_units
   r <- raster
+  if (reproject) {
+    if(is.null(st_crs(p)$input)){
+      cli_abort("EPSG code not found for {.arg epi_units}.")
+    }
+    r <- project(r, st_crs(p)$input)
+  }
   r <- terra::crop(r, p, mask = TRUE)
   p_splat <- as_Spatial(p)
   p_splat <- vect(p_splat)

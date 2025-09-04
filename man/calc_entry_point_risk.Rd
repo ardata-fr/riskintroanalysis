@@ -14,10 +14,10 @@ calc_entry_point_risk(
 }
 \arguments{
 \item{entry_points}{The entry points dataset as formatted and validated by
-\code{\link[riskintrodata:mapping_entry_points]{riskintrodata::mapping_entry_points()}}. This should be an \code{sf} object containing points and emission risks.}
+\code{\link[riskintrodata:validate_dataset]{riskintrodata::validate_dataset()}}. This should be an \code{sf} object containing points and emission risks.}
 
 \item{epi_units}{The epidemiological units dataset as formatted and validated by
-\code{\link[riskintrodata:mapping_epi_units]{riskintrodata::mapping_epi_units()}}. This should be an \code{sf} object with polygons.}
+\code{\link[riskintrodata:validate_dataset]{riskintrodata::validate_dataset()}}. This should be an \code{sf} object with polygons.}
 
 \item{emission_risk}{The emission risk dataset as returned by the \code{\link[=calc_emission_risk]{calc_emission_risk()}}
 function.}

@@ -24,5 +24,5 @@ basemap()
 }
 \seealso{
 \code{\link[leaflet:leaflet]{leaflet::leaflet()}}, \code{\link[leaflet:addProviderTiles]{leaflet::addProviderTiles()}},
-\code{\link[leaflet:addScaleBar]{leaflet::addScaleBar()}}, \link[leaflet:addLayersControl]{leaflet::addLayersControl}
+\code{\link[leaflet:addScaleBar]{leaflet::addScaleBar()}}, \code{\link[leaflet:addLayersControl]{leaflet::addLayersControl()}}
 }

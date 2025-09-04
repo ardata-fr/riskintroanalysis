@@ -13,7 +13,7 @@
 #' basemap()
 #' @importFrom leaflet addScaleBar leaflet addProviderTiles addLayersControl
 #' @seealso [leaflet::leaflet()], [leaflet::addProviderTiles()],
-#' [leaflet::addScaleBar()], [leaflet::addLayersControl]
+#' [leaflet::addScaleBar()], [leaflet::addLayersControl()]
 #' @export
 basemap <- function(...) {
   ll <- leaflet(

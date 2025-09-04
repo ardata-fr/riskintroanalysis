@@ -13,8 +13,7 @@ calc_animal_mobility_risk(
 )
 }
 \arguments{
-\item{animal_mobility}{animal moblity dataset as formatted and validated by
-\code{\link[riskintrodata:mapping_animal_mobility]{riskintrodata::mapping_animal_mobility()}}}
+\item{animal_mobility}{animal moblity validated by \code{\link[riskintrodata:validate_dataset]{riskintrodata::validate_dataset()}}}
 
 \item{emission_risk}{emission risk dataset from \link{calc_emission_risk}}
 
