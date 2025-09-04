@@ -292,7 +292,7 @@ calc_emission_risk <- function(
 #' @return same as input data with an extra column containing the surveillence
 #' score, where surveillence is in range \deqn{ S \in  (0, 3]}
 #' @family emission_risk_calculation
-#' @noRd
+#' @export
 #' @examples
 #' test_data <- data.frame(
 #'   date_last_outbreak = c(
