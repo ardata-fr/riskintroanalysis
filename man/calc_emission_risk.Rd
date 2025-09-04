@@ -137,4 +137,8 @@ emission_risk_table <- calc_emission_risk(
   emission_risk_factors = wahis_erf
 )
 }
+\seealso{
+Other emission_risk_calculation: 
+\code{\link{calc_epistatus}()}
+}
 \concept{emission_risk_calculation}
