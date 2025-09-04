@@ -8,7 +8,8 @@ augment_epi_units_with_raster(
   epi_units,
   raster,
   risk_name = "raster_risk",
-  aggregate_fun = c("mean", "max", "min", "sum")
+  aggregate_fun = c("mean", "max", "min", "sum"),
+  reproject = TRUE
 )
 }
 \arguments{
@@ -20,6 +21,9 @@ augment_epi_units_with_raster(
 
 \item{aggregate_fun}{function to use to aggregate raster values over
 epi units area, default is \code{mean}.}
+
+\item{reproject}{whether to reproject \code{raster} to \code{epi_units} projection, default
+is TRUE.}
 }
 \value{
 returns the polygon data (sf) with a new column containing the
