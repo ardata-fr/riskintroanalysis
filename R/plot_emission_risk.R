@@ -82,7 +82,7 @@ plot_emission_risk_interactive <- function(
       emission_risk,
       by = "iso3"
     )
-  pal <- ll_scale(c(0, 12))
+  pal <- riskPalette(c(0, 12))
   label_content <- map(
     paste0(
       '<h4 style="margin: 0 0 8px 0; font-weight: bold;">', er_sf$country_name, '</h4>',
@@ -119,10 +119,9 @@ plot_emission_risk_interactive <- function(
       ),
       labelOptions = riLabelOptions()
     )
-  ll <- ll |> ll_legend(
-    pal = pal,
+  ll <- ll |> addRiskLegend(
     scale = c(0, 12),
-    title = "Emission risk score"
+    title = "Emission risk"
   )
   ll
 }

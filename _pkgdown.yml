@@ -31,7 +31,7 @@ reference:
     - risk_table
     - add_risk
     - remove_risk
-    - summarise_risk_scores
+    - summarise_scores
   - title: Risk plotting
     contents:
     - plot_risk

@@ -49,7 +49,7 @@ overall_risk <- function(epi_units, risk_table, method){
 #'
 #' @export
 #' @importFrom dplyr rowwise mutate c_across ungroup
-summarise_risk_scores <- function(
+summarise_scores <- function(
     risk_table,
     cols = NULL,
     method = c("mean", "max", "min", "median"),
@@ -65,15 +65,7 @@ summarise_risk_scores <- function(
     "median" = function(x) safe_stat(x, FUN = median, NA_value = NA_real_)
   )
 
-  if (!is.null(cols) && is.null(attr(risk_table, "risk_cols"))) {
-    cols <- cols
-  } else if (is.null(cols) && !is.null(attr(risk_table, "risk_cols"))) {
-    cols <- attr(risk_table, "risk_cols")
-  } else if(!is.null(cols) && is.null(attr(risk_table, "risk_cols"))) {
-    cli_warn("{.arg risk_cols} attribute of {.arg risk_table} is being overwritten by {.arg cols}")
-  } else {
-    cli_abort("{.args cols} needs to be provided as {.arg risk_table} has no {.arg risk_cols} attribute")
-  }
+  cols <- cols %||% attr(risk_table, "risk_cols")
 
   out <- risk_table |>
     rowwise() |>

@@ -37,24 +37,66 @@ plot_risk_interactive <- function(
   )
 }
 
-ll_scale <- function(scale = c(0,100)){
+
+#' Legends and palettes for RiskIntro leaflets
+#'
+#' Interactive plots use these pallettes and legends. Risks use the viridis
+#' palette while scores use the inferno palette. These functions are built on
+#' [leaflet::colorNumeric()] and [leaflet::addLegend()].
+#'
+#' @param scale scale used for domain.
+#' @inheritParams leaflet::addLegend
+#'
+#' @name riskintro-leaflet-legends
+#' @export
+riskPalette <- function(scale = c(0,100)){
   pal <- leaflet::colorNumeric(
     palette = "viridis",
     domain = scale,
-    reverse = TRUE,
-    na.color = "lightgrey"
+    na.color = "#ededed"
   )
   pal
 }
 
-ll_legend <- function(ll, pal, scale, title, opacity = 0.7, layerId = "leaflet_legend"){
-  leaflet::addLegend(
+#' @rdname riskintro-leaflet-legends
+#' @export
+addRiskLegend <- function(ll, scale, title, opacity = 0.7, layerId = "leaflet_legend"){
+  addLegend_decreasing(
     map = ll,
-    pal = pal,
+    pal = riskPalette(scale = scale),
     values = scale,
     opacity = opacity,
     title = title,
-    position = "bottomright",
+    layerId = layerId # prevents stacking legends
+  )
+}
+
+#' @rdname riskintro-leaflet-legends
+#' @export
+scorePalette <- function(scale = c(0,100)){
+  pal <- leaflet::colorNumeric(
+    palette = "inferno",
+    domain = scale,
+    na.color = "#ededed"
+  )
+  pal
+}
+
+#' @rdname riskintro-leaflet-legends
+#' @export
+addScoreLegend <- function(
+    ll,
+    scale = c(0, 100),
+    title = "Score",
+    opacity = 0.7,
+    layerId = "leaflet_legend"
+    ){
+  addLegend_decreasing(
+    map = ll,
+    pal = scorePalette(scale= scale),
+    values = scale,
+    opacity = opacity,
+    title = title,
     layerId = layerId # prevents stacking legends
   )
 }
@@ -70,7 +112,7 @@ ll_legend <- function(ll, pal, scale, title, opacity = 0.7, layerId = "leaflet_l
 #' @importFrom leaflet leaflet addTiles addPolygons addCircleMarkers colorNumeric addLegend
 plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
-  pal <- ll_scale(scale)
+  pal <- scorePalette(scale)
 
   ll <- ll |> leaflet::addPolygons(
     data = dataset,
@@ -100,7 +142,7 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
   }
 
   ll <- ll |>
-    ll_legend(pal, scale, title = risk_col)
+    addScoreLegend(scale, title = risk_col)
   ll
 }
 
@@ -116,7 +158,7 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
 #' @importFrom leaflet addPolygons addCircleMarkers
 plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
-  pal <- ll_scale(scale)
+  pal <- scorePalette(scale)
   ll <- ll |>
     leaflet::addPolygons(
       data = dataset,
@@ -156,7 +198,7 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = base
   }
 
   ll <- ll |>
-    ll_legend(pal, scale, title = risk_col)
+    addScoreLegend(scale, title = risk_col)
   ll
 }
 
@@ -172,7 +214,7 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = base
 #' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions
 plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
-  pal <- ll_scale(scale)
+  pal <- scorePalette(scale)
   # Create label content for polygons
   label_content <- paste0(
     "<strong>", dataset$eu_name, "</strong>", "<br>",
@@ -198,7 +240,7 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
   # Add legend
   if (!is.null(scale)){
     ll <- ll |>
-      ll_legend(pal, scale, title = risk_col)
+      addScoreLegend(scale, title = risk_col)
   }
 
   ll
@@ -216,7 +258,7 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
 #' @importFrom leaflet addPolygons addPolylines clearShapes
 plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
-  pal <- ll_scale(scale)
+  pal <- scorePalette(scale)
 
   ll <- clearShapes(ll)
 
@@ -249,7 +291,7 @@ plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = basemap(
   }
 
   ll <- ll |>
-    ll_legend(pal, scale, title = risk_col)
+    addScoreLegend(scale, title = risk_col)
   ll
 }
 
@@ -289,7 +331,7 @@ plot_epi_units_interactive <- function(dataset, scale, risk_col, ll = basemap())
 #' @importFrom leaflet addPolygons
 plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
-  pal <- ll_scale(scale)
+  pal <- scorePalette(scale)
   if (!isTruthy(risk_col)) {
     fillColor <-  "lightgrey"
   } else {
@@ -318,6 +360,6 @@ plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()
   )
 
   ll <- ll |>
-    ll_legend(pal, scale, title = risk_col)
+    addScoreLegend(scale, title = risk_col)
   ll
 }

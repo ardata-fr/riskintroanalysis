@@ -505,7 +505,7 @@ rt <- add_risk(
     dataset = ri_animal_mobility
   )
 )
-summarised_risks <- summarise_risk_scores(rt, method = "max")
+summarised_risks <- summarise_scores(rt, method = "max")
 
 plot_risk(summarised_risks)
 ```
