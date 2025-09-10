@@ -85,20 +85,19 @@ plot_emission_risk_interactive <- function(
   pal <- riskPalette(c(0, 12))
   label_content <- map(
     paste0(
-      '<h4 style="margin: 0 0 8px 0; font-weight: bold;">', er_sf$country_name, '</h4>',
+      '<h5 style="margin: 0 0 8px 0; font-weight: bold;">', er_sf$country_name, '</h5>',
       '<table style="border-collapse: collapse; width: 100%; font-size: 12px;">',
-      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>Emission risk</strong></td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$emission_risk), '/12</td></tr>',
-      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>Epistatus</strong></td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_epistatus), '/3</td></tr>',
-      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>Surveillance</strong></td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_survmeasures), '/2</td></tr>',
-      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>Control</strong></td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_control), '/3</td></tr>',
-      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>Commerce</strong></td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_commerce), '/4</td></tr>',
+      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>Emission risk</strong></td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;"><strong>', fmt_num(er_sf$emission_risk), '/12</strong></td></tr>',
+      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">Surveillance</td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_survmeasures), '/2</td></tr>',
+      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">Control</td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_control), '/3</td></tr>',
+      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">Commerce</td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_commerce), '/4</td></tr>',
+      '<tr><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">Epistatus</td><td style="padding: 3px 8px; border-bottom: 1px solid #ddd;">', fmt_num(er_sf$sc_epistatus), '/3</td></tr>',
       '<tr><td style="padding: 3px 8px;"><em>Source</em></td><td style="padding: 3px 8px;"><em>', er_sf$data_source, '</em></td></tr>',
       '</table>'
     ),
     HTML
   )
 
-  # ll <- basemap() # for dev
   ll <- ll |>
     addPolygons(
       data = er_sf,

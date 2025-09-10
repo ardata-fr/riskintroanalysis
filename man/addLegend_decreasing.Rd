@@ -24,12 +24,12 @@ addLegend_decreasing(
 )
 }
 \arguments{
-\item{map}{a map widget object created from \code{\link[leaflet]{leaflet}()}}
+\item{map}{a map widget object created from \code{\link[leaflet:leaflet]{leaflet()}}}
 
 \item{position}{the position of the legend}
 
 \item{pal}{the color palette function, generated from
-\code{\link[leaflet]{colorNumeric}()}, \code{colorBin()}, \code{colorQuantile()}, or
+\code{\link[leaflet:colorNumeric]{colorNumeric()}}, \code{colorBin()}, \code{colorQuantile()}, or
 \code{colorFactor()}}
 
 \item{values}{the values used to generate colors from the palette function}
@@ -57,16 +57,16 @@ write your own function)}
 
 \item{className}{extra CSS classes to append to the control, space separated}
 
-\item{layerId}{the ID of the legend; subsequent calls to \code{addLegend}
-or \code{addControl} with the same \code{layerId} will replace this
-legend. The ID can also be used with \code{removeControl}.}
+\item{layerId}{the ID of the legend; subsequent calls to \code{addLegend()}
+or \code{addControl()} with the same \code{layerId} will replace this
+legend. The ID can also be used with \code{removeControl()}.}
 
 \item{group}{\code{group} name of a leaflet layer group.
 Supplying this value will tie the legend to the leaflet layer group
 with this name and will auto add/remove the legend as the
-group is added/removed, for example via layerControl.
+group is added/removed, for example via \code{layerControl()}.
 You will need to set the \code{group} when you add a layer
-(e.g. \code{\link[leaflet]{addPolygons}}) and supply the same name here.}
+(e.g., \code{\link[leaflet:addPolygons]{addPolygons()}}) and supply the same name here.}
 
 \item{data}{the data object from which the argument values are derived; by
 default, it is the \code{data} object provided to \code{leaflet()}

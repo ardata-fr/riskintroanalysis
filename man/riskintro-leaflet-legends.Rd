@@ -29,9 +29,9 @@ addScoreLegend(
 
 \item{opacity}{the opacity of colors}
 
-\item{layerId}{the ID of the legend; subsequent calls to \code{addLegend}
-or \code{addControl} with the same \code{layerId} will replace this
-legend. The ID can also be used with \code{removeControl}.}
+\item{layerId}{the ID of the legend; subsequent calls to \code{addLegend()}
+or \code{addControl()} with the same \code{layerId} will replace this
+legend. The ID can also be used with \code{removeControl()}.}
 }
 \description{
 Interactive plots use these pallettes and legends. Risks use the viridis
