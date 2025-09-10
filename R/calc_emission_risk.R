@@ -141,9 +141,12 @@ calc_emission_risk <- function(
     "{.arg emission_risk_factors} dataset does not have {.val table_name} attribute." = !is.null(attr(emission_risk_factors, "table_name")),
     "{.arg emission_risk_factors} dataset {.val table_name} attribute must be {.val emission_risk_factors}." = attr(emission_risk_factors, "table_name") == "emission_risk_factors",
     "{.arg weights} should sum to 5, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}." = sum(unlist(weights)) == 5L,
-    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}." = length(weights) == 9L,
-    "{.arg emission_risk_factors} has no rows." = nrow(emission_risk_factors) > 0
+    "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}." = length(weights) == 9L
   )
+
+  if (nrow(emission_risk_factors) > 0) {
+    cli_warn("{.arg emission_risk_factors} has no rows.")
+  }
 
   # Refer to data-raw/emission-risk-defaults.R
   weight_names <- names(weights)
