@@ -144,7 +144,7 @@ calc_emission_risk <- function(
     "{.arg weights} should have length 9, see doc: {.help [{.fun calc_emission_risk}](riskintroanalysis::calc_emission_risk)}." = length(weights) == 9L
   )
 
-  if (nrow(emission_risk_factors) > 0) {
+  if (nrow(emission_risk_factors) < 1) {
     cli_warn("{.arg emission_risk_factors} has no rows.")
   }
 
