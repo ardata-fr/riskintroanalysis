@@ -32,10 +32,10 @@ n_eff_sources <- function(x, x_max) {
 #' @param coef_legal Number > 1. Scaling factor of legal sources in the latent scale.
 #' @param coef_illegal Number > 1. Scaling factor of illegal sources in the latent scale.
 #' @param max_risk Number > 1. Maximum assymptotically atteinable risk.
-#' @noRd
 #' @examples
 #' library(ggplot2)
-#' case_dat <- expand_grid(
+#' library(tidyr)
+#' case_dat <- tidyr::expand_grid(
 #'   xl = 0:5,
 #'   xi = 0:5
 #' )
@@ -86,9 +86,9 @@ scale_entry_points <- function(x_legal, x_illegal, illegal_factor, coef_legal, c
 #' Either logical vectors or vectors with only 0 and 1 entries count as boolean.
 #'
 #' @param x A vector.
-#' @noRd
+#' @export
 #' @examples
-#' is.boolean(c(T, T, F))
+#' is.boolean(c(TRUE, TRUE, FALSE))
 #' is.boolean(c(0, 1, 1, 0))
 #' is.boolean(0)
 #' is.boolean(c(0, 1.1, 3))

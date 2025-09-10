@@ -84,7 +84,7 @@ augment_epi_units_with_raster <- function(
     if(is.null(st_crs(p)$input)){
       cli_abort("EPSG code not found for {.arg epi_units}.")
     }
-    r <- project(r, st_crs(p)$input)
+    r <- project(r, p)
   }
   r <- terra::crop(r, p, mask = TRUE)
   p_splat <- as_Spatial(p)

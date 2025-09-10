@@ -235,7 +235,7 @@ rescale_secondary_datasets <- function(
   dataset
 }
 
-#' Sigmoid function
+#' Sigmoid and inverse sigmoid
 #'
 #' We use the logistic function, rescaled to map non-negative values into [0, 1).
 #'
@@ -245,30 +245,19 @@ rescale_secondary_datasets <- function(
 #' @param x Numeric vector.
 #'
 #' @return A numeric vector with values between -1 and 1.
-#' @noRd
 #' @examples
 #' x <- (0:500)/100
-#' plot(x, sigmoid_1_100(x), type = 'l')
+#' plot(x, sigmoid(x), type = 'l')
 #' @importFrom stats plogis
+#' @keywords internal
 #' @rdname sigmoid
-#' @noRd
 sigmoid <- function(x) {
   2 * plogis(x) - 1
 }
 
-#' Inverse sigmoid function
-#'
-#' The invesrse of the sigmoid function.
-#'
-#' @param x Numeric vector with values between -1 and 1.
-#'
-#' @return A numeric vector with real values.
-#' @noRd
-#' @examples
-#' x <- c(0.01, 0.88, 0.247)
-#' inv_sigmoid(x)
+#' @keywords internal
+#' @name sigmoid
 #' @importFrom stats qlogis
-#' @rdname sigmoid
 inv_sigmoid <- function(x) {
   qlogis((x + 1)/2)
 }

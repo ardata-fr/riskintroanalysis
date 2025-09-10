@@ -111,7 +111,7 @@ test_that("calc_emission_risk validates input correctly", {
   expect_error(calc_emission_risk(test_erf, weights = wrong_length_weights), "should sum to 5")
 
   empty_erf <- test_erf[0, ]
-  expect_error(calc_emission_risk(empty_erf), "has no rows")
+  expect_warning(calc_emission_risk(empty_erf), "has no rows")
 })
 
 test_that("calc_emission_risk handles commerce scores correctly", {

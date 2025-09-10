@@ -25,6 +25,8 @@ addScoreLegend(
 \arguments{
 \item{scale}{scale used for domain.}
 
+\item{ll}{leaflet object or proxy to add legend to.}
+
 \item{title}{the legend title}
 
 \item{opacity}{the opacity of colors}

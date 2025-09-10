@@ -43,11 +43,13 @@ plot_risk_interactive <- function(
 #' Interactive plots use these pallettes and legends. Risks use the viridis
 #' palette while scores use the inferno palette. These functions are built on
 #' [leaflet::colorNumeric()] and [leaflet::addLegend()].
-#'
-#' @param scale scale used for domain.
+#' @param ll leaflet object or proxy to add legend to.
 #' @inheritParams leaflet::addLegend
-#'
+#' @param scale scale used for domain.
 #' @name riskintro-leaflet-legends
+NULL
+
+#' @rdname riskintro-leaflet-legends
 #' @export
 riskPalette <- function(scale = c(0,100)){
   pal <- leaflet::colorNumeric(
