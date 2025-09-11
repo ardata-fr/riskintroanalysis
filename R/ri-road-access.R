@@ -48,7 +48,10 @@ calc_road_access_risk <- function(
   attr(dataset, "risk_col") <- "road_access_risk"
   attr(dataset, "table_name") <- "road_access"
   attr(dataset, "raster") <- cropped_raster
-  attr(dataset, "scale") <- NULL
+  attr(dataset, "scale") <- c(
+    min(dataset$road_access_risk),
+    max(dataset$road_access_risk)
+  )
   dataset
 }
 
