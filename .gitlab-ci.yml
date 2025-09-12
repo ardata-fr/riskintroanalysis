@@ -1,13 +1,28 @@
+image:
+  name: rocker/verse:latest
+  docker:
+    user: root
+
 stages:
   - build
 
 pages:
   stage: build
   script:
+    # Install system dependencies for spatial packages
+    - apt-get update
+    - apt-get install -y libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+    # Install remotes to handle git dependencies
+    - Rscript -e 'install.packages("remotes")'
+    # Install all package dependencies including git remotes
+    - Rscript -e 'remotes::install_deps(dependencies = TRUE)'
+    # Install pkgdown for site building
+    - Rscript -e 'install.packages("pkgdown")'
+    # Build the site
     - Rscript -e 'pkgdown::build_site()'
   artifacts:
     paths:
       - docs/
   only:
     variables:
-      - $CI_COMMIT_MESSAGE =~ /sitedeploy/
+      - $CI_COMMIT_MESSAGE =~ /deploy_pages/
