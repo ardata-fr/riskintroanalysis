@@ -63,7 +63,7 @@ add_risk <- function(
     ) {
   cols <- cols %||% attr(risk_data, "risk_col")
   if (!is.null(scale) && is.null(attr(risk_data, "scale"))) {
-    cli_warn("Scale attribute of {.arg risk_data} overwritten by {.arg scale} argument.")
+    cli_inform("Scale attribute of {.arg risk_data} overwritten by {.arg scale} argument.")
   } else {
     scale <- attr(risk_data, "scale")
   }

@@ -64,7 +64,7 @@ rescale_risk_scores <- function(
   } else if (is.null(from) && !is.null(attr(dataset, "scale"))) {
     from <- attr(dataset, "scale")
   } else if (!is.null(from) && !is.null(attr(dataset, "scale"))) {
-    cli_warn("{.arg scale} attribute of {.arg dataset} is being overwritten by {.arg from}")
+    cli_inform("{.arg scale} attribute of {.arg dataset} is being overwritten by {.arg from}")
   } else {
     cli_abort("{.args from} needs to be provided as {.arg dataset} has no {.arg scale} attribute")
   }

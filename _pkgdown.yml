@@ -1,4 +1,4 @@
-url: "riskintroanalysis"
+url: https://astre.gitlab.cirad.fr/riskintroanalysis
 template:
   bootstrap: 5
   theme: breeze-light
@@ -8,6 +8,7 @@ template:
     base_font:
       google: "Open Sans"
 
+destination: ./public
 footer:
   structure:
     left: [developed_by]

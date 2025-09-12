@@ -9,3 +9,4 @@
 ^.github$
 ^README_cache$
 ^\.gitlab-ci\.yml$
+^public$
