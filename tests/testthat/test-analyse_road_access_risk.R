@@ -82,7 +82,8 @@ test_that("Complete road access risk analysis workflow works", {
   # Test attributes
   expect_equal(attr(ri_road_access, "risk_col"), "road_access_risk")
   expect_equal(attr(ri_road_access, "table_name"), "road_access")
-  expect_null(attr(ri_road_access, "scale")) # Road access doesn't have predefined scale
+  expect_length(attr(ri_road_access, "scale"), 2)
+  expect_true(is.numeric(attr(ri_road_access, "scale")))
   expect_s4_class(attr(ri_road_access, "raster"), "SpatRaster")
 
   # Test risk values are numeric and reasonable

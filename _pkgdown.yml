@@ -1,4 +1,4 @@
-url: ~
+url: "riskintroanalysis"
 template:
   bootstrap: 5
   theme: breeze-light
@@ -38,3 +38,14 @@ reference:
   - title: Helper functions
     contents:
     - starts_with("extract_")
+    - addLegend_decreasing
+    - add_scale
+    - basemap
+    - generate_leaflet_labels
+    - has_risk
+    - is.boolean
+    - n_eff_sources
+    - plot_emission_risk
+    - plot_emission_risk_interactive
+    - riskintro-leaflet-legends
+    - scale_entry_points

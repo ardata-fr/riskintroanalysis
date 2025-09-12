@@ -1,5 +1,5 @@
 ---
-title: "Risk scaling of entry points"
+title: "Entry points analysis"
 format: 
   html:
     toc: true
@@ -8,7 +8,7 @@ execute:
   echo: false
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Risk scaling of entry points}
+  %\VignetteIndexEntry{Entry points analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 knitr:

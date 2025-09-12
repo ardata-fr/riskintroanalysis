@@ -1,0 +1,13 @@
+stages:
+  - build
+
+pages:
+  stage: build
+  script:
+    - Rscript -e 'pkgdown::build_site()'
+  artifacts:
+    paths:
+      - docs/
+  only:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /sitedeploy/
