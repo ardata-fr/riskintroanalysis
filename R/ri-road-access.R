@@ -47,6 +47,7 @@ calc_road_access_risk <- function(
 
   # Calculate scale from cropped raster values, not aggregated values
   raster_range <- terra::minmax(cropped_raster, compute = TRUE)
+  attr(cropped_raster, "scale") <- raster_range
 
   attr(dataset, "risk_col") <- "road_access_risk"
   attr(dataset, "table_name") <- "road_access"

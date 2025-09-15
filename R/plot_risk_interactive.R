@@ -214,7 +214,8 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = base
 #' @return leaflet map object
 #' @export
 #' @rdname plot_risk
-#' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions
+#' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions addLegend colorNumeric
+#' @importFrom viridis viridis
 plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- scorePalette(scale)
@@ -240,23 +241,36 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
       group = "polygons"
     )
 
+  ll <- ll |>
+    leaflet::addLegend(
+      pal = scorePalette(scale),
+      values = scale,
+      title = risk_col,
+      opacity = 0.7,
+      layerId = "polygon_legend",
+      group = "polygons"
+    )
+
   # Add raster layer if available
   raster_data <- attr(dataset, "raster")
   if (!is.null(raster_data)) {
-    # Use the same scale and palette as polygons for consistency
-    raster_pal <- riskPalette(scale)
+
+    raster_scale <- attr(raster_data, "scale")
+
+    raster_pal <- leaflet::colorNumeric(
+      palette = "viridis",
+      domain = raster_scale,
+      na.color = "#ededed"
+    )
 
     ll <- ll |>
       leaflet::addRasterImage(
         x = raster_data,
         colors = raster_pal,
-        opacity = 0.7,
+        opacity = 0.85,
         group = "raster"
       )
-  }
 
-  # Add layer controls if raster data is available
-  if (!is.null(raster_data)) {
     ll <- ll |>
       leaflet::addLayersControl(
         baseGroups = c("polygons", "raster"),
@@ -266,12 +280,16 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
         ),
         position = "bottomright"
       )
-  }
-
-  # Add legend
-  if (!is.null(scale)){
     ll <- ll |>
-      addScoreLegend(scale, title = risk_col)
+      leaflet::addLegend(
+        pal = raster_pal,
+        values = raster_scale,
+        title = "Road Access Index",
+        opacity = 0.85,
+        layerId = "raster_legend",
+        group = "raster"
+      )
+
   }
 
   ll
