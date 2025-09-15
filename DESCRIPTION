@@ -1,7 +1,7 @@
 Type: Package
 Package: riskintroanalysis
 Title: Analysis Methods for Managing Animal Disease Introduction Risk
-Version: 0.1.4.003
+Version: 0.1.4.004
 Authors@R: c(
     person("Eli", "Daniels", , "eli.daniels@ardata.fr", role = c("aut", "cre")),
     person("David", "Gohel", , "david.gohel@ardata.fr", role = "aut"),

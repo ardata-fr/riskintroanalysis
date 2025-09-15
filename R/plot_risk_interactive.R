@@ -103,6 +103,7 @@ addScoreLegend <- function(
   )
 }
 
+
 #' Interactive leaflet plotting for entry points
 #'
 #' @param dataset sf object with entry point risk data
@@ -238,6 +239,34 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
       label = label_content,
       group = "polygons"
     )
+
+  # Add raster layer if available
+  raster_data <- attr(dataset, "raster")
+  if (!is.null(raster_data)) {
+    # Use the same scale and palette as polygons for consistency
+    raster_pal <- riskPalette(scale)
+
+    ll <- ll |>
+      leaflet::addRasterImage(
+        x = raster_data,
+        colors = raster_pal,
+        opacity = 0.7,
+        group = "raster"
+      )
+  }
+
+  # Add layer controls if raster data is available
+  if (!is.null(raster_data)) {
+    ll <- ll |>
+      leaflet::addLayersControl(
+        baseGroups = c("polygons", "raster"),
+        options = leaflet::layersControlOptions(
+          collapsed = FALSE,
+          autoZIndex = FALSE
+        ),
+        position = "bottomright"
+      )
+  }
 
   # Add legend
   if (!is.null(scale)){
