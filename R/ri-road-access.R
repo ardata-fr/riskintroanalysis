@@ -27,7 +27,7 @@
 #' @seealso [extract_raster()], [riskintrodata::download_road_access_raster()]
 #' @export
 #' @family default riskintro analysis
-#' @importFrom terra crop
+#' @importFrom terra crop minmax
 #' @example examples/calc_road_access_risk.R
 calc_road_access_risk <- function(
     epi_units,
@@ -45,13 +45,13 @@ calc_road_access_risk <- function(
     risk_name = "road_access_risk"
   )
 
+  # Calculate scale from cropped raster values, not aggregated values
+  raster_range <- terra::minmax(cropped_raster, compute = TRUE)
+
   attr(dataset, "risk_col") <- "road_access_risk"
   attr(dataset, "table_name") <- "road_access"
   attr(dataset, "raster") <- cropped_raster
-  attr(dataset, "scale") <- c(
-    min(dataset$road_access_risk),
-    max(dataset$road_access_risk)
-  )
+  attr(dataset, "scale") <- c(raster_range[1], raster_range[2])
   dataset
 }
 
