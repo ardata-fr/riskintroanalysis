@@ -215,7 +215,6 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = base
 #' @export
 #' @rdname plot_risk
 #' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions addLegend colorNumeric
-#' @importFrom viridis viridis
 plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- scorePalette(scale)
