@@ -45,7 +45,6 @@ reference:
     - generate_leaflet_labels
     - has_risk
     - is.boolean
-    - n_eff_sources
     - plot_emission_risk
     - plot_emission_risk_interactive
     - riskintro-leaflet-legends

@@ -8,8 +8,8 @@ calc_entry_point_risk(
   entry_points,
   epi_units,
   emission_risk,
-  points_agg_fun = mean,
-  eu_agg_fun = max
+  scaling_args = list(illegal_factor = 3, coef_legal = 1, coef_illegal = 1, max_risk =
+    12)
 )
 }
 \arguments{
@@ -22,11 +22,9 @@ calc_entry_point_risk(
 \item{emission_risk}{The emission risk dataset as returned by the \code{\link[=calc_emission_risk]{calc_emission_risk()}}
 function.}
 
-\item{points_agg_fun}{Function used to aggrgate emission risk for each entry
-point. See description above. Default is \code{\link[=mean]{mean()}}.}
-
-\item{eu_agg_fun}{Function used to aggregate emission risk scores for each
-epidemiological unit. Default is \code{\link[=max]{max()}}.}
+\item{scaling_args}{list of arguments to pass to \code{\link[=scale_entry_points]{scale_entry_points()}}. Accepted
+arguments are \code{illegal_factor}, \code{coef_legal} and \code{coef_illegal}. Other arguments
+are handled internally.}
 }
 \value{
 an \code{sf} dataset containing the following columns:
@@ -60,21 +58,15 @@ and has the following columns:
 }
 }
 \description{
-Calculating the entry point risk associated with each epidemiological unit.
+Calculating the risk of introduction through entry points within each
+epidemiological unit.
 
-Firstly, an aggregated (\code{points_agg_fun}) emission risk is calculated for each entry point. This is
-because an entry point can have multiple sources (countries) giving emission
-risk.
-
-Then, each entry point is allocated to an epidemiological unit. This is done
-by geospatial means, if an entry point is located inside an epidemiological unit's
-area it is thus allocated to it. Entry points not located inside any epidemiological
-unit are allocated to the nearest one.
-
-Finally, now that each entry point has an emission risk and has been paired
-with an epidemiological unit, the aggregated (\code{eu_agg_fun}) risk score for each epidemiological
-unit is calculated. Giving the final risk of introduction by entry points for
-each epidemiological unit.
+See the \href{https://astre.gitlab.cirad.fr/riskintro-app/riskintroanalysis/articles/entry-points-analysis.html}{Entry points analysis}
+article for more information or run \code{vignette("entry-points-analysis")}
+}
+\details{
+If an entry point is not within the area of an epidemiological unit, it
+will be allocated to the nearest one.
 }
 \examples{
 library(riskintrodata)

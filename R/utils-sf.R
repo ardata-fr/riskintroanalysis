@@ -25,7 +25,7 @@ st_difference_quiet <- function(...){
 }
 
 
-safe_stat <- function(..., FUN = max, NA_value = NA_real_) {
+safe_stat <- function(..., FUN = max, NA_value = NA_real_, args = NULL) {
   x <- na.omit(unlist(list(...)))
   if (length(x) > 0) {
     FUN(x)
