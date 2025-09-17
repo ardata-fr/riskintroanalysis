@@ -130,13 +130,14 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
 
   if (!is.null(extract_point_risk(dataset))) {
     points_data <- extract_point_risk(dataset)
+    points_risk_col <- attr(points_data, "risk_col")
     ll <- ll |>
       leaflet::addCircleMarkers(
         data = points_data,
         radius = 6,
         color = "black",
         weight = 2,
-        fillColor = ~pal(points_data$point_emission_risk),
+        fillColor = pal(points_data[[points_risk_col]]),
         fillOpacity = 0.8,
         label = points_data$points_label
       )

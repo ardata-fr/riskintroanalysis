@@ -61,7 +61,7 @@ calc_entry_point_risk <- function(
       illegal_factor = 3,
       coef_legal = 1,
       coef_illegal = 1,
-      max_risk = 12
+      max_risk = 100
     )
 ) {
 
@@ -69,6 +69,11 @@ calc_entry_point_risk <- function(
   check_dataset_valid(epi_units)
   check_dataset_valid(entry_points)
   check_dataset_valid(emission_risk)
+
+  scaling_args$illegal_factor <- scaling_args$illegal_factor %||% 3
+  scaling_args$coef_legal <- scaling_args$coef_legal %||% 1
+  scaling_args$coef_illegal <- scaling_args$coef_illegal %||% 1
+  scaling_args$max_risk <- scaling_args$max_risk %||% 100
 
   er <- select(emission_risk, all_of(c("iso3", "country", "emission_risk")))
   points_er <- left_join(
@@ -103,11 +108,11 @@ calc_entry_point_risk <- function(
   # Step 1: Point Exposure ----
   # This provides one emission risk score per point.
   # Not that the summary is a weighted average based on the severity of the risk
-  # of each country. See calc_point_exposure()
+  # of each country. See n_eff_sources()
   point_exposures <- points_er_complete |>
     group_by(across(all_of(c("point_id", "point_name", "mode", "type")))) |>
     summarise_quiet(
-      point_exposure = safe_stat(.data$emission_risk, FUN = calc_point_exposure, NA_value = NA_real_),
+      point_exposure = safe_stat(.data$emission_risk, FUN = n_eff_sources, NA_value = NA_real_),
       points_label =
         paste0(
           "<strong>", first(.data$point_name),"</strong>", "<br>",
@@ -149,16 +154,27 @@ calc_entry_point_risk <- function(
     filter(!is.na(.data$mode))
 
   total_exposure <- eu_ep_exposures |>
+    mutate(mode = factor(mode, levels = c("C", "NC"))) |>
     group_by(across(all_of(c("eu_id", "eu_name", "mode")))) |>
     summarise(
-      total_exposure = safe_stat(.data$point_exposure, FUN = sum, NA_value = NA_real_)
-    ) |>
+      total_exposure = safe_stat(.data$point_exposure, FUN = sum, NA_value = NA_real_),
+      .groups = "drop"
+      ) |>
     tidyr::pivot_wider(
       id_cols = all_of(c("eu_id", "eu_name")),
       names_from = all_of("mode"),
       values_from = all_of("total_exposure"),
       names_prefix = 'exposure_'
     )
+
+  # pivot_wider will not pivot NC if there are no
+  # values of NC in names_from
+  if (!"exposure_C" %in% colnames(total_exposure)) {
+    total_exposure$exposure_C <- 0
+  }
+  if (!"exposure_NC" %in% colnames(total_exposure)) {
+    total_exposure$exposure_NC <- 0
+  }
 
   # Step 3: Scaling the risk of introduction -----
 
@@ -174,7 +190,7 @@ calc_entry_point_risk <- function(
         illegal_factor = scaling_args$illegal_factor,
         coef_legal = scaling_args$coef_legal,
         coef_illegal = scaling_args$coef_illegal,
-        max_risk = 12
+        max_risk = scaling_args$max_risk
       )
     ) |>
     mutate(
@@ -185,7 +201,8 @@ calc_entry_point_risk <- function(
         "Non-controled exposure: ", fmt_num(.data$exposure_NC), "<br>"
       ) |>
         map(HTML)
-    )
+    ) |>
+    select(-all_of("eu_name"))
 
   dataset <- left_join(
     epi_units, introduction_risk,
@@ -193,13 +210,13 @@ calc_entry_point_risk <- function(
     relationship = "one-to-one"
   )
 
-  attr(point_exposures, "risk_col") <- "point_emission_risk"
-  attr(point_exposures, "scale") <- c(0, 12)
+  attr(point_exposures, "risk_col") <- "point_exposure"
+  attr(point_exposures, "scale") <- c(0, scaling_args$max_risk)
   attr(dataset, "points") <- point_exposures
 
   attr(dataset, "risk_col") <- "entry_points_risk"
   attr(dataset, "table_name") <- "entry_points"
-  attr(dataset, "scale") <- c(0,12)
+  attr(dataset, "scale") <- c(0,scaling_args$max_risk)
   dataset
 }
 
@@ -214,10 +231,7 @@ calc_entry_point_risk <- function(
 #' @param x Numeric vector. Risk of emission scores of source countries.
 #' @param x_max Positive number. Maximum possible emission score for a country
 #' @keywords internal
-#' @examples
-#' calc_point_exposure(c(12, 12), x_max = 12)  # 2 equivalent sources
-#' calc_point_exposure(c(6, 6), x_max = 12)    # 2 half-score sources = 1 equivalent source
-calc_point_exposure <- function(x, x_max = 12) {
+n_eff_sources <- function(x, x_max = 12) {
   stopifnot(
     length(x_max) == 1,
     x_max > 0
@@ -230,15 +244,20 @@ calc_point_exposure <- function(x, x_max = 12) {
 
 #' Scale risk of entry points
 #'
-#' Scale the effective numbers of legal and illegal sources into the risk scale.
+#' Scale the effective numbers of legal and illegal sources into the risk scale. Part
+#' of the analysis of entry point risk.
+#'
+#' See the [Entry points analysis](https://astre.gitlab.cirad.fr/riskintro-app/riskintroanalysis/articles/entry-points-analysis.html)
+#' article for more information or run `vignette("entry-points-analysis")`
+#'
 #'
 #' @param x_legal Numeric vector. Effective numbers of sources for each legal entry point.
 #' @param x_illegal Numeric vector. Effective numbers of sources for each illegal entry point.
-#' @param illegal_factor Number > 1. Relative risk of an illegal entry point with respect
+#' @param illegal_factor (lambda) Number > 1. Relative risk of an illegal entry point with respect
 #'   to a legal one.
-#' @param coef_legal Number > 1. Scaling factor of legal sources in the latent scale.
-#' @param coef_illegal Number > 1. Scaling factor of illegal sources in the latent scale.
-#' @param max_risk Number > 1. Maximum assymptotically atteinable risk.
+#' @param coef_legal (alpha) Number > 1. Scaling factor of legal sources in the latent scale.
+#' @param coef_illegal (beta) Number > 1. Scaling factor of illegal sources in the latent scale.
+#' @param max_risk (M) Number > 1. Maximum assymptotically atteinable risk.
 #' @examples
 #' library(ggplot2)
 #' library(tidyr)
@@ -260,7 +279,14 @@ calc_point_exposure <- function(x, x_max = 12) {
 #'     fill = "Risk"
 #'   )
 #' @export
-scale_entry_points <- function(x_legal, x_illegal, illegal_factor, coef_legal, coef_illegal, max_risk) {
+scale_entry_points <- function(
+    x_legal,
+    x_illegal,
+    illegal_factor = 3,
+    coef_legal = 1,
+    coef_illegal = 1,
+    max_risk = 100
+    ) {
 
   stopifnot(
     length(illegal_factor) == 1,
@@ -279,11 +305,11 @@ scale_entry_points <- function(x_legal, x_illegal, illegal_factor, coef_legal, c
   ## apply the illegal scaling factor inversely and back-transform to the latent scale
   latent_legal_risk <- inv_sigmoid(sigmoid(coef_legal * x_legal) / illegal_factor)
 
+  eff_n_illegal <- coef_illegal * x_illegal
   ## Combine with the effective number of illegal sources
-  latent_risk <- latent_legal_risk + coef_illegal * x_illegal
+  latent_risk <- latent_legal_risk + eff_n_illegal
 
   ## Scale into the risk scale
   ans <- max_risk * sigmoid(latent_risk)
-
-  return(ans)
+  ans
 }

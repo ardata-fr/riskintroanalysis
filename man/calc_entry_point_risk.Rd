@@ -9,7 +9,7 @@ calc_entry_point_risk(
   epi_units,
   emission_risk,
   scaling_args = list(illegal_factor = 3, coef_legal = 1, coef_illegal = 1, max_risk =
-    12)
+    100)
 )
 }
 \arguments{

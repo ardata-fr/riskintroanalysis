@@ -118,7 +118,8 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   entry_points_original <- calc_entry_point_risk(
     entry_points = entry_points,
     epi_units = epi_units,
-    emission_risk = emission_risk_table
+    emission_risk = emission_risk_table,
+    scaling_args = list(max_risk = 12)
   )
 
   # Test that original data is on 0-12 scale
@@ -140,7 +141,7 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   # Test that secondary dataset (borders attribute) is also rescaled
   extracted_borders_scaled <- extract_point_risk(entry_points_scaled)
   expect_true(all(
-    extracted_borders_scaled$point_emission_risk <= 100,
+    extracted_borders_scaled$point_exposure <= 100,
     na.rm = TRUE
   ))
 
@@ -151,12 +152,12 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   # (i.e., both should be scaled by the same factor)
   if (
     any(entry_points_original$entry_points_risk > 0, na.rm = TRUE) &&
-      any(extracted_borders_original$point_emission_risk > 0, na.rm = TRUE)
+      any(extracted_borders_original$point_exposure > 0, na.rm = TRUE)
   ) {
     original_ratio <- entry_points_original$entry_points_risk[1] /
-      extracted_borders_original$point_emission_risk[1]
+      extracted_borders_original$point_exposure[1]
     scaled_ratio <- entry_points_scaled$entry_points_risk[1] /
-      extracted_borders_scaled$point_emission_risk[1]
+      extracted_borders_scaled$point_exposure[1]
 
     expect_equal(original_ratio, scaled_ratio, tolerance = 1e-10)
   }

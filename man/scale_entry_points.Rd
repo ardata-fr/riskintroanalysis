@@ -7,10 +7,10 @@
 scale_entry_points(
   x_legal,
   x_illegal,
-  illegal_factor,
-  coef_legal,
-  coef_illegal,
-  max_risk
+  illegal_factor = 3,
+  coef_legal = 1,
+  coef_illegal = 1,
+  max_risk = 100
 )
 }
 \arguments{
@@ -18,17 +18,22 @@ scale_entry_points(
 
 \item{x_illegal}{Numeric vector. Effective numbers of sources for each illegal entry point.}
 
-\item{illegal_factor}{Number > 1. Relative risk of an illegal entry point with respect
+\item{illegal_factor}{(lambda) Number > 1. Relative risk of an illegal entry point with respect
 to a legal one.}
 
-\item{coef_legal}{Number > 1. Scaling factor of legal sources in the latent scale.}
+\item{coef_legal}{(alpha) Number > 1. Scaling factor of legal sources in the latent scale.}
 
-\item{coef_illegal}{Number > 1. Scaling factor of illegal sources in the latent scale.}
+\item{coef_illegal}{(beta) Number > 1. Scaling factor of illegal sources in the latent scale.}
 
-\item{max_risk}{Number > 1. Maximum assymptotically atteinable risk.}
+\item{max_risk}{(M) Number > 1. Maximum assymptotically atteinable risk.}
 }
 \description{
-Scale the effective numbers of legal and illegal sources into the risk scale.
+Scale the effective numbers of legal and illegal sources into the risk scale. Part
+of the analysis of entry point risk.
+}
+\details{
+See the \href{https://astre.gitlab.cirad.fr/riskintro-app/riskintroanalysis/articles/entry-points-analysis.html}{Entry points analysis}
+article for more information or run \code{vignette("entry-points-analysis")}
 }
 \examples{
 library(ggplot2)
