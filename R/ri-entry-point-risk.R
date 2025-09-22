@@ -196,7 +196,7 @@ calc_entry_point_risk <- function(
     mutate(
       entry_points_risk_label = paste0(
         "<strong>", .data$eu_name, "</strong> (", .data$eu_id, ")<br>",
-        "Introduction risk: ", fmt_num(.data$entry_points_risk), "/12<br>",
+        "Introduction risk: ", fmt_num(.data$entry_points_risk), "/", round(scaling_args$max_risk),"<br>",
         "Controled exposure: ", fmt_num(.data$exposure_C), "<br>",
         "Non-controled exposure: ", fmt_num(.data$exposure_NC), "<br>"
       ) |>

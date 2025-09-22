@@ -119,13 +119,13 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
 
   ll <- ll |> leaflet::addPolygons(
     data = dataset,
-    fillColor = ~pal(get(risk_col)),
+    fillColor = pal(dataset[[risk_col]]),
     weight = 1,
     opacity = 1,
     color = "white",
     dashArray = "3",
     fillOpacity = 0.75,
-    label = dataset$entry_points_risk_label
+    label = map(dataset$entry_points_risk_label, HTML)
   )
 
   if (!is.null(extract_point_risk(dataset))) {
@@ -139,7 +139,8 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
         weight = 2,
         fillColor = pal(points_data[[points_risk_col]]),
         fillOpacity = 0.8,
-        label = points_data$points_label
+        label = points_data$points_label,
+        layerId = points_data$point_id
       )
   } else {
     cli_warn("No point data provided, it will not be plotted.")
