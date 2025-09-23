@@ -46,15 +46,21 @@ overall_risk <- function(epi_units, risk_table, method){
 #' @param method summary method such as `"mean"` or `"max"`.
 #' @param name_to name of overall risk column, defaults to `"overall_risk"`
 #' @param keep_cols whether to keep `cols` or remove them.
-#'
+#' @param overwrite_table a dataframe containing 3 columns: `eu_id`,
+#' `overwrite_risk`, and `overwrite_risk_comm`. This dataset will be joined to
+#' `risk_table` and `overwrite_risk` values will take precedence over calculated
+#' risk values. This allows for analysts with specific information about certain
+#' epidemiological units to modify the overall risk score. `overwrite_risk_comm` column
+#' contains comments on why this decision was made.
 #' @export
-#' @importFrom dplyr rowwise mutate c_across ungroup
+#' @importFrom dplyr rowwise mutate c_across ungroup all_of
 summarise_scores <- function(
     risk_table,
     cols = NULL,
     method = c("mean", "max", "min", "median"),
     name_to = "overall_risk",
-    keep_cols = FALSE
+    keep_cols = FALSE,
+    overwrite_table = NULL
     ){
   method <- match.arg(method)
   method_func <- switch(
@@ -69,8 +75,40 @@ summarise_scores <- function(
 
   out <- risk_table |>
     rowwise() |>
-    mutate("{name_to}" := method_func(c_across(cols))) |>
+    mutate("{name_to}" := method_func(c_across(all_of(cols)))) |>
     ungroup()
+
+  if (!is.null(overwrite_table)) {
+    cli_abort_if_not(
+      "{.arg overwrite_table} should have {.arg eu_id} column" = "eu_id" %in% colnames(overwrite_table),
+      "{.arg eu_id} column of {.arg overwrite_table} should be character" =
+        is.character(overwrite_table$eu_id),
+      "{.arg overwrite_table} should have {.arg overwrite_risk} column" =
+        "overwrite_risk" %in% colnames(overwrite_table),
+      "{.arg overwrite_risk} column of {.arg overwrite_risk} should be numeric" =
+        is.numeric(overwrite_table$overwrite_risk),
+      "{.arg overwrite_table} should have {.arg overwrite_risk_comm} column" =
+        "overwrite_risk_comm" %in% colnames(overwrite_table),
+      "{.arg overwrite_risk_comm} column of {.arg overwrite_table} should be character" =
+        is.character(overwrite_table$overwrite_risk_comm)
+    )
+
+    out <- dplyr::left_join(
+      out, overwrite_table,
+      by = "eu_id"
+    )
+
+    out <- mutate(
+      out,
+      "{name_to}" := if_else(
+        !is.na(.data[["overwrite_risk"]]),
+        .data[["overwrite_risk"]],
+        .data[[name_to]])
+    )
+    attr(out, "has_overwrite") <- TRUE
+  } else {
+    attr(out, "has_overwrite") <- FALSE
+  }
 
   if (!keep_cols) {
     out <- select(out, -all_of(cols))
@@ -78,6 +116,8 @@ summarise_scores <- function(
   } else {
     attr(out, "risk_cols") <- cols
   }
+
+
 
   attr(out, "scale") <- attr(risk_table, "scale")
   attr(out, "risk_col") <- name_to
