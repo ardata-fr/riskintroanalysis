@@ -62,7 +62,7 @@ riskPalette <- function(scale = c(0,100)){
 
 #' @rdname riskintro-leaflet-legends
 #' @export
-addRiskLegend <- function(ll, scale, title, opacity = 0.7, layerId = "leaflet_legend"){
+addRiskLegend <- function(ll, scale, title, opacity = 0.7, layerId = "risk_legend"){
   addLegend_decreasing(
     map = ll,
     pal = riskPalette(scale = scale),
@@ -91,7 +91,7 @@ addScoreLegend <- function(
     scale = c(0, 100),
     title = "Score",
     opacity = 0.7,
-    layerId = "leaflet_legend"
+    layerId = "score_legend"
     ){
   addLegend_decreasing(
     map = ll,
