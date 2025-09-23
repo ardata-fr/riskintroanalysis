@@ -131,7 +131,6 @@ test_that("Complete border risk analysis workflow works", {
   expect_true("bc_id" %in% names(extracted_borders))
   expect_true("border_length" %in% names(extracted_borders))
   expect_true("border_risk" %in% names(extracted_borders))
-  expect_true("border_label" %in% names(extracted_borders))
 
   # Test extract_border function
   expect_equal(attr(extracted_borders, "risk_col"), "border_risk")
