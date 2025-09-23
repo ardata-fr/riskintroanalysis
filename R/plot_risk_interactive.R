@@ -399,7 +399,7 @@ plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()
   label <- generate_leaflet_labels(
     dataset,
     title_field = "eu_name",
-    exclude_fields = c(
+    exclude = c(
       "eu_id"
     )
   )

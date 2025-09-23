@@ -9,7 +9,7 @@ test_that("TV-001 : sigmoid and inv_sigmoid functions correctly", {
 })
 test_that("TV-002 : fundamental properties", {
 
-  f <- scale_entry_points
+  f <- purrr::partial(scale_entry_points, max_risk = 100)
   # Monotonie : f(2,1) ≤ f(3,1) et f(2,1) ≤ f(2,2)
   expect_true(f(2, 1) <= f(3, 1))
   expect_true(f(2, 1) <= f(2, 2))
@@ -30,7 +30,9 @@ test_that("TV-002 : fundamental properties", {
 })
 
 test_that("TV-003 : Asymptotic convergence", {
-  f <- scale_entry_points
+
+  f <- purrr::partial(scale_entry_points, max_risk = 100)
+
   # f(0, 10) = 99.99 ≈ M (avec alpha = 1, M = 100)
   expect_equal(f(0, 10), 100, tolerance = 0.0001)
 
@@ -38,7 +40,7 @@ test_that("TV-003 : Asymptotic convergence", {
   expect_equal(f(10, 0), 100/3, tolerance = 0.0001)
 })
 test_that("TV-004 : Univariate equivalence", {
-  f <- scale_entry_points
+  f <- purrr::partial(scale_entry_points, max_risk = 100)
   # xc = 2.31 équivaut à x̂u = 0.56
   # Vérifier : f(2.31, 0) ≈ f(0, 0.56) = 27.31
   expect_equal(f(2.31, 0), f(0, 0.56), tolerance = 0.001)
@@ -51,7 +53,7 @@ test_that("TP-001 : Variation of lambda (ratio of impact controlled/non-controll
   # •	λ = 3 → 64.08 (différence standard)
   # •	λ = 5 → 57.40 (forte différence types)
   # •	λ = 10 → 52.00 (très forte différence)
-  f <- scale_entry_points
+  f <- purrr::partial(scale_entry_points, max_risk = 100)
   expect_equal(f(2, 1, illegal_factor = 1.5), 78.55, tolerance = 0.001)
   expect_equal(f(2, 1, illegal_factor = 3),   64.08, tolerance = 0.001)
   expect_equal(f(2, 1, illegal_factor = 5),   57.40, tolerance = 0.001)
@@ -64,7 +66,7 @@ test_that("TP-002 : Variation of alpha and beta (convergence speed towards range
   # •	α=β=1 → 64.08 (standard)
   # •	α=0.5, β=2 → 81.95 (convergence plus lente contrôlés)
   # •	α=2, β=0.5 → 52.49 (convergence plus rapide contrôlés)
-  f <- scale_entry_points
+  f <- purrr::partial(scale_entry_points, max_risk = 100)
   expect_equal(f(2, 1, coef_legal = 1,   coef_illegal = 1),   64.08, tolerance = 0.001)
   expect_equal(f(2, 1, coef_legal = 0.5, coef_illegal = 2),   81.95, tolerance = 0.001)
   expect_equal(f(2, 1, coef_legal = 2,   coef_illegal = 0.5), 52.49, tolerance = 0.001)
@@ -92,7 +94,7 @@ test_that("TL-001 : Test lots of points", {
   xu <- rep(250, 1000)
 
   before <- Sys.time()
-  res <- scale_entry_points(xc, xu)
+  res <- scale_entry_points(xc, xu, max_risk = 100)
   after <- Sys.time()
 
   # •	Résultat attendu : ≈ 100 (saturation)
@@ -109,8 +111,8 @@ test_that("TL-002 : Numeric precision", {
   # Test expositions élevées : xc = 100, xu = 100 → 100.0
   # Stabilité numérique vérifiée
 
-  expect_equal(scale_entry_points(0.001, 0.001),0.066666, tolerance = 0.00001)
-  expect_equal(scale_entry_points(100, 100),100, tolerance = 0.00001)
+  expect_equal(scale_entry_points(0.001, 0.001, max_risk = 100),0.066666, tolerance = 0.00001)
+  expect_equal(scale_entry_points(100, 100, max_risk = 100),100, tolerance = 0.00001)
 })
 
 

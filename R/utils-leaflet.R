@@ -55,8 +55,11 @@ riLabelOptions <- function(){
 #'   (e.g., list(score = "/10", rating = "/5")). Default is empty list.
 #' @param source_field Character. Name of the field containing data source information
 #'   to display in italics at bottom of table. Set to NULL to omit. Default is NULL (no source).
-#' @param exclude_fields Character vector. Field names to exclude from the label table.
+#' @param exclude Character vector. Field names to exclude from the label table.
 #'   The title_field and source_field are automatically excluded. Default is empty vector.
+#' @param rename Named list or vector used to rename columns, such as list(new_name = "old_name").
+#' @param arrange Character vector of column names to arrange in a specific order. This
+#' affects the columns in the main body of the table.
 #' @param na_string Character. String to display for NA values. Default is " - ".
 #'
 #' @return A list of HTML objects suitable for use with Leaflet's label or popup parameters
@@ -101,7 +104,7 @@ riLabelOptions <- function(){
 #'     sc_epistatus = "/3",
 #'     emission_risk = "/12"
 #'   ),
-#'   exclude_fields = c(
+#'   exclude = c(
 #'     "disease", "country", "iso3",
 #'     "animal_category", "species",
 #'     "country_name_fr"
@@ -137,10 +140,10 @@ generate_leaflet_labels <- function(
     dat <- st_drop_geometry(dat)
   }
   if (length(exclude) > 0) {
-    dat <- dplyr::select(dat, -all_of(exclude))
+    dat <- dplyr::select(dat, -all_of(intersect(exclude, colnames(dat))))
   }
   if (length(arrange) > 0) {
-    dat <- dplyr::relocate(dat, dplyr::all_of(arrange))
+    dat <- dplyr::relocate(dat, dplyr::all_of(intersect(arrange, colnames(dat))))
   }
   if (length(rename) > 0) {
     stopifnot("`rename_fields` has no names." = rlang::is_named(rename))

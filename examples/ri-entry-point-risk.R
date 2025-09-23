@@ -109,3 +109,5 @@ plot_risk(ri_entry_points)
 extract_point_risk(ri_entry_points)
 
 attributes(ri_entry_points)
+
+plot_risk(ri_entry_points, interactive = TRUE)

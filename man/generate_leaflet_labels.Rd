@@ -27,10 +27,15 @@ Set to NULL to omit title. Default is NULL (no title).}
 \item{source_field}{Character. Name of the field containing data source information
 to display in italics at bottom of table. Set to NULL to omit. Default is NULL (no source).}
 
-\item{na_string}{Character. String to display for NA values. Default is " - ".}
-
-\item{exclude_fields}{Character vector. Field names to exclude from the label table.
+\item{exclude}{Character vector. Field names to exclude from the label table.
 The title_field and source_field are automatically excluded. Default is empty vector.}
+
+\item{rename}{Named list or vector used to rename columns, such as list(new_name = "old_name").}
+
+\item{arrange}{Character vector of column names to arrange in a specific order. This
+affects the columns in the main body of the table.}
+
+\item{na_string}{Character. String to display for NA values. Default is " - ".}
 }
 \value{
 A list of HTML objects suitable for use with Leaflet's label or popup parameters
@@ -80,7 +85,7 @@ labels <- generate_leaflet_labels(
     sc_epistatus = "/3",
     emission_risk = "/12"
   ),
-  exclude_fields = c(
+  exclude = c(
     "disease", "country", "iso3",
     "animal_category", "species",
     "country_name_fr"
