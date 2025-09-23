@@ -10,7 +10,7 @@
 \usage{
 riskPalette(scale = c(0, 100))
 
-addRiskLegend(ll, scale, title, opacity = 0.7, layerId = "leaflet_legend")
+addRiskLegend(ll, scale, title, opacity = 0.7, layerId = "risk_legend")
 
 scorePalette(scale = c(0, 100))
 
@@ -19,7 +19,7 @@ addScoreLegend(
   scale = c(0, 100),
   title = "Score",
   opacity = 0.7,
-  layerId = "leaflet_legend"
+  layerId = "score_legend"
 )
 }
 \arguments{

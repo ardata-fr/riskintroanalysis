@@ -323,10 +323,9 @@ plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = basemap(
   pal <- scorePalette(scale)
 
   ll <- clearShapes(ll)
-
   ll <- ll |> leaflet::addPolygons(
     data = dataset,
-    fillColor = ~pal(dataset[[risk_col]]),
+    fillColor = pal(dataset[[risk_col]]),
     weight = 1,
     opacity = 1,
     color = "white",
@@ -338,22 +337,28 @@ plot_border_risk_interactive <- function(dataset, scale, risk_col, ll = basemap(
     ) |> map(HTML)
   )
 
+  ll <- ll |>
+    addScoreLegend(scale, title = "Introduction risk")
+
   if (!is.null(extract_border(dataset))) {
     borders_data <- extract_border(dataset)
+    borders_scale <- attr(borders_data, "scale")
+    borders_pal <- riskPalette(borders_scale)
     ll <- ll |>
       leaflet::addPolylines(
         data = borders_data,
-        color = ~pal(borders_data$border_risk),
-        weight = 4,
+        color = pal(borders_data$border_risk),
+        weight = 6,
         opacity = 1,
-        label = borders_data$border_label
+        label = attr(borders_data, "leaflet_labels")
       )
+
+    ll <- ll |>
+      addRiskLegend(borders_scale, title = "Emission risk")
   } else {
     cli_warn("No border data provided, it will not be plotted.")
   }
 
-  ll <- ll |>
-    addScoreLegend(scale, title = risk_col)
   ll
 }
 

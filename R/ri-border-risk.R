@@ -320,29 +320,14 @@ calc_border_risk <- function(
       )
     ) |>
     ungroup() |>
-    # mutate(
-    #   risk_sources_label =
-    #     paste0(
-    #       "<strong>", .data$eu_name, "</strong>", "<br>",
-    #       "<strong>", "Border risk score: ", fmt_num(.data$border_risk), "/12", "</strong>", "<br>",
-    #       if_else(
-    #         is.na(.data$border_risk),
-    #         "No sources of border risk",
-    #         paste(
-    #           "Risk sources:", "<br>",
-    #           "<ul>", .data$sources_label, "</ul>"
-    #         )
-    #       )
-    #     )
-    # ) |>
     select(-all_of("sources_label"))
 
   attr(borders, "risk_col") <- "border_risk"
   attr(borders, "html_label") <- "border_label"
   attr(borders, "table_name") <- "shared_borders"
   attr(borders, "scale") <- c(0, 12)
-  attr(dataset, "borders") <- borders
 
+  attr(dataset, "borders") <- borders
   attr(dataset, "risk_col") <- "border_risk"
   attr(dataset, "table_name") <- "border_risk"
   attr(dataset, "scale") <- c(0,12)
@@ -368,6 +353,9 @@ label_borders <- function(borders, epi_units, emission_risk) {
         map(HTML)
     ) |>
     select(-all_of("eu_name"))
+
+  attr(border_risks, "leaflet_labels") <- border_risks$border_label
+  border_risks$border_label <- NULL
   border_risks
 }
 
