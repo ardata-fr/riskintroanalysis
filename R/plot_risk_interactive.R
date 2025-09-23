@@ -134,10 +134,14 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
       exclude = c("eu_id", "user_id")
     )
   )
+  ll <- ll |>
+    addScoreLegend(scale, title = "Introduction risk", layerId = "score_legend")
 
   if (!is.null(extract_point_risk(dataset))) {
     points_data <- extract_point_risk(dataset)
     points_risk_col <- attr(points_data, "risk_col")
+    points_scale <- c(min(points_data[[points_risk_col]]), max(points_data[[points_risk_col]]))
+    pal <- riskPalette(scale = points_scale)
     ll <- ll |>
       leaflet::addCircleMarkers(
         data = points_data,
@@ -146,15 +150,16 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
         weight = 2,
         fillColor = pal(points_data[[points_risk_col]]),
         fillOpacity = 0.8,
-        label = points_data$points_label,
+        label = attr(points_data, "leaflet_labels"),
         layerId = points_data$point_id
       )
+    ll <- ll |>
+      addRiskLegend(scale = points_scale, title = "Entry points", layerId = "points_legend")
+
   } else {
     cli_warn("No point data provided, it will not be plotted.")
   }
 
-  ll <- ll |>
-    addScoreLegend(scale, title = risk_col)
   ll
 }
 
@@ -395,7 +400,6 @@ plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()
     fillColor <- pal(dataset[[risk_col]])
   }
 
-
   label <- generate_leaflet_labels(
     dataset,
     title_field = "eu_name",
@@ -413,7 +417,8 @@ plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()
     opacity = 1,
     color = "white",
     dashArray = "3",
-    label = label
+    label = label,
+    layerId = dataset$eu_id
   )
 
   ll <- ll |>

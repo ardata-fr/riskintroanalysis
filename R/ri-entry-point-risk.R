@@ -131,7 +131,9 @@ calc_entry_point_risk <- function(
       .groups = "drop"
     )
 
+  attr(point_exposures, "leaflet_labels") <- point_exposures$points_label
   points <- select(point_exposures, -all_of("points_label"))
+  point_exposures$points_label <- NULL
 
   # Step 2: Effective number of controlled/not-controlled points -----
   # Allocate each point to an epi_unit and then sum the risk exposures

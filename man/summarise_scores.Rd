@@ -9,7 +9,8 @@ summarise_scores(
   cols = NULL,
   method = c("mean", "max", "min", "median"),
   name_to = "overall_risk",
-  keep_cols = FALSE
+  keep_cols = FALSE,
+  overwrite_table = NULL
 )
 }
 \arguments{
@@ -22,6 +23,13 @@ summarise_scores(
 \item{name_to}{name of overall risk column, defaults to \code{"overall_risk"}}
 
 \item{keep_cols}{whether to keep \code{cols} or remove them.}
+
+\item{overwrite_table}{a dataframe containing 3 columns: \code{eu_id},
+\code{overwrite_risk}, and \code{overwrite_risk_comm}. This dataset will be joined to
+\code{risk_table} and \code{overwrite_risk} values will take precedence over calculated
+risk values. This allows for analysts with specific information about certain
+epidemiological units to modify the overall risk score. \code{overwrite_risk_comm} column
+contains comments on why this decision was made.}
 }
 \description{
 Summarise risk scores across columns using the chosen method.
