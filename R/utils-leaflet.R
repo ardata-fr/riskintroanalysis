@@ -119,17 +119,32 @@ riLabelOptions <- function(){
 #' @importFrom sf st_drop_geometry
 #' @importFrom purrr pmap map map_df
 #' @importFrom stringr str_to_sentence
+#' @importFrom dplyr select rename arrange
 #' @export
-generate_leaflet_labels <- function(dat,
-                                    title_field = NULL,
-                                    special_fields = list(),
-                                    source_field = NULL,
-                                    exclude_fields = c(),
-                                    na_string = " - ") {
+generate_leaflet_labels <- function(
+    dat,
+    title_field = NULL,
+    special_fields = list(),
+    source_field = NULL,
+    exclude = c(),
+    rename = c(),
+    arrange = c(),
+    na_string = " - "
+) {
 
   # Drop geometry if it exists
   if ("sf" %in% class(dat)) {
     dat <- st_drop_geometry(dat)
+  }
+  if (length(exclude) > 0) {
+    dat <- dplyr::select(dat, -all_of(exclude))
+  }
+  if (length(arrange) > 0) {
+    dat <- dplyr::relocate(dat, dplyr::all_of(arrange))
+  }
+  if (length(rename) > 0) {
+    stopifnot("`rename_fields` has no names." = rlang::is_named(rename))
+    dat <- dplyr::rename(dat, !!!rename)
   }
 
   # Format the data
@@ -165,7 +180,7 @@ generate_leaflet_labels <- function(dat,
                       '<table style="border-collapse: collapse; width: 100%; font-size: 12px;">')
 
       # Get fields to include (exclude title and source fields, plus any specified exclusions)
-      fields_to_exclude <- c(title_field, source_field, exclude_fields)
+      fields_to_exclude <- c(title_field, source_field)
       fields_to_include <- names(row_data)[!names(row_data) %in% fields_to_exclude]
 
       # Add data rows
@@ -199,7 +214,7 @@ generate_leaflet_labels <- function(dat,
   ) |>
     map(HTML)
 
-  return(labels)
+  labels
 }
 
 
