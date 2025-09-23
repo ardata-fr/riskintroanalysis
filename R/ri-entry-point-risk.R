@@ -193,15 +193,6 @@ calc_entry_point_risk <- function(
         max_risk = scaling_args$max_risk
       )
     ) |>
-    mutate(
-      entry_points_risk_label = paste0(
-        "<strong>", .data$eu_name, "</strong> (", .data$eu_id, ")<br>",
-        "Introduction risk: ", fmt_num(.data$entry_points_risk), "/", round(scaling_args$max_risk),"<br>",
-        "Controled exposure: ", fmt_num(.data$exposure_C), "<br>",
-        "Non-controled exposure: ", fmt_num(.data$exposure_NC), "<br>"
-      ) |>
-        map(HTML)
-    ) |>
     select(-all_of("eu_name"))
 
   dataset <- left_join(
@@ -285,7 +276,7 @@ scale_entry_points <- function(
     illegal_factor = 3,
     coef_legal = 1,
     coef_illegal = 1,
-    max_risk = 100
+    max_risk = 12
     ) {
 
   stopifnot(

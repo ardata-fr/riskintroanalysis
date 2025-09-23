@@ -10,7 +10,7 @@ scale_entry_points(
   illegal_factor = 3,
   coef_legal = 1,
   coef_illegal = 1,
-  max_risk = 100
+  max_risk = 12
 )
 }
 \arguments{

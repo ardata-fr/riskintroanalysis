@@ -116,7 +116,6 @@ addScoreLegend <- function(
 plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- scorePalette(scale)
-
   ll <- ll |> leaflet::addPolygons(
     data = dataset,
     fillColor = pal(dataset[[risk_col]]),
@@ -125,7 +124,15 @@ plot_entry_points_interactive <- function(dataset, scale, risk_col, ll = basemap
     color = "white",
     dashArray = "3",
     fillOpacity = 0.75,
-    label = map(dataset$entry_points_risk_label, HTML)
+    label = generate_leaflet_labels(
+      dat = dataset,
+      title_field = "eu_name",
+      special_fields = setNames("/100" , nm = risk_col),
+      rename = list("Exposure (controlled)" = "exposure_C",
+                     "Exposure (non-controlled)" = "exposure_NC"),
+      arrange = c("eu_name", risk_col, "exposure_C", "exposure_NC"),
+      exclude = c("eu_id", "user_id")
+    )
   )
 
   if (!is.null(extract_point_risk(dataset))) {
