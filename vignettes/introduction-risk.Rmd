@@ -16,7 +16,380 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(riskintroanalysis)
+library(riskintrodata)
+library(dplyr)
+library(sf)
+library(ggplot2)
 ```
 
+## Introduction
 
-Introduction risk placeholder.
+**Introduction risk** is the overall assessment of disease introduction probability for each epidemiological unit, combining multiple risk pathways into a single comprehensive score. This vignette demonstrates how to:
+
+1. Calculate risks from multiple sources (border, entry points, animal mobility, road access)
+2. Rescale risks to a common 0-100 scale
+3. Combine risks into a unified risk table
+4. Summarize risks using different aggregation methods
+5. Visualize the final introduction risk
+
+The key insight is that disease introduction can occur through multiple pathways, and a comprehensive risk assessment must account for all relevant routes.
+
+## Preparing Core Data
+
+All risk analyses require two core datasets: epidemiological units and (for most methods) emission risk scores.
+
+### Epidemiological Units
+
+```{r epi-units}
+# Load and validate epidemiological units
+tunisia_raw <- read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+tunisia <- validate_dataset(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |> extract_dataset()
+```
+
+### Emission Risk Scores
+
+```{r emission-risk}
+# Create emission risk factors for Tunisia's neighbors
+algeria <- erf_row(
+  iso3 = "DZA",
+  country = "Algeria",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = 0,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 1,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("2023-06-30"),
+  commerce_illegal = 0L,
+  commerce_legal = 0L
+)
+
+libya <- erf_row(
+  iso3 = "LBY",
+  country = "Libya",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = TRUE,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 0,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("2019-06-30"),
+  commerce_illegal = 0L,
+  commerce_legal = 1
+)
+
+wahis_erf <- get_wahis_erf(
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds"
+)
+
+emission_risk_factors <- dplyr::bind_rows(algeria, libya, wahis_erf)
+emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
+```
+
+## Calculating Individual Risks
+
+Each risk pathway is calculated separately using its specific method and data requirements. Below we show the input data types needed for each analysis.
+
+### Border Risk
+
+**Input data types:**
+- Epidemiological units (spatial vector - sf polygon)
+- Emission risk table (tabular data frame)
+- Shared borders are calculated internally from the epidemiological units
+
+```{r border-risk}
+shared_borders <- calc_border_lengths(epi_units = tunisia)
+
+ri_borders <- calc_border_risk(
+  epi_units = tunisia,
+  shared_borders = shared_borders,
+  emission_risk = emission_risk_table
+)
+```
+
+### Entry Point Risk
+
+**Input data types:**
+- Entry points (tabular CSV with coordinates - converted to spatial points internally)
+- Epidemiological units (spatial vector - sf polygon)
+- Emission risk table (tabular data frame)
+
+```{r entry-point-risk}
+entry_points_fp <- system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "entry_points", "BORDER_CROSSING_POINTS.csv"
+)
+
+entry_points <- readr::read_csv(entry_points_fp, show_col_types = FALSE)
+
+entry_points <- validate_dataset(
+  x = entry_points,
+  table_name = "entry_points",
+  point_name = "NAME",
+  lng = "LONGITUDE_X",
+  lat = "LATITUDE_Y",
+  mode = "MODE",
+  type = "TYPE",
+  sources = "SOURCES"
+) |> extract_dataset()
+
+ri_entry_points <- calc_entry_point_risk(
+  entry_points = entry_points,
+  epi_units = tunisia,
+  emission_risk = emission_risk_table
+)
+```
+
+### Animal Mobility Risk
+
+**Input data types:**
+- Animal mobility flows (tabular CSV with origin and destination coordinates)
+- Epidemiological units (spatial vector - sf polygon)
+- Emission risk table (tabular data frame)
+
+```{r animal-mobility-risk}
+animal_mobility_fp <- system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "animal_mobility", "ANIMAL_MOBILITY_raw.csv"
+)
+
+animal_mobility_raw <- readr::read_csv(animal_mobility_fp, show_col_types = FALSE)
+
+animal_mobility <- validate_dataset(
+  x = animal_mobility_raw,
+  table_name = "animal_mobility",
+  o_name = "ORIGIN_NAME",
+  o_lng = "ORIGIN_LONGITUDE_X",
+  o_lat = "ORIGIN_LATITUDE_Y",
+  d_name = "DESTINATION_NAME",
+  d_lng = "DESTINATION_LONGITUDE_X",
+  d_lat = "DESTINATION_LATITUDE_Y",
+  quantity = "HEADCOUNT"
+) |> extract_dataset()
+
+ri_animal_mobility <- calc_animal_mobility_risk(
+  animal_mobility = animal_mobility,
+  emission_risk = emission_risk_table,
+  epi_units = tunisia,
+  method = "mean"
+)
+```
+
+### Road Access Risk
+
+**Input data types:**
+- Road accessibility raster (raster file - global dataset)
+- Epidemiological units (spatial vector - sf polygon)
+- Note: This method does NOT require emission risk scores
+
+```{r road-access-risk, eval=FALSE}
+# Note: This step downloads a large raster file (~500 MB)
+library(terra)
+
+riskintrodata::init_riskintrodata_cache()
+road_raster_fp <- riskintrodata::download_road_access_raster()
+road_raster <- terra::rast(road_raster_fp)
+
+ri_road_access <- calc_road_access_risk(
+  epi_units = tunisia,
+  road_access_raster = road_raster,
+  aggregate_fun = "mean"
+)
+```
+
+```{r fake-road-risk, echo=FALSE}
+# For vignette building, create synthetic road access data
+ri_road_access <- tunisia |>
+  mutate(road_access_risk = runif(n(), 0, 50))
+attr(ri_road_access, "risk_col") <- "road_access_risk"
+attr(ri_road_access, "scale") <- c(0, 50)
+attr(ri_road_access, "table_name") <- "road_access"
+```
+
+## Rescaling Risks to a Common Scale
+
+Before combining risks, we must ensure they're all on the same scale. The standard approach is to rescale all risks to 0-100.
+
+Most risks start on a 0-12 scale (from emission risk scores), but road access uses its own scale based on the raster values.
+
+```{r rescale-risks}
+# Border risk: from 0-12 to 0-100
+ri_borders_scaled <- rescale_risk_scores(
+  dataset = ri_borders,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "linear"
+)
+
+# Entry point risk: from 0-12 to 0-100
+ri_entry_points_scaled <- rescale_risk_scores(
+  dataset = ri_entry_points,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "sigmoid"
+)
+
+# Animal mobility risk: from 0-12 to 0-100
+ri_animal_mobility_scaled <- rescale_risk_scores(
+  dataset = ri_animal_mobility,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "linear"
+)
+
+# Road access risk: from 0-50 to 0-100
+ri_road_access_scaled <- rescale_risk_scores(
+  dataset = ri_road_access,
+  from = c(0, max(ri_road_access$road_access_risk)),
+  to = c(0, 100),
+  method = "linear"
+)
+```
+
+### Rescaling Methods
+
+The `method` parameter controls how values are transformed:
+
+- **linear** - Straightforward proportional scaling
+- **quadratic** - Emphasizes higher values (x²)
+- **exponential** - Strongly emphasizes higher values (e^x)
+- **sigmoid** - S-curve that compresses extremes and expands middle values
+
+Choose the method based on how you want to weight different risk levels in your analysis.
+
+## Creating a Risk Table
+
+A **risk table** is a unified structure that holds all risk scores for each epidemiological unit. It ensures all risks are on the same scale and provides a consistent way to manage multiple risk pathways.
+
+```{r create-risk-table}
+# Initialize the risk table with the 0-100 scale
+rt <- risk_table(tunisia, scale = c(0, 100))
+
+# Add each risk to the table
+rt <- add_risk(risk_table = rt, risk_data = ri_borders_scaled)
+rt <- add_risk(risk_table = rt, risk_data = ri_entry_points_scaled)
+rt <- add_risk(risk_table = rt, risk_data = ri_animal_mobility_scaled)
+rt <- add_risk(risk_table = rt, risk_data = ri_road_access_scaled)
+
+# View the structure
+head(rt)
+```
+
+The risk table now contains all four risk scores for each epidemiological unit, all on the 0-100 scale.
+
+## Summarizing Risks
+
+With all risks in one table, we can summarize them into a single overall introduction risk score using different aggregation methods:
+
+```{r summarize-risks}
+# Maximum risk across all pathways
+risk_max <- summarise_scores(rt, method = "max")
+
+# Mean risk across all pathways
+risk_mean <- summarise_scores(rt, method = "mean")
+
+# Median risk across all pathways
+risk_min <- summarise_scores(rt, method = "min")
+```
+
+### Choosing an Aggregation Method
+
+Different methods reflect different risk philosophies:
+
+- **max** - "Weakest link" approach: overall risk equals the highest individual risk. Conservative choice that emphasizes the most dangerous pathway.
+- **mean** - Averages all pathways equally. Good when all pathways contribute independently to risk.
+- **min** - Rarely used, but available if you need the minimum risk value.
+
+For disease introduction, **max** is often preferred because a single high-risk pathway can facilitate disease entry regardless of other pathways.
+
+## Visualizing Introduction Risk
+
+### Static Maps
+
+Compare the different summarization methods visually:
+
+```{r compare-methods, fig.width=10, fig.height=8}
+library(patchwork)
+
+p1 <- plot_risk(risk_max) + labs(title = "Maximum Risk")
+p2 <- plot_risk(risk_mean) + labs(title = "Mean Risk")
+p3 <- plot_risk(risk_min) + labs(title = "Minimum Risk")
+
+p1 + p2 + p3
+```
+
+### Interactive Map
+
+For detailed exploration, use an interactive map:
+
+```{r interactive-map}
+library(leaflet)
+
+plot_risk_interactive(risk_max)
+```
+
+Click on any governorate to see its overall introduction risk score and individual pathway contributions.
+
+## Manual Risk Overrides
+
+In some cases, expert knowledge may suggest modifying risk scores for specific units. The risk table structure supports this:
+
+```{r manual-override, eval=FALSE}
+# Override risk for specific units based on expert judgment
+rt_modified <- rt |>
+  mutate(
+    border_risk = case_when(
+      eu_name == "Tunis" ~ 50,  # Reduce due to enhanced border controls
+      TRUE ~ border_risk
+    )
+  )
+
+# Recalculate summary with overrides
+risk_max_modified <- summarise_scores(rt_modified, method = "max")
+```
+
+## Summary
+
+This vignette demonstrated the complete workflow for assessing overall disease introduction risk:
+
+1. **Calculate individual risks** from multiple pathways
+2. **Rescale to common scale** (typically 0-100)
+3. **Combine into risk table** for unified management
+4. **Summarize using appropriate method** (max, mean, median)
+5. **Visualize and explore** results
+
+This approach provides a comprehensive, transparent assessment of disease introduction risk that accounts for multiple pathways while remaining flexible enough to incorporate expert judgment and additional risk factors.
+
+## Further Reading
+
+For detailed information on each risk calculation method, see:
+
+- [Border Risk Analysis](border-risk-analysis.html)
+- [Entry Points Analysis](entry-points-analysis.html)
+- [Animal Mobility Analysis](animal-mobility-analysis.html)
+- [Road Access Analysis](road-access-analysis.html)
+- [Additional Risks](additional-risks.html)
+- [Emission Scores](emission-scores.html)

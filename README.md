@@ -45,6 +45,19 @@ corresponding data.
 The RShiny app [riskintro](https://github.com/ardata-fr/riskintro)
 provides a graphical interface for the following analyses.
 
+## Analysis Method Vignettes
+
+For detailed documentation on each analysis method, see the following vignettes:
+
+- [Emission Scores](articles/emission-scores.html) - Creating and calculating emission risk factors
+- [Border Risk Analysis](articles/border-risk-analysis.html) - Risk from shared land borders
+- [Entry Points Analysis](articles/entry-points-analysis.html) - Risk from border crossing points
+- [Animal Mobility Analysis](articles/animal-mobility-analysis.html) - Risk from animal trade flows
+- [Road Access Analysis](articles/road-access-analysis.html) - Risk based on road accessibility
+- [Additional Risks](articles/additional-risks.html) - Adding custom risk factors beyond the default methods
+
+## Core Datasets
+
 The central datasets to each method are:
 
 1.  **The emission risk score table**, which provides a risk of emission
@@ -659,7 +672,7 @@ rt <- add_risk(
     dataset = ri_animal_mobility
   )
 )
-summarised_risks <- summarise_risk_scores(rt, method = "max")
+summarised_risks <- summarise_scores(rt, method = "max")
 
 plot_risk(summarised_risks)
 ```

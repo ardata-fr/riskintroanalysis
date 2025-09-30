@@ -30,7 +30,6 @@
 #'  check_dataset_valid
 NULL
 
-
 #  addRiskLegend
 # countries_sf_lowres country_ref gcIntermediate get_label
 # get_risks_levels_scale isTruthy neighbours_table

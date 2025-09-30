@@ -1,0 +1,215 @@
+---
+title: "Analysis - Additional risks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analysis - Additional risks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(riskintroanalysis)
+library(riskintrodata)
+library(dplyr)
+library(sf)
+library(terra)
+library(ggplot2)
+```
+
+## Introduction
+
+The four standard risk analysis methods (border, entry points, animal mobility, and road access) cover common disease introduction pathways. However, your analysis may require **additional custom risk factors** that aren't covered by these default methods.
+
+**Additional risks** allow you to incorporate any risk factor not included in the standard analyses. These could include:
+
+- Environmental factors (climate, water sources, vegetation)
+- Socioeconomic indicators (population density, market locations)
+- Infrastructure beyond roads (railways, ports, airports)
+- Disease-specific transmission routes
+- Expert-assigned risk scores
+- Results from other modeling approaches
+
+Additional risks can come from two sources:
+
+1. **Raster data** - spatial risk factors represented as gridded data that you aggregate over epidemiological units
+2. **Pre-calculated risks** - risk scores you've already computed for each epidemiological unit from other sources or analyses
+
+Both types can be rescaled to match the 0-100 scale used by standard risk methods, allowing you to combine your custom risk factors with the default analyses into comprehensive risk assessments.
+
+## Required Data
+
+For this vignette, we'll need epidemiological units. Additional risk data will be created as examples.
+
+### Epidemiological Units
+
+```{r epi-units}
+# Load and validate epidemiological units
+tunisia_raw <- read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+tunisia <- validate_dataset(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |> extract_dataset()
+
+plot(sf::st_geometry(tunisia))
+```
+
+## Risk from Raster Data
+
+Raster data can represent any spatially-distributed risk factor: water courses, elevation, vegetation cover, climate variables, or any other gridded data source.
+
+### Creating Example Raster Data
+
+For this example, we'll create fictional water courses in Tunisia that could represent disease introduction risk through waterborne transmission or animal movement along water sources.
+
+```{r create-raster}
+# Define extent covering Tunisia
+tun_ext <- ext(6, 12, 30, 38)
+r_tun <- rast(tun_ext, res = 0.1, crs = "EPSG:4326")
+
+# Create fictional water courses as line features
+wkt_lines <- c(
+  "LINESTRING (9.0 36.0, 9.5 35.0, 10.0 34.5)",
+  "LINESTRING (8.5 33.5, 9.0 33.0, 10.0 32.5)"
+)
+
+water_sv <- vect(data.frame(wkt = wkt_lines),
+  geom = "wkt",
+  crs  = "EPSG:4326"
+)
+water_sv$water <- 1
+
+# Rasterize the water courses
+water_rast <- rasterize(
+  water_sv,
+  r_tun,
+  field      = "water",
+  background = 0
+)
+
+plot(water_rast, main = "Example watercourses")
+plot(tunisia, add = TRUE, col = NA, border = "red")
+```
+
+### Calculating Risk from Raster
+
+The `augment_epi_units_with_raster()` function aggregates raster values within each epidemiological unit. The aggregation function determines how cell values are summarized (mean, max, sum, etc.).
+
+```{r raster-risk}
+ri_water <- augment_epi_units_with_raster(
+  epi_units = tunisia,
+  raster = water_rast,
+  risk_name = "water_risk",
+  aggregate_fun = "mean"
+)
+
+# Rescale to 0-100 with quadratic transformation
+ri_water <- rescale_risk_scores(
+  dataset = ri_water,
+  cols = "water_risk",
+  from = c(0, 1),
+  to = c(0, 100),
+  method = "quadratic"
+)
+
+ggplot(ri_water) +
+  geom_sf(aes(fill = water_risk)) +
+  scale_fill_viridis_c(limits = c(0, 100)) +
+  labs(title = "Water course risk", fill = "Risk") +
+  theme_minimal()
+```
+
+The quadratic transformation emphasizes higher values, making areas with more water coverage stand out more in the risk assessment.
+
+## Pre-calculated Risk Scores
+
+If you have risk scores already calculated from external analyses, you can join them to the epidemiological units and incorporate them into your risk assessment.
+
+### Requirements for Pre-calculated Data
+
+Your pre-calculated dataset must:
+
+1. Have a **join key** that matches epidemiological unit identifiers
+2. Contain **one risk score per unit** (no duplicates)
+3. Have risk values on a **defined scale** (so they can be rescaled if needed)
+
+### Example: Random Risk Data
+
+Here we generate example pre-calculated risk scores from a uniform distribution:
+
+```{r precalc-risk}
+# Generate random risk scores
+ri_random <- tunisia |>
+  select(my_key = eu_id) |>
+  mutate(
+    ri_random = runif(nrow(tunisia), min = 0, max = 100)
+  ) |>
+  # Simulate incomplete data (only 30 units have scores)
+  filter(row_number() <= 30) |>
+  rescale_risk_scores(
+    cols = "ri_random",
+    from = c(0, 100),
+    to = c(0, 100),
+    method = "sigmoid"
+  )
+
+# Preview the data
+head(ri_random)
+```
+
+The sigmoid transformation creates an S-curve that compresses extreme values and expands middle values, useful when you want to dampen the effect of outliers.
+
+## Combining Additional Risks with Standard Risks
+
+Once you have additional risks scaled to 0-100, you can add them to a risk table alongside standard risk methods. See the introduction risk vignette for details on creating and managing risk tables.
+
+Here's a quick example:
+
+```{r combine-risks}
+# Initialize risk table
+rt <- risk_table(tunisia, scale = c(0, 100))
+
+# Add additional risks
+rt <- add_risk(risk_table = rt, risk_data = ri_water)
+rt <- add_risk(risk_table = rt, risk_data = ri_random, join_by = "my_key")
+
+# Summarize to get overall risk
+summarised_risks <- summarise_scores(rt, method = "max")
+
+plot_risk(summarised_risks)
+```
+
+## Interactive Map
+
+For interactive exploration of additional risks, we can create a leaflet map:
+
+```{r interactive-map}
+library(leaflet)
+
+# Show the water risk interactively
+plot_risk_interactive(ri_water)
+```
+
+Click on any governorate to see its risk score. The interactive map helps identify spatial patterns in your additional risk factors.
+
+## Guidelines for Additional Risks
+
+When incorporating additional risks into your analysis:
+
+1. **Document your sources** - clearly note where additional risk data comes from
+2. **Choose appropriate aggregation** - consider whether mean, max, or sum best represents the risk
+3. **Scale consistently** - ensure all risks use the same 0-100 scale before combining
+4. **Select meaningful transformations** - linear, quadratic, exponential, and sigmoid each emphasize different parts of the risk distribution
+5. **Validate spatial alignment** - verify that raster and vector data align correctly in space

@@ -1,4 +1,3 @@
-
 #' @title Extract analysis subcomponents
 #' @description
 #'
@@ -21,7 +20,7 @@ NULL
 #' @export
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
-extract_point_risk <- function(x){
+extract_point_risk <- function(x) {
   cli_abort_if_not(
     "No points dataset to extract from {.arg x}" = !is.null(attr(x, "points"))
   )
@@ -31,7 +30,7 @@ extract_point_risk <- function(x){
 #' @export
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
-extract_flow_risk <- function(x){
+extract_flow_risk <- function(x) {
   cli_abort_if_not(
     "No points dataset to extract from {.arg x}" = !is.null(attr(x, "flows"))
   )
@@ -42,7 +41,7 @@ extract_flow_risk <- function(x){
 #' @export
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
-extract_raster <- function(x){
+extract_raster <- function(x) {
   cli_abort_if_not(
     "No points dataset to extract from {.arg x}" = !is.null(attr(x, "raster"))
   )
@@ -52,7 +51,7 @@ extract_raster <- function(x){
 #' @export
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
-extract_border <- function(x){
+extract_border <- function(x) {
   cli_abort_if_not(
     "No points dataset to extract from {.arg x}" = !is.null(attr(x, "borders"))
   )

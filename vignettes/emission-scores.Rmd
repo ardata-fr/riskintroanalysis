@@ -16,6 +16,159 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(riskintroanalysis)
+library(riskintrodata)
+library(dplyr)
+library(sf)
 ```
 
-Emission scores placeholder.
+## Introduction
+
+**Emission risk scores** quantify the risk that a country will export (emit) a disease to other regions. These scores form the foundation for several risk analyses in the riskintroanalysis package, including border risk, entry point risk, and animal mobility risk.
+
+The emission risk for each country is calculated from multiple risk factors, including:
+
+- Disease surveillance measures
+- Border control measures
+- Disease control interventions
+- Recent outbreak history
+- Commercial trade patterns
+
+Each factor is weighted according to its importance, and the weighted sum produces a final emission risk score ranging from 0 (no risk) to 12 (maximum risk).
+
+## Creating Emission Risk Factors
+
+Emission risk factors can be obtained from two sources:
+
+1. **WAHIS database** - automatically extracted for countries with reported outbreaks
+2. **Manual entry** - for countries not in WAHIS or to override WAHIS data
+
+### Example: Tunisia's Neighbors
+
+For this example, we'll create emission risk factors for Algeria and Libya, Tunisia's two neighboring countries. In these entries, a value of `1` indicates additional risk from that factor, while `0` indicates no additional risk.
+
+```{r emission-risk-loading}
+# Create emission risk factors for Algeria
+algeria <- erf_row(
+  iso3 = "DZA",
+  country = "Algeria",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = 0,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 1,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("2023-06-30"),
+  commerce_illegal = 0L,
+  commerce_legal = 0L
+)
+
+# Create emission risk factors for Libya
+libya <- erf_row(
+  iso3 = "LBY",
+  country = "Libya",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = TRUE,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 0,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("2019-06-30"),
+  commerce_illegal = 0L,
+  commerce_legal = 1
+)
+```
+
+### Combining with WAHIS Data
+
+For a more complete global picture, we can combine our manual entries with WAHIS outbreak data for the same disease and species:
+
+```{r wahis-data}
+# Get WAHIS data for the same disease/species combination
+wahis_erf <- get_wahis_erf(
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds"
+)
+
+# Combine all emission risk factors
+emission_risk_factors <- dplyr::bind_rows(
+  algeria,
+  libya,
+  wahis_erf
+)
+```
+
+## Calculating Emission Risk Scores
+
+The `calc_emission_risk()` function processes the emission risk factors and produces final scores for each country. The function applies weighting to each factor and aggregates them into a single score.
+
+```{r calc-emission}
+emission_risk_table <- calc_emission_risk(
+  emission_risk_factors = emission_risk_factors
+)
+
+# View the distribution of scores
+hist(
+  emission_risk_table$emission_risk,
+  main = "Histogram of emission risk scores",
+  xlab = "Emission risk scores (0-12)",
+  breaks = 20
+)
+```
+
+## Visualizing Global Emission Risk
+
+For spatial analysis, it's useful to join the emission risk scores with geographic data. This allows us to visualize which regions of the world have higher or lower emission risk:
+
+```{r display-world}
+# Join with world geographic boundaries
+world <- riskintrodata::world_sf
+
+emission_risk_sf <- dplyr::left_join(
+  x = world,
+  y = emission_risk_table,
+  by = "iso3"
+)
+
+# Visualize on a world map
+plot(
+  select(emission_risk_sf, emission_risk),
+  main = "Global emission risk scores"
+)
+```
+
+Countries shown in grey either have no emission risk data (no disease reported in WAHIS for that species) or were not included in the analysis.
+
+## Using Emission Scores in Other Analyses
+
+The `emission_risk_table` created here can be used as input to:
+
+- **Border risk analysis** - weight risk by shared border lengths
+- **Entry point risk analysis** - assess risk at border crossings
+- **Animal mobility risk analysis** - evaluate risk from animal trade flows
+
+See the corresponding vignettes for details on each analysis method.
+
+## Interactive Map
+
+For interactive exploration of global emission risk, we can create a leaflet map:
+
+```{r interactive-map}
+library(leaflet)
+
+plot_emission_risk_interactive(emission_risk_table)
+```
+
+Click on any country to see its exact emission risk score, component scores, and data source. The interactive map makes it easy to explore global patterns in disease emission risk.

@@ -1,7 +1,7 @@
 Type: Package
 Package: riskintroanalysis
 Title: Analysis Methods for Managing Animal Disease Introduction Risk
-Version: 0.1.6
+Version: 0.1.7.001
 Authors@R: c(
     person("Eli", "Daniels", , "eli.daniels@ardata.fr", role = c("aut", "cre")),
     person("David", "Gohel", , "david.gohel@ardata.fr", role = "aut"),
@@ -11,14 +11,16 @@ Authors@R: c(
 Description: The riskintroanalysis R package provides functions to analyse
     the risk of introduction of animal diseases within a geographic area.
 License: MIT + file LICENSE
+URL: https://astre.gitlab.cirad.fr/, https://astre.gitlab.cirad.fr/riskintroanalysis
+BugReports: https://gitlab.cirad.fr/astre/riskintro-app/riskintroanalysis/-/issues
 Depends:
-    riskintrodata,
     ggplot2 (>= 3.5.2),
-    R (>= 4.4.0)
+    R (>= 4.4.0),
+    riskintrodata
 Imports:
     cli,
-    glue,
     dplyr,
+    glue,
     leaflet,
     purrr,
     rlang,
@@ -28,10 +30,13 @@ Imports:
 Suggests: 
     knitr,
     readr,
-    tidyr,
-    tibble,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tibble,
+    tidyr,
+    patchwork
+VignetteBuilder: 
+    knitr
 Remotes: 
     git::https://gitlab.cirad.fr/astre/riskintro-app/riskintrodata.git
 Config/testthat/edition: 3
@@ -40,5 +45,3 @@ Language: en
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-VignetteBuilder: knitr
-URL: https://astre.gitlab.cirad.fr/, https://astre.gitlab.cirad.fr/riskintroanalysis

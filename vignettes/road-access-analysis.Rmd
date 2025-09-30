@@ -1,8 +1,8 @@
 ---
-title: "Road access analysis"
+title: "Analysis - Road access"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Road access analysis}
+  %\VignetteIndexEntry{Analysis - Road access}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,7 +16,119 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(riskintroanalysis)
+library(riskintrodata)
+library(dplyr)
+library(sf)
+library(terra)
 ```
 
+## Introduction
 
-Road access analysis placeholder.
+**Road access risk** evaluates disease introduction risk based on the accessibility of an area by road infrastructure. The underlying principle is that areas more accessible by roads face higher risk of disease introduction through increased human and animal movement.
+
+Unlike the other risk methods, road access analysis does **not** use emission risk scores. Instead, it relies solely on:
+
+1. **Epidemiological units** - the geographic areas being analyzed
+2. **Road accessibility raster** - global data measuring distance to roads
+
+The method aggregates raster values within each epidemiological unit to produce a risk score.
+
+## Required Data
+
+This analysis requires two datasets:
+
+1. **Epidemiological units** - the geographic areas being analyzed
+2. **Road accessibility raster** - a global dataset indicating travel time to roads
+
+The road accessibility raster is provided by the `riskintrodata` package and will be downloaded automatically if not already cached.
+
+## Preparing the Data
+
+### Epidemiological Units
+
+```{r epi-units}
+# Load and validate epidemiological units
+tunisia_raw <- read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+tunisia <- validate_dataset(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |> extract_dataset()
+
+plot(sf::st_geometry(tunisia))
+```
+
+### Road Accessibility Raster
+
+The road accessibility raster is a large global dataset. The `download_road_access_raster()` function will download it to a local cache directory on first use.
+
+```{r download-raster}
+riskintrodata::init_riskintrodata_cache()
+road_raster_fp <- riskintrodata::download_road_access_raster()
+road_raster <- terra::rast(road_raster_fp)
+```
+
+## Calculating Road Access Risk
+
+The `calc_road_access_risk()` function performs three operations:
+
+1. **Crops** the global raster to the extent of the epidemiological units
+2. **Masks** the raster to only include cells within the units
+3. **Aggregates** raster values for each unit using the specified function
+
+The aggregation function determines how raster cell values are summarized. Common choices include:
+
+- `"mean"` - average accessibility across the unit (most common)
+- `"max"` - worst (maximum) accessibility value
+- `"min"` - best (minimum) accessibility value
+- `"median"` - median accessibility
+
+Lower raster values indicate better road access (less time to reach roads), which translates to higher risk.
+
+```{r road-access-analysis}
+ri_road_access <- calc_road_access_risk(
+  epi_units = tunisia,
+  road_access_raster = road_raster,
+  aggregate_fun = "mean"
+)
+```
+
+## Visualizing the Results
+
+We can visualize both the cropped raster data and the final risk scores:
+
+```{r display-raster}
+# Show the raster cropped to Tunisia
+plot(
+  extract_raster(ri_road_access),
+  main = "Raster cropped to epidemiological units"
+)
+
+# Show the aggregated risk scores
+plot_risk(ri_road_access)
+```
+
+The first plot shows the raw raster data - darker areas are more remote from roads. The second plot shows the aggregated risk scores by governorate - these values have been aggregated using the mean function across all raster cells within each administrative boundary.
+
+## Understanding the Scale
+
+The raw raster values represent travel time to roads in minutes. When aggregated, these values may not be on the standard 0-100 risk scale used by other methods.
+
+To combine road access risk with other risk types, you'll need to rescale it. See the introduction risk vignette for details on using `rescale_risk_scores()` to transform the values to a comparable scale.
+
+## Interactive Map
+
+For interactive exploration, we can create a leaflet map that allows zooming and panning:
+
+```{r interactive-map}
+library(leaflet)
+
+plot_risk_interactive(ri_road_access)
+```
+
+Click on any governorate to see its exact risk score. The interactive map allows you to explore the relationship between road accessibility and geographic features.

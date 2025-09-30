@@ -1,14 +1,14 @@
 ---
-title: "Entry points analysis"
-format: 
+title: "Analysis - Entry points"
+format:
   html:
     toc: true
     html-math-method: mathjax
-execute: 
+execute:
   echo: false
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Entry points analysis}
+  %\VignetteIndexEntry{Analysis - Entry points}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 knitr:

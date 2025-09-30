@@ -1,8 +1,8 @@
 ---
-title: "Animal mobility analysis"
+title: "Analysis - Animal mobility"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Animal mobility analysis}
+  %\VignetteIndexEntry{Analysis - Animal mobility}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,7 +16,172 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(riskintroanalysis)
+library(riskintrodata)
+library(dplyr)
+library(sf)
 ```
 
+## Introduction
 
-Animal mobility analysis placeholder.
+**Animal mobility risk** assesses disease introduction risk through formal animal trade flows. Unlike entry points which represent uncontrolled or informal movement, animal mobility tracks documented commercial transport of live animals into the region.
+
+The key principle is that each animal flow carries risk proportional to:
+
+1. The **emission risk** of the source country
+2. The **quantity** of animals being moved
+
+Risk is aggregated for each epidemiological unit based on all incoming animal flows to destinations within that unit.
+
+## Required Data
+
+This analysis requires three datasets:
+
+1. **Epidemiological units** - the geographic areas being analyzed
+2. **Emission risk scores** - risk levels for source countries
+3. **Animal mobility data** - records of animal flows with origins, destinations, and quantities
+
+## Preparing the Data
+
+### Epidemiological Units
+
+```{r epi-units}
+# Load and validate epidemiological units
+tunisia_raw <- read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+tunisia <- validate_dataset(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |> extract_dataset()
+
+plot(sf::st_geometry(tunisia))
+```
+
+### Emission Risk Scores
+
+We need emission risk scores for the source countries from which animals are being imported. See the [emission scores vignette](emission-scores.html) for full details.
+
+```{r emission-risk}
+algeria <- erf_row(
+  iso3 = "DZA",
+  country = "Algeria",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = 0,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 1,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("30/06/2023"),
+  commerce_illegal = 0L,
+  commerce_legal = 0L
+)
+
+libya <- erf_row(
+  iso3 = "LBY",
+  country = "Libya",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = TRUE,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 0,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("30/06/2019"),
+  commerce_illegal = 0L,
+  commerce_legal = 1
+)
+
+wahis_erf <- get_wahis_erf(
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds"
+)
+
+emission_risk_factors <- dplyr::bind_rows(algeria, libya, wahis_erf)
+emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
+```
+
+### Animal Mobility Data
+
+Animal mobility data consists of records with origin locations, destination locations, and animal quantities. Each flow is geocoded with coordinates and associated with a source country.
+
+```{r load-mobility}
+animal_mobility_fp <- system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "animal_mobility", "ANIMAL_MOBILITY_raw.csv"
+)
+
+animal_mobility_raw <- readr::read_csv(animal_mobility_fp, show_col_types = FALSE)
+
+# Validate and standardize the data
+animal_mobility <- validate_dataset(
+  x = animal_mobility_raw,
+  table_name = "animal_mobility",
+  o_name = "ORIGIN_NAME",
+  o_lng = "ORIGIN_LONGITUDE_X",
+  o_lat = "ORIGIN_LATITUDE_Y",
+  d_name = "DESTINATION_NAME",
+  d_lng = "DESTINATION_LONGITUDE_X",
+  d_lat = "DESTINATION_LATITUDE_Y",
+  quantity = "HEADCOUNT"
+) |> extract_dataset()
+```
+
+## Calculating Animal Mobility Risk
+
+The `calc_animal_mobility_risk()` function aggregates risk for each epidemiological unit. For each destination point, the risk contribution is calculated as:
+
+$$
+\text{risk contribution} = \text{emission risk} \times \text{animal quantity}
+$$
+
+When multiple flows arrive at different locations within the same epidemiological unit, these contributions are aggregated using the specified method (mean, sum, max, or median). The `mean` method is commonly used to normalize by the number of destination points.
+
+```{r animal-mobility-analysis}
+ri_animal_mobility <- calc_animal_mobility_risk(
+  animal_mobility = animal_mobility,
+  emission_risk = emission_risk_table,
+  epi_units = tunisia,
+  method = "mean"
+)
+
+plot_risk(ri_animal_mobility)
+```
+
+## Interpreting the Results
+
+The map shows the risk level for each governorate based on incoming animal flows. Areas shown in grey have no recorded animal imports in the dataset, or imports from countries not included in the emission risk table.
+
+The warning messages indicate countries with missing emission risk scores. To get complete risk coverage, you would need to add emission risk factor entries for these countries using `erf_row()` or by obtaining WAHIS data for them.
+
+Units with higher risk typically either:
+- Receive animals from high-risk countries
+- Receive large quantities of animals
+- Have multiple import destinations within their boundaries
+
+## Interactive Map
+
+For interactive exploration, we can create a leaflet map that allows zooming and panning:
+
+```{r interactive-map}
+library(leaflet)
+
+plot_risk_interactive(ri_animal_mobility)
+```
+
+Click on any governorate to see its exact risk score. The interactive map makes it easy to explore spatial patterns in animal mobility risk.
