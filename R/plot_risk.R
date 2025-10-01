@@ -64,11 +64,25 @@ plot_risk <- function(
 
 
 
-#' @importFrom ggplot2 scale_color_viridis_c scale_fill_viridis_c
+#' @importFrom ggplot2 scale_color_viridis_c scale_fill_viridis_c scale_color_gradientn scale_fill_gradientn
+#' @importFrom grDevices hcl.colors
 ggplot_risk_scale <- function(limits = c(0, 100)){
   list(
     ggplot2::scale_color_viridis_c(limits = limits, direction = -1),
     ggplot2::scale_fill_viridis_c(limits = limits, direction = -1)
+  )
+}
+
+ggplot_score_scale <- function(limits = c(0, 100)){
+  list(
+    ggplot2::scale_color_gradientn(
+      colors = grDevices::hcl.colors(256, "inferno"),
+      limits = limits
+    ),
+    ggplot2::scale_fill_gradientn(
+      colors = grDevices::hcl.colors(256, "inferno"),
+      limits = limits
+    )
   )
 }
 
@@ -94,7 +108,7 @@ plot_entry_points <- function(dataset, scale, risk_col) {
   } else {
     cli_warn("No point data provided, it will not be plotted.")
   }
-  gg <- gg + ggplot_risk_scale(limits = scale)
+  gg <- gg + ggplot_score_scale(limits = scale)
   gg <- gg + theme_void()
   gg
 }
@@ -123,7 +137,7 @@ plot_animal_mobility <- function(dataset, scale, risk_col) {
     cli_warn("No flows data provided, it will not be plotted.")
   }
 
-  gg <- gg + ggplot_risk_scale(limits = scale)
+  gg <- gg + ggplot_score_scale(limits = scale)
   gg <- gg + theme_void()
   gg
 }
@@ -141,7 +155,7 @@ plot_road_access <- function(dataset, scale, risk_col) {
       )
     )
 
-  gg <- gg + ggplot_risk_scale(limits = scale)
+  gg <- gg + ggplot_score_scale(limits = scale)
   gg <- gg + theme_void()
   gg
 }
@@ -156,36 +170,19 @@ plot_border_risk <- function(dataset, scale, risk_col) {
       aes(fill = .data[[risk_col]]),
       alpha = 0.5
     )
+
+  borders_data <- extract_border(dataset)
+  borders_scale <- attr(borders_data, "scale")
+
   gg <- gg +
     geom_sf(
-      data = extract_border(dataset),
+      data = borders_data,
       aes(color = .data$border_risk),
       linewidth =  2
     )
 
-  gg <- gg + ggplot_risk_scale(limits = scale)
-  gg <- gg + theme_void()
-  gg
-}
-
-#' @export
-#' @rdname plot_risk
-plot_border_risk <- function(dataset, scale, risk_col) {
-  gg <- ggplot()
-  gg <- gg +
-    geom_sf(
-      data = dataset,
-      aes(fill = .data[[risk_col]]),
-      alpha = 0.5
-    )
-  gg <- gg +
-    geom_sf(
-      data = extract_border(dataset),
-      aes(color = .data$border_risk),
-      linewidth =  2
-    )
-
-  gg <- gg + ggplot_risk_scale(limits = scale)
+  gg <- gg + ggplot_score_scale(limits = scale)
+  gg <- gg + ggplot_risk_scale(limits = borders_scale)
   gg <- gg + theme_void()
   gg
 }
@@ -211,7 +208,7 @@ plot_risk_table <- function(dataset, scale, risk_col){
       data = dataset,
       aes(fill = .data[[risk_col]])
     )
-  gg <- gg + ggplot_risk_scale(limits = scale)
+  gg <- gg + ggplot_score_scale(limits = scale)
   gg <- gg + theme_void()
   gg
 
