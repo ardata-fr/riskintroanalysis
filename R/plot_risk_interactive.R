@@ -228,7 +228,10 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = base
 #' @return leaflet map object
 #' @export
 #' @rdname plot_risk
-#' @importFrom leaflet addPolygons addRasterImage addLayersControl layersControlOptions addLegend colorNumeric
+#' @importFrom leaflet
+#'  addPolygons addRasterImage addLayersControl layersControlOptions
+#'  addLegend colorNumeric
+#' @importFrom htmlwidgets onRender
 plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
 
   pal <- scorePalette(scale)
@@ -239,6 +242,10 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
     "Risk score: ", fmt_num(dataset[[risk_col]]), "/", scale[[2]]
   ) |>
     map(HTML)
+
+
+  group1 <- "Risk"
+  group2 <- "Source"
 
   # Add polygons with group name for layer control
   ll <- ll |>
@@ -251,17 +258,18 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
       dashArray = "3",
       fillOpacity = 0.7,
       label = label_content,
-      group = "polygons"
+      group = group1
     )
 
   ll <- ll |>
-    leaflet::addLegend(
+    addLegend_decreasing(
       pal = scorePalette(scale),
       values = scale,
       title = risk_col,
       opacity = 0.7,
-      layerId = "polygon_legend",
-      group = "polygons"
+      # layerId = group1,
+      group = group1,
+      className = paste("info legend", group1)
     )
 
   # Add raster layer if available
@@ -281,29 +289,91 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
         x = raster_data,
         colors = raster_pal,
         opacity = 0.85,
-        group = "raster"
+        group = group2
       )
 
     ll <- ll |>
-      leaflet::addLayersControl(
-        baseGroups = c("polygons", "raster"),
-        options = leaflet::layersControlOptions(
-          collapsed = FALSE,
-          autoZIndex = FALSE
-        ),
-        position = "bottomright"
-      )
-    ll <- ll |>
-      leaflet::addLegend(
+      addLegend_decreasing(
         pal = raster_pal,
         values = raster_scale,
         title = "Road Access Index",
         opacity = 0.85,
-        layerId = "raster_legend",
-        group = "raster"
+        # layerId = group2,
+        group = group2,
+        className = paste("info legend", group2)
       )
-
   }
+
+
+  ll <- ll |>
+    leaflet::addLayersControl(
+      baseGroups = c(group1, group2),
+      options = leaflet::layersControlOptions(
+        collapsed = FALSE,
+        autoZIndex = FALSE
+      ),
+      position = "bottomright"
+    )
+
+  # Make legend change on control radio button click
+  ll <- ll |>
+
+    # Doesnt work, shows no legends
+
+    # htmlwidgets::onRender("
+    # function(el, x) {
+    #   var updateLegend = function () {
+    #       var selectedGroup = document.querySelectorAll('input:checked')[0].nextSibling.innerText.substr(1);
+    #
+    #       document.querySelectorAll('.legend').forEach(a => a.hidden=true);
+    #       document.querySelectorAll('.legend').forEach(l => {
+    #         if (l.children[0].children[0].innerText == selectedGroup) l.hidden=false;
+    #       });
+    #   };
+    #   updateLegend();
+    #   this.on('baselayerchange', e => updateLegend());
+    # }")
+
+
+    # Doesn't work, shows both legends always.
+
+  htmlwidgets::onRender("
+      function(el, x) {
+         var map = this;
+         var updateLegend = function () {
+            var checkedInput = document.querySelector('input[type=\"radio\"]:checked');
+            if (!checkedInput) return;
+
+            var selectedGroup = checkedInput.nextSibling.innerText.substr(1);
+
+            document.querySelectorAll('.legend').forEach(function(legend) {
+               legend.style.display = 'none';
+               if (legend.classList.contains(selectedGroup)) {
+                  legend.style.display = 'block';
+               }
+            });
+         };
+         updateLegend();
+         this.on('baselayerchange', function(e) {
+            updateLegend();
+         });
+      }"
+  )
+
+  # Works in Rmd, but not in RShiny with proxy or no proxy
+
+#     htmlwidgets::onRender("
+#     function() {
+#       var map = this;
+#       var legends = map.controls._controlsById;
+#       function addActualLegend() {
+#          var sel = $('.leaflet-control-layers-base').find('input[type=\"radio\"]:checked').siblings('span').text().trim();
+#          $.each(map.controls._controlsById, (nm) => map.removeControl(map.controls.get(nm)));
+#          map.addControl(legends[sel]);
+#       }
+#       $('.leaflet-control-layers-base').on('click', addActualLegend);
+#       addActualLegend();
+#    }")
 
   ll
 }

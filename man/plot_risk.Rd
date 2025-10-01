@@ -33,8 +33,6 @@ plot_road_access(dataset, scale, risk_col)
 
 plot_border_risk(dataset, scale, risk_col)
 
-plot_border_risk(dataset, scale, risk_col)
-
 plot_epi_units(dataset, scale, risk_col)
 
 plot_risk_table(dataset, scale, risk_col)

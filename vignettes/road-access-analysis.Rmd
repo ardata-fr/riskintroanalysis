@@ -121,6 +121,22 @@ The raw raster values represent travel time to roads in minutes. When aggregated
 
 To combine road access risk with other risk types, you'll need to rescale it. See the introduction risk vignette for details on using `rescale_risk_scores()` to transform the values to a comparable scale.
 
+## Rescaling to 0-100
+
+Because the original scaling of the raw risk score is from 0 to around 1600, its 
+hard to compare to other score. Here it is simply rescaled linearly to a range from
+1 to 100.
+
+```{r}
+ri_road_access_scaled <- rescale_risk_scores(
+  ri_road_access,
+  to = c(0, 100)
+)
+```
+
+You can see the new scale displayed in the interactive map below.
+
+
 ## Interactive Map
 
 For interactive exploration, we can create a leaflet map that allows zooming and panning:
@@ -128,7 +144,7 @@ For interactive exploration, we can create a leaflet map that allows zooming and
 ```{r interactive-map}
 library(leaflet)
 
-plot_risk_interactive(ri_road_access)
+plot_risk_interactive(ri_road_access_scaled)
 ```
 
 Click on any governorate to see its exact risk score. The interactive map allows you to explore the relationship between road accessibility and geographic features.
