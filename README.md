@@ -35,6 +35,11 @@ You can install the development version of riskintroanalysis like so:
 # Install pak if you don't already have it
 install.packages("pak")
 pak::pak("git::https://gitlab.cirad.fr/astre/riskintro-app/riskintroanalysis.git")
+
+# Accept updates to 
+#  + riskintrodata    
+#  + riskintroanalysis
+#  + ideally any other dependencies
 ```
 
 # 3 Analysis
