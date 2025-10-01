@@ -156,7 +156,13 @@ calc_emission_risk <- function(
   )
 
   if (nrow(emission_risk_factors) < 1) {
-    cli_warn("{.arg emission_risk_factors} has no rows.")
+    cli_warn(
+      if (shinyIsRunning()) {
+        "No emission risk scores have been provided."
+      } else {
+        "{.arg emission_risk_factors} has no rows."
+      }
+    )
   }
 
   # Refer to data-raw/emission-risk-defaults.R
@@ -204,7 +210,12 @@ calc_emission_risk <- function(
       "There are NA values in {.arg emission_risk_factors} dataset.",
       i = "Missing values identified for the following countries:",
       quote_and_collapse(na_rows$iso3, quote_char = '"', max_out = 6),
-      "!" = "By default, NA values are considered as having the highest level of risk."
+      if (shinyIsRunning()) {
+        "!" = "NA values are considered as having the highest level of risk.
+        You can missing values by clicking on the map.Can you"
+      } else {
+        "!" = "By default, NA values are considered as having the highest level of risk."
+      }
     ))
   }
 

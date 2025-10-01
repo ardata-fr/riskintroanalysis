@@ -148,7 +148,11 @@ calc_animal_mobility_flows_risk <- function(
     cli_warn(c(
       "!" = "There are missing emission risk scores for the following countries:",
       warn_msg,
-      "Create new entries in the emission risk factor table using {.help [{.fun erf_row}](riskintrodata::erf_row)}."
+      if (shinyIsRunning()) {
+        "i" = "Create new entries in the Emission Scores interface."
+      } else {
+        "Create new entries in the emission risk factor table using {.help [{.fun erf_row}](riskintrodata::erf_row)}."
+      }
     ))
   }
 

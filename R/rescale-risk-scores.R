@@ -54,7 +54,9 @@ rescale_risk_scores <- function(
     cols <- attr(dataset, "risk_col")
   } else if (!is.null(cols) && !is.null(attr(dataset, "risk_col"))) {
     if(attr(dataset, "risk_col") != cols){
-      cli_warn("{.arg risk_col} attribute of {.arg dataset} is being overwritten by {.arg cols}")
+      if (!shinyIsRunning()) {
+        cli_warn("{.arg risk_col} attribute of {.arg dataset} is being overwritten by {.arg cols}")
+      }
     }
   } else {
     cli_abort("{.args cols} needs to be provided as {.arg dataset} has no {.arg risk_col} attribute")
@@ -64,7 +66,9 @@ rescale_risk_scores <- function(
   } else if (is.null(from) && !is.null(attr(dataset, "scale"))) {
     from <- attr(dataset, "scale")
   } else if (!is.null(from) && !is.null(attr(dataset, "scale"))) {
-    cli_inform("{.arg scale} attribute of {.arg dataset} is being overwritten by {.arg from}")
+    if (!shinyIsRunning()) {
+      cli_inform("{.arg scale} attribute of {.arg dataset} is being overwritten by {.arg from}")
+    }
   } else {
     cli_abort("{.args from} needs to be provided as {.arg dataset} has no {.arg scale} attribute")
   }

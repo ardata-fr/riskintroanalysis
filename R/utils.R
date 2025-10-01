@@ -117,3 +117,21 @@ fmt_scale <- function(scales){
   glue::glue("[{scales[[1]]},{scales[[2]]}]")
 }
 
+
+
+shinyIsRunning <- function () {
+  frames <- sys.frames()
+  calls <- lapply(sys.calls(), `[[`, 1)
+  call_name <- function (call){
+    if (is.function(call)) { '<closure>'}
+    else {
+      deparse(call)
+    }
+  }
+  call_names <- vapply(calls, call_name, character(1))
+  target_call <- grep('^runApp$|^shiny::runApp$', call_names)
+  isFALSE(length(target_call) == 0)
+}
+
+
+
