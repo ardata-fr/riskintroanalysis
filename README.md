@@ -32,7 +32,9 @@ data from WAHIS (World Animal Health Information System).
 You can install the development version of riskintroanalysis like so:
 
 ``` r
-remotes::install_github("riskintroanalysis")
+# Install pak if you don't already have it
+install.packages("pak")
+pak::pak("git::https://gitlab.cirad.fr/astre/riskintro-app/riskintroanalysis.git")
 ```
 
 # 3 Analysis
@@ -44,19 +46,6 @@ corresponding data.
 
 The RShiny app [riskintro](https://github.com/ardata-fr/riskintro)
 provides a graphical interface for the following analyses.
-
-## Analysis Method Vignettes
-
-For detailed documentation on each analysis method, see the following vignettes:
-
-- [Emission Scores](articles/emission-scores.html) - Creating and calculating emission risk factors
-- [Border Risk Analysis](articles/border-risk-analysis.html) - Risk from shared land borders
-- [Entry Points Analysis](articles/entry-points-analysis.html) - Risk from border crossing points
-- [Animal Mobility Analysis](articles/animal-mobility-analysis.html) - Risk from animal trade flows
-- [Road Access Analysis](articles/road-access-analysis.html) - Risk based on road accessibility
-- [Additional Risks](articles/additional-risks.html) - Adding custom risk factors beyond the default methods
-
-## Core Datasets
 
 The central datasets to each method are:
 
@@ -192,6 +181,10 @@ emission_risk_factors <- dplyr::bind_rows(
 )
 
 emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
+#> Warning: There are NA values in `emission_risk_factors` dataset.
+#> ℹ Missing values identified for the following countries:
+#> "DZA", "LBY", "ALB", "JPN", "RUS" and "SYC" and 58 more
+#> ! By default, NA values are considered as having the highest level of risk.
 
 hist(
   emission_risk_table$emission_risk,
@@ -469,7 +462,7 @@ aggregated over each epidemiological unit of Tunisia.
 library(riskintroanalysis)
 library(dplyr)
 library(terra)
-#> terra 1.8.60
+#> terra 1.8.64
 
 riskintrodata::init_riskintrodata_cache()
 #> [1] "C:\\Users\\EliDaniels\\AppData\\Roaming/R/data/R/riskintrodata"
@@ -534,6 +527,7 @@ rescaled <- rescale_risk_scores(
   names_to = "scaled_road_access_risk",
   keep_cols = TRUE
 )
+#> `scale` attribute of `dataset` is being overwritten by `from`
 plot(rescaled$road_access_risk, rescaled$scaled_road_access_risk)
 ```
 
@@ -553,6 +547,7 @@ ri_road_access_scaled <- rescale_risk_scores(
   method = "sigmoid",
   keep_cols = FALSE
 )
+#> `scale` attribute of `dataset` is being overwritten by `from`
 ```
 
 ## 4.4 Non-default risks
@@ -632,7 +627,9 @@ ri_random <- tunisia |>
   filter(row_number() <= 30) |>
   rescale_risk_scores(
     cols = "ri_random",
-    from = c(0, 100), to = c(0, 100), method = "sigmoid"
+    from = c(0, 100),
+    to = c(0, 100),
+    method = "sigmoid"
   )
 ```
 
