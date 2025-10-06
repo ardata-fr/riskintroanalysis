@@ -44,9 +44,17 @@ calc_border_lengths <- function(
   nt <- riskintrodata::neighbours_table
   epi_units_iso3 <- eu_country_iso3 %||% get_eu_country(epi_units)$country_iso3
   cli_abort_if_not(
-    "{.arg eu_country_iso3} must be character vector of length 1" = rlang::is_scalar_character(epi_units_iso3),
-    "{.arg eu_country_iso3} must be a valid ISO3 country code" = epi_units_iso3 %in% nt$country_id
-  )
+    "{.arg eu_country_iso3} must be character vector of length 1" = rlang::is_scalar_character(epi_units_iso3)
+    )
+
+  if (!epi_units_iso3 %in% nt$country_id) {
+    cli_error(c(
+      "{.val epi_units_iso3} not found in neighbouring countries reference table.",
+      i = "This may be because this country does not have any shared borders or the
+        ISO3 code provided is not valid."
+    ))
+  }
+
 
   # Unsure if still needed.
   eu_id_col <- "eu_id"
