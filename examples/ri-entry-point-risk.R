@@ -1,5 +1,5 @@
 library(riskintrodata)
-library(riskintroanalysis)
+# library(riskintroanalysis)
 library(dplyr)
 
 entry_points_fp <-
@@ -24,6 +24,8 @@ entry_points <- validate_dataset(
   sources = "SOURCES"
 ) |>
   extract_dataset()
+
+entry_points <- entry_points[0, ]
 
 tunisia_raw <- sf::read_sf(system.file(
   package = "riskintrodata",

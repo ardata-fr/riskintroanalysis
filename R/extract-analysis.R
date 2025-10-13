@@ -21,9 +21,10 @@ NULL
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
 extract_point_risk <- function(x) {
-  cli_abort_if_not(
-    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "points"))
-  )
+
+  if (is.null(attr(x, "points"))) {
+    cli_warn("No points dataset to extract from {.arg x}")
+  }
   attr(x, "points")
 }
 
@@ -31,9 +32,10 @@ extract_point_risk <- function(x) {
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
 extract_flow_risk <- function(x) {
-  cli_abort_if_not(
-    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "flows"))
-  )
+
+  if (is.null(attr(x, "flows"))) {
+    cli_warn("No flows dataset to extract from {.arg x}")
+  }
   attr(x, "flows")
 }
 
@@ -42,9 +44,10 @@ extract_flow_risk <- function(x) {
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
 extract_raster <- function(x) {
-  cli_abort_if_not(
-    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "raster"))
-  )
+
+  if (is.null(attr(x, "raster"))) {
+    cli_warn("No raster dataset to extract from {.arg x}")
+  }
   attr(x, "raster")
 }
 
@@ -52,8 +55,9 @@ extract_raster <- function(x) {
 #' @rdname extract-analysis
 #' @importFrom rlang has_name
 extract_border <- function(x) {
-  cli_abort_if_not(
-    "No points dataset to extract from {.arg x}" = !is.null(attr(x, "borders"))
-  )
+
+  if (is.null(attr(x, "borders"))) {
+    cli_warn("No borders dataset to extract from {.arg x}")
+  }
   attr(x, "borders")
 }

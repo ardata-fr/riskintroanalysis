@@ -1,3 +1,133 @@
+test_that("Entry points tunisia on example data with no entry points rows", {
+  library(dplyr)
+
+  entry_points_fp <-
+    system.file(
+      package = "riskintrodata",
+      "samples",
+      "tunisia",
+      "entry_points",
+      "BORDER_CROSSING_POINTS.csv"
+    )
+
+  entry_points <- readr::read_csv(entry_points_fp)
+
+  entry_points <- validate_dataset(
+    x = entry_points,
+    table_name = "entry_points",
+    point_name = "NAME",
+    lng = "LONGITUDE_X",
+    lat = "LATITUDE_Y",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
+
+  entry_points <- entry_points[0, ]
+
+  tunisia_raw <- sf::read_sf(system.file(
+    package = "riskintrodata",
+    "samples",
+    "tunisia",
+    "epi_units",
+    "tunisia_adm2_raw.gpkg"
+  ))
+
+  # Apply mapping to prepare colnames and validate dataset
+
+  tunisia <- expect_no_error({
+
+    validate_dataset(
+      x = tunisia_raw,
+      table_name = "epi_units",
+      eu_name = "NAME_2",
+      geometry = "geom"
+    ) |>
+      extract_dataset()
+
+  })
+
+  algeria <- riskintrodata::erf_row(
+    iso3 = "DZA",
+    country = "Algeria",
+    disease = "Avian infectious laryngotracheitis",
+    animal_category = "Domestic",
+    species = "Birds",
+    disease_notification = 0,
+    targeted_surveillance = 1,
+    general_surveillance = 0,
+    screening = 1,
+    precautions_at_the_borders = 1,
+    slaughter = 1,
+    selective_killing_and_disposal = 1,
+    zoning = 1,
+    official_vaccination = 1,
+    last_outbreak_end_date = as.Date("30/06/2023"),
+    commerce_illegal = 0L,
+    commerce_legal = 0L
+  )
+
+  libya <- riskintrodata::erf_row(
+    iso3 = "LBY",
+    country = "Libya",
+    disease = "Avian infectious laryngotracheitis",
+    animal_category = "Domestic",
+    species = "Birds",
+    disease_notification = TRUE,
+    targeted_surveillance = 1,
+    general_surveillance = 0,
+    screening = 1,
+    precautions_at_the_borders = 0,
+    slaughter = 1,
+    selective_killing_and_disposal = 1,
+    zoning = 1,
+    official_vaccination = 1,
+    last_outbreak_end_date = as.Date("30/06/2019"),
+    commerce_illegal = 0L,
+    commerce_legal = 1
+  )
+
+  wahis_erf <- riskintrodata::get_wahis_erf(
+    disease = "Avian infectious laryngotracheitis",
+    animal_category = "Domestic",
+    species = "Birds"
+  )
+
+  emission_risk_factors <- dplyr::bind_rows(
+    algeria,
+    libya,
+    wahis_erf
+  )
+
+  expect_warning({
+    emission_risk_table <- calc_emission_risk(
+      emission_risk_factors = emission_risk_factors
+    )
+  })
+
+  expect_warning({
+    ri_entry_points <- calc_entry_point_risk(
+      entry_points = entry_points,
+      epi_units = tunisia,
+      emission_risk = emission_risk_table
+    )
+  })
+
+  expect_warning(expect_warning({
+    gg <- plot_risk(ri_entry_points)
+    gg
+  }))
+
+  expect_warning({
+    extract_point_risk(ri_entry_points)
+  })
+
+  expect_warning(expect_warning({
+    plot_risk(ri_entry_points, interactive = TRUE)
+  }))
+})
+
 test_that("CU-001: Basic calculation with complete data", {
   library(sf)
   library(dplyr)
@@ -122,7 +252,7 @@ test_that("CU-002: Unit without entry points", {
     sources = "SOURCES"
   )
 
-  expect_error(extract_dataset(status))
+  expect_no_error(extract_dataset(status))
 })
 
 

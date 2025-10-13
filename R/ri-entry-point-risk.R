@@ -70,6 +70,20 @@ calc_entry_point_risk <- function(
   check_dataset_valid(entry_points)
   check_dataset_valid(emission_risk)
 
+  if(nrow(entry_points) == 0) {
+    cli_warn(
+      "No rows in {.arg entry_points} dataset."
+    )
+    dataset <- epi_units
+    dataset$entry_points_risk <- NA
+    dataset$exposure_C <- 0
+    dataset$exposure_NC <- 0
+    attr(dataset, "risk_col") <- "entry_points_risk"
+    attr(dataset, "table_name") <- "entry_points"
+    attr(dataset, "scale") <- c(0,scaling_args$max_risk)
+    return(dataset)
+  }
+
   scaling_args$illegal_factor <- scaling_args$illegal_factor %||% 3
   scaling_args$coef_legal <- scaling_args$coef_legal %||% 1
   scaling_args$coef_illegal <- scaling_args$coef_illegal %||% 1
