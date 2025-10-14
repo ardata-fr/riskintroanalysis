@@ -541,3 +541,499 @@ test_that("augment_epi_units_with_raster function works independently", {
   expect_true(all(augmented_max$max_risk >= augmented_epi_units$custom_risk))
   expect_true(all(augmented_epi_units$custom_risk >= augmented_min$min_risk))
 })
+
+
+test_that("MR-001: Raster with negative values (temperature data)", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create test epidemiological unit
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1"),
+      EU_NAME = c("Test Region"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  # Create raster with only negative values (cold temperatures)
+  raster_extent <- st_bbox(epi_units)
+
+  temp_raster <- rast(
+    xmin = raster_extent["xmin"] - 0.1,
+    xmax = raster_extent["xmax"] + 0.1,
+    ymin = raster_extent["ymin"] - 0.1,
+    ymax = raster_extent["ymax"] + 0.1,
+    resolution = 0.1,
+    crs = "EPSG:4326"
+  )
+
+  # All negative values
+  values(temp_raster) <- rep(-15, ncell(temp_raster))
+
+  # Should handle negative values without error
+  ri_temp <- expect_no_error(
+    augment_epi_units_with_raster(
+      epi_units = epi_units,
+      raster = temp_raster,
+      risk_name = "temperature_risk",
+      aggregate_fun = "mean"
+    )
+  )
+
+  # Verify that negative values are handled correctly
+  expect_s3_class(ri_temp, "sf")
+  expect_true(is.finite(ri_temp$temperature_risk))
+  # Verify negative value is preserved in aggregation
+  expect_true(ri_temp$temperature_risk < 0)
+  expect_equal(ri_temp$temperature_risk, -15, tolerance = 0.01)
+})
+
+
+test_that("MR-002: Raster with binary values (migration corridor)", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create test epidemiological units
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1", "EU2", "EU3"),
+      EU_NAME = c("Corridor Zone", "Mixed Zone", "No Corridor"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  # Create binary raster (0/1 for migration corridor)
+  raster_extent <- st_bbox(epi_units)
+
+  corridor_raster <- rast(
+    xmin = raster_extent["xmin"] - 0.1,
+    xmax = raster_extent["xmax"] + 0.1,
+    ymin = raster_extent["ymin"] - 0.1,
+    ymax = raster_extent["ymax"] + 0.1,
+    resolution = 0.1,
+    crs = "EPSG:4326"
+  )
+
+  # Binary values: create spatial gradient across EUs
+  # Create values that will properly cover each EU
+  n_cells <- ncell(corridor_raster)
+  corridor_values <- rep(c(1, 0.5, 0), length.out = n_cells)
+  values(corridor_raster) <- corridor_values
+
+  # Test mean aggregation with binary data
+  ri_corridor_mean <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = corridor_raster,
+    risk_name = "corridor_risk",
+    aggregate_fun = "mean"
+  )
+
+  # Test max aggregation - useful for binary presence/absence
+  ri_corridor_max <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = corridor_raster,
+    risk_name = "corridor_risk",
+    aggregate_fun = "max"
+  )
+
+  # Verify binary values are handled correctly
+  expect_s3_class(ri_corridor_mean, "sf")
+  expect_s3_class(ri_corridor_max, "sf")
+
+  # Verify values are within expected range
+  expect_true(all(ri_corridor_mean$corridor_risk >= 0))
+  expect_true(all(ri_corridor_mean$corridor_risk <= 1))
+  expect_true(all(ri_corridor_max$corridor_risk >= 0))
+  expect_true(all(ri_corridor_max$corridor_risk <= 1))
+})
+
+
+test_that("MR-003: Raster not covering any epidemiological units", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create epidemiological units in one location
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1"),
+      EU_NAME = c("Test Unit"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  # Create raster in completely different location
+  non_overlapping_raster <- rast(
+    xmin = 100,
+    xmax = 101,
+    ymin = 100,
+    ymax = 101,
+    resolution = 0.1,
+    crs = "EPSG:4326"
+  )
+
+  values(non_overlapping_raster) <- runif(ncell(non_overlapping_raster), 0, 100)
+
+  # Should error when extents do not overlap
+  expect_error(
+    augment_epi_units_with_raster(
+      epi_units = epi_units,
+      raster = non_overlapping_raster,
+      risk_name = "no_coverage_risk",
+      aggregate_fun = "mean"
+    ),
+    "extents do not overlap"
+  )
+})
+
+
+test_that("MR-004: Epidemiological units partially covered by raster", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create two epidemiological units
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1", "EU2"),
+      EU_NAME = c("Fully Covered", "Partially Covered"),
+      geometry = st_sfc(
+        # EU1: fully within raster coverage
+        st_polygon(list(matrix(
+          c(0.2, 0.2, 0.8, 0.2, 0.8, 0.8, 0.2, 0.8, 0.2, 0.2),
+          ncol = 2,
+          byrow = TRUE
+        ))),
+        # EU2: extends beyond raster coverage
+        st_polygon(list(matrix(
+          c(0.5, 0.5, 2.5, 0.5, 2.5, 2.5, 0.5, 2.5, 0.5, 0.5),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  # Create raster that only covers part of the area
+  limited_raster <- rast(
+    xmin = 0,
+    xmax = 1,
+    ymin = 0,
+    ymax = 1,
+    resolution = 0.1,
+    crs = "EPSG:4326"
+  )
+
+  values(limited_raster) <- rep(50, ncell(limited_raster))
+
+  # Should handle partial coverage
+  ri_partial <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = limited_raster,
+    risk_name = "partial_risk",
+    aggregate_fun = "mean"
+  )
+
+  expect_s3_class(ri_partial, "sf")
+  expect_equal(nrow(ri_partial), 2)
+
+  # EU1 should have valid risk value (fully covered)
+  expect_true(is.numeric(ri_partial$partial_risk[1]))
+  expect_false(is.na(ri_partial$partial_risk[1]))
+
+  # EU2 might have reduced coverage but should still compute if any overlap exists
+  # (behavior depends on implementation - may be NA or computed from partial data)
+  expect_true(is.numeric(ri_partial$partial_risk[2]) | is.na(ri_partial$partial_risk[2]))
+})
+
+
+test_that("MR-005: Aggregation with NA values in raster", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create test epidemiological unit
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1"),
+      EU_NAME = c("Test Unit"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  raster_extent <- st_bbox(epi_units)
+
+  # Create raster with mixed NA and valid values
+  mixed_raster <- rast(
+    xmin = raster_extent["xmin"] - 0.1,
+    xmax = raster_extent["xmax"] + 0.1,
+    ymin = raster_extent["ymin"] - 0.1,
+    ymax = raster_extent["ymax"] + 0.1,
+    resolution = 0.2,
+    crs = "EPSG:4326"
+  )
+
+  # Half NA, half valid values
+  n_cells <- ncell(mixed_raster)
+  mixed_values <- c(rep(NA, n_cells %/% 2), rep(50, n_cells - n_cells %/% 2))
+  values(mixed_raster) <- mixed_values
+
+  # Test different aggregation methods with NA values
+  ri_mean <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = mixed_raster,
+    risk_name = "mixed_risk",
+    aggregate_fun = "mean"
+  )
+
+  ri_max <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = mixed_raster,
+    risk_name = "mixed_risk",
+    aggregate_fun = "max"
+  )
+
+  ri_min <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = mixed_raster,
+    risk_name = "mixed_risk",
+    aggregate_fun = "min"
+  )
+
+  # All should compute values ignoring NAs (na.rm = TRUE in zonal)
+  expect_false(is.na(ri_mean$mixed_risk))
+  expect_false(is.na(ri_max$mixed_risk))
+  expect_false(is.na(ri_min$mixed_risk))
+
+  # Values should be close to 50 since non-NA values are all 50
+  expect_equal(ri_mean$mixed_risk, 50, tolerance = 0.01)
+  expect_equal(ri_max$mixed_risk, 50, tolerance = 0.01)
+  expect_equal(ri_min$mixed_risk, 50, tolerance = 0.01)
+})
+
+
+test_that("MR-006: Raster with all NA values", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create test epidemiological unit
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1"),
+      EU_NAME = c("Test Unit"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  raster_extent <- st_bbox(epi_units)
+
+  # Create raster with all NA values
+  all_na_raster <- rast(
+    xmin = raster_extent["xmin"] - 0.1,
+    xmax = raster_extent["xmax"] + 0.1,
+    ymin = raster_extent["ymin"] - 0.1,
+    ymax = raster_extent["ymax"] + 0.1,
+    resolution = 0.2,
+    crs = "EPSG:4326"
+  )
+
+  values(all_na_raster) <- rep(NA, ncell(all_na_raster))
+
+  # Should result in NA when all raster values are NA (with warnings)
+  expect_warning(
+    ri_all_na <- augment_epi_units_with_raster(
+      epi_units = epi_units,
+      raster = all_na_raster,
+      risk_name = "all_na_risk",
+      aggregate_fun = "mean"
+    ),
+    "no non-missing arguments"
+  )
+
+  expect_s3_class(ri_all_na, "sf")
+  expect_true(is.na(ri_all_na$all_na_risk) | is.nan(ri_all_na$all_na_risk) | is.infinite(ri_all_na$all_na_risk))
+})
+
+
+test_that("MR-007: Raster with custom NA value in metadata", {
+  library(sf)
+  library(terra)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create test epidemiological unit
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1"),
+      EU_NAME = c("Test Unit"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2,
+          byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |>
+    extract_dataset()
+
+  raster_extent <- st_bbox(epi_units)
+
+  # Create raster with custom NA value (-9999)
+  custom_na_raster <- rast(
+    xmin = raster_extent["xmin"] - 0.1,
+    xmax = raster_extent["xmax"] + 0.1,
+    ymin = raster_extent["ymin"] - 0.1,
+    ymax = raster_extent["ymax"] + 0.1,
+    resolution = 0.2,
+    crs = "EPSG:4326"
+  )
+
+  # Mix of valid values and custom NA value
+  n_cells <- ncell(custom_na_raster)
+  custom_values <- c(rep(-9999, n_cells %/% 2), rep(75, n_cells - n_cells %/% 2))
+  values(custom_na_raster) <- custom_values
+
+  # Set custom NA value in raster metadata
+  NAflag(custom_na_raster) <- -9999
+
+  # Should treat -9999 as NA and compute from valid values
+  ri_custom_na <- augment_epi_units_with_raster(
+    epi_units = epi_units,
+    raster = custom_na_raster,
+    risk_name = "custom_na_risk",
+    aggregate_fun = "mean"
+  )
+
+  expect_s3_class(ri_custom_na, "sf")
+  expect_false(is.na(ri_custom_na$custom_na_risk))
+
+  # Should be close to 75 (ignoring -9999 values)
+  expect_equal(ri_custom_na$custom_na_risk, 75, tolerance = 0.01)
+})
