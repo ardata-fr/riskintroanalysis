@@ -1,8 +1,8 @@
 ---
-title: "Analysis - Additional risks"
+title: "Additional risks"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis - Additional risks}
+  %\VignetteIndexEntry{Additional risks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(riskintroanalysis)
 library(riskintrodata)
 library(dplyr)
@@ -124,11 +124,7 @@ ri_water <- rescale_risk_scores(
   method = "quadratic"
 )
 
-ggplot(ri_water) +
-  geom_sf(aes(fill = water_risk)) +
-  scale_fill_viridis_c(limits = c(0, 100)) +
-  labs(title = "Water course risk", fill = "Risk") +
-  theme_minimal()
+plot_risk(ri_water)
 ```
 
 The quadratic transformation emphasizes higher values, making areas with more water coverage stand out more in the risk assessment.
@@ -169,7 +165,7 @@ ri_random <- tunisia |>
 head(ri_random)
 ```
 
-The sigmoid transformation creates an S-curve that compresses extreme values and expands middle values, useful when you want to dampen the effect of outliers.
+The sigmoid transformation creates an S-curve that compresses extreme values, useful when you want to dampen the effect of outliers.
 
 ## Combining Additional Risks with Standard Risks
 
@@ -203,13 +199,3 @@ plot_risk_interactive(ri_water)
 ```
 
 Click on any governorate to see its risk score. The interactive map helps identify spatial patterns in your additional risk factors.
-
-## Guidelines for Additional Risks
-
-When incorporating additional risks into your analysis:
-
-1. **Document your sources** - clearly note where additional risk data comes from
-2. **Choose appropriate aggregation** - consider whether mean, max, or sum best represents the risk
-3. **Scale consistently** - ensure all risks use the same 0-100 scale before combining
-4. **Select meaningful transformations** - linear, quadratic, exponential, and sigmoid each emphasize different parts of the risk distribution
-5. **Validate spatial alignment** - verify that raster and vector data align correctly in space

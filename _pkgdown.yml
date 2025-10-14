@@ -17,6 +17,22 @@ footer:
       This R package was developed by [Ardata](https://ardata.fr/) for CIRAD to provide a tool for
       analysing geospatial epidemiological.
 
+articles:
+  - title: Getting Started
+    contents:
+    - emission-scores
+    - introduction-risk
+  - title: Risk Analysis Methods
+    contents:
+    - border-risk-analysis
+    - entry-points-analysis
+    - animal-mobility-analysis
+    - road-access-analysis
+    - additional-risks
+  - title: Advanced Topics
+    contents:
+    - risk-scaling
+
 reference:
   - title: Calculate risks
     desc: >

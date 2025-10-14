@@ -1,5 +1,5 @@
 ---
-title: "Analysis - Entry points"
+title: "Entry points"
 format:
   html:
     toc: true
@@ -8,7 +8,7 @@ execute:
   echo: false
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis - Entry points}
+  %\VignetteIndexEntry{Entry points}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 knitr:
@@ -20,6 +20,7 @@ knitr:
 ```{r}
 #| label: setup
 #| include: false
+#| message: false
 library(riskintroanalysis)
 library(dplyr)
 library(ggplot2)
@@ -30,11 +31,11 @@ library(tidyr)
 
 
 __Entry points__ are one of the default risk factors in `riskintroanalysis`.
-They correspond places in the territory known to be risk sources of introduction due to the passage of animals.
-They typically correspond to border posts, or simply routes and paths that cross the border of the target territory, which are known to be used for animal transportation or transhumance.
+They correspond to places through which emission risk of animal diseases can become
+a risk of introduction in epidemiological units. They typically correspond to border posts, or simply routes and paths that cross the border of the target territory, which are known to be used for animal transportation or transhumance.
 
 They can also be interior (i.e. not in the border) locations such as airports or aerodromes.
-But they are distinguished from the desintations of __animal movement__ in that:
+But they are distinguished from the destinations of __animal movement__ in that:
 
 1. they represent the introduction of animals outside formal trade flows,
 
@@ -43,7 +44,7 @@ But they are distinguished from the desintations of __animal movement__ in that:
 3. the sanitary regulations and controls are weaker or inexistent.
 
 We distinguish __controlled__ and __not-controlled__ entry points.
-For example, a border post with a sanitary control of transhumant herds can be considered a _controlled_ entry point.
+For example, a border post with a sanitary control of transhumance herds can be considered a _controlled_ entry point.
 By contrast, a mountain pass known to be used for unauthorised introduction of animals would be considered _not-controlled_ and typically would entail a higher risk of pathogen introduction.
 
 
@@ -63,9 +64,9 @@ Furthermore, for each entry point, you need to identify the countries that are p
 
 ## Step 1: Point Exposure
 
-![Scematic example of a epidemiological unit with two controlled and one not-controlled entry points.](img/diagram_entry-points.svg){#fig-diagram}
+![Schematic example of an epidemiological unit with two controlled and one not-controlled entry points.](img/diagram_entry-points.svg){#fig-diagram}
 
-For each entry point, we first compute its value of _exposure_ $e$, which wheights the number and emission scores $\nu_k$ of the source countries.
+For each entry point, we first compute its value of _exposure_ $e$, which weights the number and emission scores $\nu_k$ of the source countries.
 
 $$
 e = \sum_k \nu_k / \nu_{\text{max}}
@@ -80,7 +81,7 @@ In the example in @fig-diagram, the corresponding exposure values for the entry 
 
 - $e_3 = 3/12 = 0.25$
 
-These values can be interpreted as a _effective number of __risky__ sources_. 
+These values can be interpreted as an _effective number of __risky__ sources_. 
 The first entry point has 2 sources, but the second has a lower emission score, so it counts as a quarter of a _risky_ source.
 The second entry point has 3 sources, but together, they accumulate to an effective equivalent equal to the exposure of the first entry point.
 The bottom entry point has only one source of animals with a low emission score, resulting in only a quarter of a _risky_ source.

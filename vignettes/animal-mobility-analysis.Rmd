@@ -1,8 +1,8 @@
 ---
-title: "Analysis - Animal mobility"
+title: "Animal mobility"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis - Animal mobility}
+  %\VignetteIndexEntry{Animal mobility}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(riskintroanalysis)
 library(riskintrodata)
 library(dplyr)
@@ -144,13 +144,48 @@ animal_mobility <- validate_dataset(
 
 ## Calculating Animal Mobility Risk
 
-The `calc_animal_mobility_risk()` function aggregates risk for each epidemiological unit. For each destination point, the risk contribution is calculated as:
+The `calc_animal_mobility_risk()` function calculates risk through a three-step process:
+
+### Step 1: Calculate weighted risk per destination point
+
+For each destination point that receives animal flows from external sources:
+
+1. **Filter relevant flows**: Only flows from external origins (outside the region) to internal destinations (inside the region) are considered
+2. **Calculate proportional weights**: For each destination point, weights are calculated based on the proportion of animals received from each source country:
 
 $$
-\text{risk contribution} = \text{emission risk} \times \text{animal quantity}
+w_{ij} = \frac{q_{ij}}{\sum_{k} q_{kj}}
 $$
 
-When multiple flows arrive at different locations within the same epidemiological unit, these contributions are aggregated using the specified method (mean, sum, max, or median). The `mean` method is commonly used to normalize by the number of destination points.
+where $w_{ij}$ is the weight for flow from source $i$ to destination $j$, and $q_{ij}$ is the quantity of animals in that flow.
+
+3. **Apply weighted emission risk**: The emission risk from each source is weighted by the proportion of animals received:
+
+$$
+\text{weighted risk}_{ij} = \nu_i \times w_{ij}
+$$
+
+where $\nu_i$ is the emission risk score for source country $i$.
+
+4. **Aggregate by destination**: All weighted risks arriving at the same destination point are summed:
+
+$$
+\text{destination risk}_j = \sum_{i} (\nu_i \times w_{ij})
+$$
+
+### Step 2: Spatial assignment
+
+Destination points are assigned to epidemiological units using spatial intersection (`st_intersects`). Each destination point falls within exactly one epidemiological unit.
+
+### Step 3: Aggregate to epidemiological units
+
+When multiple destination points fall within the same epidemiological unit, their risk scores are combined using the specified aggregation method:
+
+- **mean** (default): Average risk across all destination points - commonly used to normalize by the number of destinations
+- **max**: Maximum risk among all destination points - conservative approach emphasizing highest-risk locations
+- **min**: Minimum risk among all destination points - rarely used
+
+Note that unlike other aggregation contexts, `sum` and `median` are not available for animal mobility risk.
 
 ```{r animal-mobility-analysis}
 ri_animal_mobility <- calc_animal_mobility_risk(

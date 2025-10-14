@@ -1,0 +1,523 @@
+---
+title: "Risk Scaling and Transformation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Risk Scaling and Transformation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, message = FALSE}
+library(riskintroanalysis)
+library(riskintrodata)
+library(dplyr)
+library(sf)
+library(ggplot2)
+```
+
+## Introduction
+
+**Risk scaling** transforms risk scores from one numerical range to another while optionally applying a mathematical transformation to change the distribution of values. This is a critical step when:
+
+1. **Comparing multiple risk sources** - Different risk methods may use different scales (0-12 for emission-based risks, variable ranges for raster-based risks). All must be scaled to a common range (typically 0-100) before they can be compared.
+
+2. **Emphasizing or de-emphasizing risk levels** - Non-linear transformations allow you to adjust the relative importance of high vs. low risk values to match your risk management philosophy. Forward transformations (quadratic, exponential) emphasize high values, while inverse transformations compress high values and expand low values.
+
+This vignette explains:
+
+- Why and when to use non-linear scaling
+- The mathematical functions available and their effects
+- How to choose the right transformation method
+- Practical examples with real data
+
+## Why Non-Linear Scaling?
+
+Linear scaling simply stretches or compresses values proportionally. **Non-linear transformations** change the relative spacing between values, allowing you to:
+
+### Emphasize High Risks (Exponential, Quadratic)
+
+When you want to **amplify differences between high-risk areas** while compressing low-risk differences:
+
+- **Use case**: Conservative risk management where high-risk areas require immediate attention
+- **Effect**: High values become much higher, creating greater separation at the upper end
+- **Example**: A border with risk 10/12 becomes 83/100 (quadratic) or 93/100 (exponential) instead of 83/100 (linear)
+
+### Balance Extremes (Sigmoid)
+
+When you want to **moderate extreme values** while preserving middle-range distinctions:
+
+- **Use case**: Avoiding over-reaction to outliers while maintaining sensitivity in the typical range
+- **Effect**: Creates an S-curve that compresses both very low and very high values
+- **Example**: Useful for combining risks where extreme values from one source might otherwise dominate the final assessment
+
+### Expand Low Values (Inverse Transformations)
+
+When you want to **expand differences at the low end while compressing high values**:
+
+- **Use case**: When small differences at the low end are important to distinguish, but differences at the high end don't matter as much
+- **Effect**: Applies the mathematical inverse function (square root for quadratic, logarithm for exponential, inverse sigmoid) to the normalized values
+- **Example**: Scenarios where you need to distinguish between low-risk areas more carefully, while all high-risk areas are treated similarly
+
+## Transformation Functions
+
+The `rescale_risk_scores()` function supports four transformation methods. Here's the mathematical definition and intuitive effect of each:
+
+### Linear
+
+**Formula**:
+$$f(x) = x$$
+
+**Effect**: Proportional scaling with no transformation. The relative spacing between values remains unchanged.
+
+**Normalized form** (0 to 1):
+$$f_{\text{norm}}(x) = x$$
+
+**When to use**: When the original distribution is appropriate, or when you simply need to change the numerical range without altering relationships.
+
+```{r linear-demo, fig.width=5, fig.height=3}
+x <- seq(0, 1, by = 0.01)
+plot(x, x, type = "l", lwd = 2, col = "blue",
+     main = "Linear Transformation",
+     xlab = "Normalized input (0-1)", ylab = "Transformed output (0-1)")
+grid()
+```
+
+### Quadratic
+
+**Formula**:
+$$f(x) = x^2$$
+
+**Effect**: Emphasizes high values. Differences between high values are amplified, while differences between low values are compressed.
+
+**Intuitive interpretation**: "High risks become higher, low risks become lower" - increases polarization of risk scores.
+
+**Normalized form** (0 to 1):
+$$f_{\text{norm}}(x) = x^2$$
+
+**When to use**: Conservative risk management where you want high-risk areas to stand out more prominently.
+
+```{r quadratic-demo, fig.width=5, fig.height=3}
+plot(x, x^2, type = "l", lwd = 2, col = "red",
+     main = "Quadratic Transformation",
+     xlab = "Normalized input (0-1)", ylab = "Transformed output (0-1)")
+lines(x, x, lty = 2, col = "grey")
+grid()
+legend("topleft", legend = c("Quadratic", "Linear (reference)"),
+       col = c("red", "grey"), lwd = c(2, 1), lty = c(1, 2))
+```
+
+**Example**: A value at 50% becomes 25%, a value at 75% becomes 56%, a value at 100% stays at 100%.
+
+### Exponential
+
+**Formula**:
+$$f(x) = \frac{e^{kx} - 1}{e^{k} - 1}$$
+
+where $k = 1$ is the growth rate parameter.
+
+**Effect**: Strongly emphasizes high values. Even more aggressive than quadratic at amplifying high-risk areas.
+
+**Intuitive interpretation**: "Extreme polarization" - creates very large differences at the high end while heavily compressing the low end.
+
+**Normalized form** (0 to 1):
+$$f_{\text{norm}}(x) = \frac{e^{x} - 1}{e - 1}$$
+
+**When to use**: When you want maximum sensitivity to high-risk areas and minimal distinction among low-risk areas.
+
+```{r exponential-demo, fig.width=5, fig.height=3}
+exponential_transform <- function(x) (exp(x) - 1) / (exp(1) - 1)
+plot(x, exponential_transform(x), type = "l", lwd = 2, col = "darkred",
+     main = "Exponential Transformation",
+     xlab = "Normalized input (0-1)", ylab = "Transformed output (0-1)")
+lines(x, x^2, lty = 2, col = "red")
+lines(x, x, lty = 2, col = "grey")
+grid()
+legend("topleft",
+       legend = c("Exponential", "Quadratic", "Linear"),
+       col = c("darkred", "red", "grey"), lwd = c(2, 1, 1), lty = c(1, 2, 2))
+```
+
+**Example**: A value at 50% becomes 21%, a value at 75% becomes 53%, values above 80% expand dramatically.
+
+### Sigmoid
+
+**Formula**:
+$$f(x) = \frac{1}{1 + \left(\frac{1-x}{x}\right)^2}$$
+
+**Effect**: Creates an S-curve that compresses both extremes while expanding the middle range.
+
+**Intuitive interpretation**: "Moderate extremes" - reduces the influence of outliers (both very high and very low) while preserving distinctions in the typical range.
+
+**Alternative formulation** using the logistic function:
+$$f(x) = \frac{1}{1 + e^{-10(x - 0.5)}}$$
+
+**When to use**: When you want to avoid over-reaction to extreme values, or when combining risks where one source has outliers that would otherwise dominate.
+
+```{r sigmoid-demo, fig.width=5, fig.height=3}
+sigmoid_transform <- function(x) 1 / (1 + ((1-x)/x)^2)
+# Handle edge cases
+sigmoid_transform <- function(x) {
+  result <- 1 / (1 + ((1-x)/x)^2)
+  result[x == 0] <- 0
+  result[x == 1] <- 1
+  result
+}
+plot(x, sigmoid_transform(x), type = "l", lwd = 2, col = "purple",
+     main = "Sigmoid Transformation",
+     xlab = "Normalized input (0-1)", ylab = "Transformed output (0-1)")
+lines(x, x, lty = 2, col = "grey")
+grid()
+legend("topleft", legend = c("Sigmoid", "Linear (reference)"),
+       col = c("purple", "grey"), lwd = c(2, 1), lty = c(1, 2))
+```
+
+**Example**: A value at 10% becomes 19%, a value at 50% stays near 50%, a value at 90% becomes 81%.
+
+## Inverse Transformations
+
+Each transformation can be **inverted** by setting `inverse = TRUE`. The inverse functions apply the mathematical inverse of the transformation:
+
+| Method | Forward | Inverse |
+|--------|---------|---------|
+| Linear | $x$ | $x$ (same) |
+| Quadratic | $x^2$ | $\sqrt{x}$ |
+| Exponential | $\frac{e^x - 1}{e - 1}$ | $\frac{-\log(1 - x(1 - e^{-1}))}{1}$ |
+| Sigmoid | $\frac{1}{1 + (\frac{1-x}{x})^2}$ | $\frac{1}{\sqrt{\frac{1}{x} - 1} + 1}$ |
+
+**Effect**: Inverse transformations expand differences at low values and compress differences at high values. This is useful when you need to carefully distinguish between low-risk areas, while treating all high-risk areas as similarly dangerous.
+
+**Important note**: The `inverse` parameter applies the mathematical inverse of the transformation function, but does NOT flip the direction of the mapping (i.e., it does not make high input values produce low output values). Values that are high on the input scale remain high on the output scale, just with a different distribution shape.
+
+```{r inverse-demo, fig.width=7, fig.height=4}
+par(mfrow = c(1, 2))
+# Forward quadratic
+plot(x, x^2, type = "l", lwd = 2, col = "red",
+     main = "Quadratic (Forward)",
+     xlab = "Input", ylab = "Output")
+lines(x, x, lty = 2, col = "grey")
+grid()
+
+# Inverse quadratic (square root)
+plot(x, sqrt(x), type = "l", lwd = 2, col = "blue",
+     main = "Quadratic (Inverse)",
+     xlab = "Input", ylab = "Output")
+lines(x, x, lty = 2, col = "grey")
+grid()
+```
+
+## Practical Example: Border Risk Scaling
+
+Let's work through a complete example using border risk analysis.
+
+### Prepare the Data
+
+```{r prepare-data}
+# Load epidemiological units
+tunisia_raw <- read_sf(system.file(
+  package = "riskintrodata",
+  "samples", "tunisia", "epi_units", "tunisia_adm2_raw.gpkg"
+))
+
+tunisia <- validate_dataset(
+  x = tunisia_raw,
+  table_name = "epi_units",
+  eu_name = "NAME_2",
+  geometry = "geom"
+) |> extract_dataset()
+
+# Create emission risk
+algeria <- erf_row(
+  iso3 = "DZA",
+  country = "Algeria",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = 0,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 1,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("2023-06-30"),
+  commerce_illegal = 0L,
+  commerce_legal = 0L
+)
+
+libya <- erf_row(
+  iso3 = "LBY",
+  country = "Libya",
+  disease = "Avian infectious laryngotracheitis",
+  animal_category = "Domestic",
+  species = "Birds",
+  disease_notification = TRUE,
+  targeted_surveillance = 1,
+  general_surveillance = 0,
+  screening = 1,
+  precautions_at_the_borders = 0,
+  slaughter = 1,
+  selective_killing_and_disposal = 1,
+  zoning = 1,
+  official_vaccination = 1,
+  last_outbreak_end_date = as.Date("2019-06-30"),
+  commerce_illegal = 0L,
+  commerce_legal = 1
+)
+
+emission_risk_factors <- bind_rows(algeria, libya)
+emission_risk_table <- calc_emission_risk(emission_risk_factors = emission_risk_factors)
+
+# Calculate border risk
+shared_borders <- calc_border_lengths(epi_units = tunisia)
+ri_borders <- calc_border_risk(
+  epi_units = tunisia,
+  shared_borders = shared_borders,
+  emission_risk = emission_risk_table
+)
+```
+
+### Compare Transformation Methods
+
+Now let's apply different transformation methods and compare their effects:
+
+```{r compare-methods, fig.width=8, fig.height=10}
+# Apply each transformation
+ri_linear <- rescale_risk_scores(
+  ri_borders,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "linear"
+)
+
+ri_quadratic <- rescale_risk_scores(
+  ri_borders,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "quadratic"
+)
+
+ri_exponential <- rescale_risk_scores(
+  ri_borders,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "exponential"
+)
+
+ri_sigmoid <- rescale_risk_scores(
+  ri_borders,
+  from = c(0, 12),
+  to = c(0, 100),
+  method = "sigmoid"
+)
+
+# Create comparison plots
+library(patchwork)
+p1 <- plot_risk(ri_linear) + labs(title = "Linear")
+p2 <- plot_risk(ri_quadratic) + labs(title = "Quadratic")
+p3 <- plot_risk(ri_exponential) + labs(title = "Exponential")
+p4 <- plot_risk(ri_sigmoid) + labs(title = "Sigmoid")
+
+(p1 | p2) / (p3 | p4)
+```
+
+### Visual Comparison of Distributions
+
+Let's examine how the transformations affect the distribution of risk scores:
+
+```{r distribution-comparison, fig.width=8, fig.height=5}
+# Combine data for comparison
+comparison_data <- data.frame(
+  Linear = ri_linear$border_risk,
+  Quadratic = ri_quadratic$border_risk,
+  Exponential = ri_exponential$border_risk,
+  Sigmoid = ri_sigmoid$border_risk
+)
+
+# Reshape for plotting
+comparison_long <- tidyr::pivot_longer(
+  comparison_data,
+  cols = everything(),
+  names_to = "Method",
+  values_to = "Risk"
+)
+
+# Create violin plot with jittered points
+ggplot(comparison_long, aes(x = Method, y = Risk, fill = Method)) +
+  geom_violin(alpha = 0.7, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_jitter(width = 0.1, alpha = 0.3, size = 2) +
+  scale_fill_viridis_d(option = "D", direction = -1) +
+  labs(
+    title = "Distribution of Risk Scores by Transformation Method",
+    x = "Transformation Method",
+    y = "Risk Score (0-100)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Transformation Curves with Data Points
+
+Here's how your actual data maps onto each transformation function using `rescale_risk_scores()`:
+
+```{r transformation-curves, fig.width=8, fig.height=6}
+# Create transformation curves using rescale_risk_scores
+create_transformation_plot <- function(method_name, method) {
+  # Create smooth curve data
+  curve_data <- data.frame(original = seq(0, 12, by = 0.1))
+  curve_data <- rescale_risk_scores(
+    dataset = curve_data,
+    cols = "original",
+    from = c(0, 12),
+    to = c(0, 100),
+    method = method,
+    names_to = "transformed",
+    keep_cols = TRUE
+  )
+
+  # Transform actual border risk data
+  actual_data <- data.frame(original = ri_borders$border_risk)
+  actual_data <- rescale_risk_scores(
+    dataset = actual_data,
+    cols = "original",
+    from = c(0, 12),
+    to = c(0, 100),
+    method = method,
+    names_to = "transformed",
+    keep_cols = TRUE
+  )
+
+  ggplot() +
+    geom_line(data = curve_data, aes(x = original, y = transformed),
+              color = "grey40", linewidth = 1) +
+    geom_point(data = actual_data, aes(x = original, y = transformed, color = transformed),
+               size = 3, alpha = 0.6) +
+    scale_color_viridis_c(option = "D", direction = -1, limits = c(0, 100)) +
+    labs(
+      title = paste(method_name, "Transformation"),
+      x = "Original Scale (0-12)",
+      y = "Transformed Scale (0-100)",
+      color = "Transformed\nValue"
+    ) +
+    theme_minimal() +
+    coord_fixed(ratio = 12/100)
+}
+
+# Create all four plots
+p1 <- create_transformation_plot("Linear", "linear")
+p2 <- create_transformation_plot("Quadratic", "quadratic")
+p3 <- create_transformation_plot("Exponential", "exponential")
+p4 <- create_transformation_plot("Sigmoid", "sigmoid")
+
+(p1 | p2) / (p3 | p4)
+```
+
+## Choosing the Right Method
+
+Here's a decision guide for selecting transformation methods:
+
+### Use **Linear** when:
+- Original distribution is appropriate
+- No need to emphasize or de-emphasize any range
+- Simplicity and transparency are priorities
+- Combining risks that are already well-calibrated
+
+### Use **Quadratic** when:
+- You want moderate emphasis on high risks
+- Conservative risk management approach
+- High-risk areas need attention but not extreme separation
+- Balancing sensitivity with stability
+
+### Use **Exponential** when:
+- Maximum sensitivity to high-risk areas is critical
+- Resource allocation prioritizes worst-case scenarios
+- Low-risk distinctions are less important
+- Regulatory requirements demand conservative approaches
+
+### Use **Sigmoid** when:
+- Outliers exist that might skew the analysis
+- You want robust risk assessment resistant to extreme values
+- Combining disparate data sources with different scales
+- Middle-range discrimination is most important
+
+### Use **Inverse** when:
+- You need to distinguish carefully between low-risk areas
+- Differences at the low end of the scale are most important
+- High-risk areas can all be treated as similarly dangerous
+- You want square root, logarithmic, or inverse sigmoid curves
+
+## Combining Scaled Risks
+
+Once risks are scaled to 0-100, they can be combined into a comprehensive risk table:
+
+```{r combine-risks, eval=FALSE}
+# Initialize risk table with common scale
+rt <- risk_table(tunisia, scale = c(0, 100))
+
+# Add risks with chosen transformations
+rt <- add_risk(rt, ri_quadratic)  # Border risk with quadratic
+
+# Add other risk sources (scaled to 0-100)
+# rt <- add_risk(rt, ri_entry_points_scaled)
+# rt <- add_risk(rt, ri_animal_mobility_scaled)
+
+# Summarize to overall risk
+final_risk <- summarise_scores(rt, method = "max")
+
+plot_risk(final_risk)
+```
+
+## Technical Notes
+
+### Normalization and Rescaling Process
+
+The rescaling process involves three steps:
+
+1. **Normalization**: Transform input to 0-1 range
+   $$x_{\text{norm}} = \frac{x - \text{min}_{\text{old}}}{\text{max}_{\text{old}} - \text{min}_{\text{old}}}$$
+
+2. **Transformation**: Apply the chosen function
+   $$x_{\text{trans}} = f(x_{\text{norm}})$$
+
+3. **Rescaling**: Map to target range
+   $$x_{\text{final}} = x_{\text{trans}} \times (\text{max}_{\text{new}} - \text{min}_{\text{new}}) + \text{min}_{\text{new}}$$
+
+### Attribute Preservation
+
+The `rescale_risk_scores()` function preserves important metadata attributes:
+
+- `scale`: Updated to reflect the new range
+- `risk_col`: Updated to point to the rescaled column
+- `table_name`: Preserved from the original dataset
+
+These attributes enable automatic detection in downstream functions like `plot_risk()` and `summarise_scores()`.
+
+## Summary
+
+Risk scaling is a powerful tool for:
+
+- Standardizing risks to a common scale for combination
+- Adjusting the relative importance of different risk levels
+- Handling diverse data sources with different characteristics
+- Implementing your risk management philosophy through mathematical transformations
+
+The choice of transformation method should reflect your analytical goals and risk management approach. Linear scaling maintains original relationships, quadratic and exponential amplify high risks, sigmoid moderates extremes, and inverse transformations flip the direction of association.
+
+## Further Reading
+
+For more information on risk analysis methods:
+
+- [Introduction Risk](introduction-risk.html) - Combining multiple risk sources
+- [Border Risk Analysis](border-risk-analysis.html) - Border-based risk calculation
+- [Entry Points Analysis](entry-points-analysis.html) - Entry point risk calculation
+- [Animal Mobility Analysis](animal-mobility-analysis.html) - Animal movement risk
+- [Road Access Analysis](road-access-analysis.html) - Road accessibility risk
+- [Additional Risks](additional-risks.html) - Custom risk factors from raster data

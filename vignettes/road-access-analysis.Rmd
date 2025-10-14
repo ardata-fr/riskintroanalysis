@@ -1,8 +1,8 @@
 ---
-title: "Analysis - Road access"
+title: "Road access"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis - Road access}
+  %\VignetteIndexEntry{Road access}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(riskintroanalysis)
 library(riskintrodata)
 library(dplyr)
@@ -40,7 +40,7 @@ This analysis requires two datasets:
 1. **Epidemiological units** - the geographic areas being analyzed
 2. **Road accessibility raster** - a global dataset indicating travel time to roads
 
-The road accessibility raster is provided by the `riskintrodata` package and will be downloaded automatically if not already cached.
+The road accessibility raster is provided by the `riskintrodata::download_road_access_raster()`.
 
 ## Preparing the Data
 
@@ -70,7 +70,7 @@ The road accessibility raster is a large global dataset. The `download_road_acce
 ```{r download-raster}
 riskintrodata::init_riskintrodata_cache()
 road_raster_fp <- riskintrodata::download_road_access_raster()
-road_raster <- terra::rast(road_raster_fp)
+(road_raster <- terra::rast(road_raster_fp))
 ```
 
 ## Calculating Road Access Risk
@@ -86,7 +86,6 @@ The aggregation function determines how raster cell values are summarized. Commo
 - `"mean"` - average accessibility across the unit (most common)
 - `"max"` - worst (maximum) accessibility value
 - `"min"` - best (minimum) accessibility value
-- `"median"` - median accessibility
 
 Lower raster values indicate better road access (less time to reach roads), which translates to higher risk.
 
@@ -96,6 +95,7 @@ ri_road_access <- calc_road_access_risk(
   road_access_raster = road_raster,
   aggregate_fun = "mean"
 )
+ri_road_access
 ```
 
 ## Visualizing the Results

@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(riskintroanalysis)
 library(riskintrodata)
 library(dplyr)
@@ -25,15 +25,9 @@ library(sf)
 
 **Emission risk scores** quantify the risk that a country will export (emit) a disease to other regions. These scores form the foundation for several risk analyses in the riskintroanalysis package, including border risk, entry point risk, and animal mobility risk.
 
-The emission risk for each country is calculated from multiple risk factors, including:
+The emission risk for each country is calculated from multiple risk factors. Each factor is weighted according to its importance, and the weighted sum produces a final emission risk score ranging from 0 (no risk) to 12 (maximum risk).
 
-- Disease surveillance measures
-- Border control measures
-- Disease control interventions
-- Recent outbreak history
-- Commercial trade patterns
-
-Each factor is weighted according to its importance, and the weighted sum produces a final emission risk score ranging from 0 (no risk) to 12 (maximum risk).
+You can see all the details for this calculation here: `calc_emission_risk()`
 
 ## Creating Emission Risk Factors
 
@@ -133,20 +127,8 @@ hist(
 For spatial analysis, it's useful to join the emission risk scores with geographic data. This allows us to visualize which regions of the world have higher or lower emission risk:
 
 ```{r display-world}
-# Join with world geographic boundaries
-world <- riskintrodata::world_sf
-
-emission_risk_sf <- dplyr::left_join(
-  x = world,
-  y = emission_risk_table,
-  by = "iso3"
-)
-
 # Visualize on a world map
-plot(
-  select(emission_risk_sf, emission_risk),
-  main = "Global emission risk scores"
-)
+plot_emission_risk(emission_risk_table)
 ```
 
 Countries shown in grey either have no emission risk data (no disease reported in WAHIS for that species) or were not included in the analysis.
@@ -166,8 +148,6 @@ See the corresponding vignettes for details on each analysis method.
 For interactive exploration of global emission risk, we can create a leaflet map:
 
 ```{r interactive-map}
-library(leaflet)
-
 plot_emission_risk_interactive(emission_risk_table)
 ```
 

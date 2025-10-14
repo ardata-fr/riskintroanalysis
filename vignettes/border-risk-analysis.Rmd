@@ -1,8 +1,8 @@
 ---
-title: "Analysis - Border risk"
+title: "Border risk"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Analysis - Border risk}
+  %\VignetteIndexEntry{Border risk}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(riskintroanalysis)
 library(riskintrodata)
 library(dplyr)
@@ -138,7 +138,7 @@ The first step in border risk analysis is identifying and measuring shared borde
 
 The `calc_border_lengths()` function corrects these misalignments by treating the epidemiological units as the "true" borders and aligning the neighboring country borders to match.
 
-```{r shared-borders}
+```{r shared-borders, warning=FALSE}
 # Calculate shared border lengths
 shared_borders <- calc_border_lengths(
   epi_units = tunisia
@@ -154,17 +154,19 @@ ggplot() +
   geom_sf(data = tunisia, fill = "lightblue", colour = "blue", alpha = 0.5) +
   geom_sf(data = shared_borders, colour = "black") +
   geom_sf_label(data = shared_borders, aes(label = sprintf("%.fkm", border_length)), size = 1.5) +
-  coord_sf(xlim = c(7, 12), ylim = c(30, 38), expand = FALSE)
+  coord_sf(xlim = c(7, 12), ylim = c(30, 38), expand = FALSE) +
+  theme_void()
 ```
 
-The map shows the shared borders as thick black lines with their lengths labeled in kilometers. Notice how some Tunisia governorates share borders with both Algeria and Libya.
+The map shows the shared borders as thick black lines with their lengths labeled in kilometers. Notice how one Tunisia governorates share borders with both Algeria and Libya, this is important
+for weighting emission risk scores by border length.
 
 ## Calculating Border Risk
 
 Now we can calculate the border risk for each epidemiological unit. The calculation follows this logic:
 
-- For units bordering **one country**: risk = that country's emission risk
-- For units bordering **multiple countries**: risk = weighted average of emission risks, weighted by border length
+- For units bordering **one country**: introduction risk = that country's emission risk
+- For units bordering **multiple countries**: introduction risk = weighted average of emission risks, weighted by shared border length
 
 ```{r border-risk-analysis}
 ri_borders <- calc_border_risk(
@@ -180,7 +182,7 @@ plot_risk(ri_borders)
 
 The map shows risk values for each governorate. Most have a single color corresponding to their sole neighbor (either Algeria or Libya).
 
-The southernmost governorate (Remada) is particularly interesting: it borders both Algeria and Libya, so its risk is a weighted average. If it shares 60km with Algeria (emission risk = 8) and 40km with Libya (emission risk = 5), the calculation would be:
+The southernmost governorate (Remada) borders both Algeria and Libya, so its introduction risk is weighted. If it shares 60km with Algeria (emission risk = 8) and 40km with Libya (emission risk = 5), the calculation would be:
 
 $$
 \text{risk} = \frac{(60 \times 8) + (40 \times 5)}{60 + 40} = \frac{480 + 200}{100} = 6.8

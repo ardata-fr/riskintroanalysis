@@ -48,7 +48,7 @@ calc_border_lengths <- function(
     )
 
   if (!epi_units_iso3 %in% nt$country_id) {
-    cli_error(c(
+    cli_abort(c(
       "{.val epi_units_iso3} not found in neighbouring countries reference table.",
       i = "This may be because this country does not have any shared borders or the
         ISO3 code provided is not valid."

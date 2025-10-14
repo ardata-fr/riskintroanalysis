@@ -8,6 +8,7 @@
 \alias{plot_border_risk}
 \alias{plot_epi_units}
 \alias{plot_risk_table}
+\alias{plot_additional_risk}
 \alias{plot_risk_interactive}
 \alias{plot_entry_points_interactive}
 \alias{plot_animal_mobility_interactive}
@@ -15,6 +16,7 @@
 \alias{plot_border_risk_interactive}
 \alias{plot_epi_units_interactive}
 \alias{plot_risk_table_interactive}
+\alias{plot_additional_risk_interactive}
 \title{Plot risk}
 \usage{
 plot_risk(
@@ -37,6 +39,8 @@ plot_epi_units(dataset, scale, risk_col)
 
 plot_risk_table(dataset, scale, risk_col)
 
+plot_additional_risk(dataset, scale, risk_col)
+
 plot_risk_interactive(
   dataset,
   risk_name = NULL,
@@ -56,9 +60,11 @@ plot_border_risk_interactive(dataset, scale, risk_col, ll = basemap())
 plot_epi_units_interactive(dataset, scale, risk_col, ll = basemap())
 
 plot_risk_table_interactive(dataset, scale, risk_col, ll = basemap())
+
+plot_additional_risk_interactive(dataset, scale, risk_col, ll = basemap())
 }
 \arguments{
-\item{dataset}{sf object with risk table data}
+\item{dataset}{sf object with additional risk data}
 
 \item{risk_name}{risk_name used to determine which plotting function to use,
 this is NULL by default and is inferred from \code{attr(x, "table_name")}.}
@@ -75,6 +81,8 @@ interactive leaflet.}
 \value{
 ggplot2 object with the appropriate visualisation if interactive is FALSE,
 otherwise, leaflet object
+
+leaflet map object
 
 leaflet map object
 
