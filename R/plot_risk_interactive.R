@@ -26,6 +26,7 @@ plot_risk_interactive <- function(
     "border_risk" = plot_border_risk_interactive,
     "epi_units" = plot_epi_units_interactive,
     "risk_table" = plot_risk_table_interactive,
+    "additional_risk" = plot_additional_risk_interactive,
     cli_abort("This risk is not supported.")
   )
 
@@ -497,6 +498,43 @@ plot_risk_table_interactive <- function(dataset, scale, risk_col, ll = basemap()
     label = label,
     layerId = dataset$eu_id
   )
+
+  ll <- ll |>
+    addScoreLegend(scale, title = risk_col)
+  ll
+}
+
+#' Interactive leaflet plotting for additional risk
+#'
+#' @param dataset sf object with additional risk data
+#' @param scale numeric vector of length 2 defining the risk scale
+#' @param risk_col character string naming the risk column to visualize
+#' @param ll leaflet object to add layers to
+#' @return leaflet map object
+#' @export
+#' @rdname plot_risk
+#' @importFrom leaflet addPolygons
+plot_additional_risk_interactive <- function(dataset, scale, risk_col, ll = basemap()) {
+
+  pal <- scorePalette(scale)
+
+  label_content <- paste0(
+    "<strong>", dataset$eu_name, "</strong>", "<br>",
+    risk_col, ": ", fmt_num(dataset[[risk_col]]), "/", scale[[2]]
+  ) |>
+    map(HTML)
+
+  ll <- ll |>
+    leaflet::addPolygons(
+      data = dataset,
+      fillColor = ~pal(get(risk_col)),
+      weight = 1,
+      opacity = 1,
+      color = "white",
+      dashArray = "3",
+      fillOpacity = 0.75,
+      label = label_content
+    )
 
   ll <- ll |>
     addScoreLegend(scale, title = risk_col)

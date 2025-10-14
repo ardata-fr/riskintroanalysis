@@ -27,7 +27,9 @@ is TRUE.}
 }
 \value{
 returns the polygon data (sf) with a new column containing the
-aggregated values from the raster data for each polygon.
+aggregated values from the raster data for each polygon. The output includes
+attributes for use with \code{\link[=plot_risk]{plot_risk()}}: \code{table_name} = "additional_risk",
+\code{risk_col} = the value of \code{risk_name}, and \code{scale} = the range of values.
 }
 \description{
 Takes the mean of raster values in an area, ignoring any missing values.

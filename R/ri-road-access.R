@@ -69,10 +69,12 @@ calc_road_access_risk <- function(
 #' is TRUE.
 #'
 #' @return returns the polygon data (sf) with a new column containing the
-#' aggregated values from the raster data for each polygon.
+#' aggregated values from the raster data for each polygon. The output includes
+#' attributes for use with [plot_risk()]: `table_name` = "additional_risk",
+#' `risk_col` = the value of `risk_name`, and `scale` = the range of values.
 #' @importFrom stats median
 #' @importFrom sf as_Spatial
-#' @importFrom terra vect zonal project
+#' @importFrom terra vect zonal project minmax
 #' @export
 augment_epi_units_with_raster <- function(
     epi_units,
@@ -95,5 +97,11 @@ augment_epi_units_with_raster <- function(
   p_splat <- vect(p_splat)
   aggs <- zonal(r, p_splat, fun = aggregate_fun, na.rm=TRUE)[[1]]
   p[[risk_name]] <- aggs
+
+  # Add attributes for plot_risk compatibility
+  attr(p, "table_name") <- "additional_risk"
+  attr(p, "risk_col") <- risk_name
+  attr(p, "scale") <- c(min(p[[risk_name]], na.rm = TRUE), max(p[[risk_name]], na.rm = TRUE))
+
   p
 }

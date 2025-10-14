@@ -52,6 +52,7 @@ plot_risk <- function(
       "border_risk" = plot_border_risk,
       "epi_units" = plot_epi_units,
       "risk_table" = plot_risk_table,
+      "additional_risk" = plot_additional_risk,
       cli_abort("This risk is not supported.")
     )
     plot_fun(
@@ -94,7 +95,9 @@ plot_entry_points <- function(dataset, scale, risk_col) {
     geom_sf(
       data = dataset,
       aes(fill = .data[[risk_col]]),
-      alpha = 0.6
+      alpha = 0.6,
+      color = "white",
+      linewidth = 0.3
     )
 
   if (!is.null(extract_point_risk(dataset))) {
@@ -103,6 +106,7 @@ plot_entry_points <- function(dataset, scale, risk_col) {
       geom_sf(
         data = extract_point_risk(dataset),
         size = 1.5, shape = 21,
+        color = "black",
         aes(fill = .data[[attr(points_data, "risk_col")]])
       )
   } else {
@@ -123,7 +127,9 @@ plot_animal_mobility <- function(dataset, scale, risk_col) {
       aes(
         geometry = .data$geometry,
         fill = .data[[risk_col]]
-      )
+      ),
+      color = "white",
+      linewidth = 0.3
     )
 
   if (!is.null(extract_flow_risk(dataset))) {
@@ -152,7 +158,9 @@ plot_road_access <- function(dataset, scale, risk_col) {
       aes(
         geometry = .data$geometry,
         fill = .data[[risk_col]]
-      )
+      ),
+      color = "white",
+      linewidth = 0.3
     )
 
   gg <- gg + ggplot_score_scale(limits = scale)
@@ -168,7 +176,9 @@ plot_border_risk <- function(dataset, scale, risk_col) {
     geom_sf(
       data = dataset,
       aes(fill = .data[[risk_col]]),
-      alpha = 0.5
+      alpha = 0.5,
+      color = "white",
+      linewidth = 0.3
     )
 
   borders_data <- extract_border(dataset)
@@ -193,7 +203,10 @@ plot_epi_units <- function(dataset, scale, risk_col) {
   gg <- ggplot()
   gg <- gg +
     geom_sf(
-      data = dataset
+      data = dataset,
+      color = "black",
+      fill = NA,
+      linewidth = 0.5
     )
   gg <- gg + theme_void()
   gg
@@ -206,10 +219,32 @@ plot_risk_table <- function(dataset, scale, risk_col){
   gg <- gg +
     geom_sf(
       data = dataset,
-      aes(fill = .data[[risk_col]])
+      aes(fill = .data[[risk_col]]),
+      color = "white",
+      linewidth = 0.3
     )
   gg <- gg + ggplot_score_scale(limits = scale)
   gg <- gg + theme_void()
   gg
 
+}
+
+#' @export
+#' @rdname plot_risk
+plot_additional_risk <- function(dataset, scale, risk_col) {
+  gg <- ggplot()
+  gg <- gg +
+    geom_sf(
+      data = dataset,
+      aes(
+        geometry = .data$geometry,
+        fill = .data[[risk_col]]
+      ),
+      color = "white",
+      linewidth = 0.3
+    )
+
+  gg <- gg + ggplot_score_scale(limits = scale)
+  gg <- gg + theme_void()
+  gg
 }
