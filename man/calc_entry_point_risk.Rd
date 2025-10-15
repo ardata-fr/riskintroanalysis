@@ -96,7 +96,6 @@ entry_points <- validate_dataset(
 ) |>
   extract_dataset()
 
-entry_points <- entry_points[0, ]
 
 tunisia_raw <- sf::read_sf(system.file(
   package = "riskintrodata",

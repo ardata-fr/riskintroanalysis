@@ -956,14 +956,17 @@ test_that("MR-006: Raster with all NA values", {
   values(all_na_raster) <- rep(NA, ncell(all_na_raster))
 
   # Should result in NA when all raster values are NA (with warnings)
-  expect_warning(
+  # There are two warnings that are the exact same
+  expect_warning(expect_warning(
     ri_all_na <- augment_epi_units_with_raster(
       epi_units = epi_units,
       raster = all_na_raster,
       risk_name = "all_na_risk",
       aggregate_fun = "mean"
     ),
-    "no non-missing arguments"
+    regexp = "no non-missing arguments"
+  ),
+  regexp = "no non-missing arguments"
   )
 
   expect_s3_class(ri_all_na, "sf")
