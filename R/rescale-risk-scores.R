@@ -25,9 +25,12 @@
 #' @param to new range of possible values for `risk_col`, by default it is 0 to 100.
 #' @param method The scaling method to apply. Options are `"linear"`, `"quadratic"`,
 #' `"exponential"`, `"sigmoid"`, or `"complementary"`.
-#' @param inverse boolean to inverse the risk values, i.e. low becomes high, and
-#' high becomes low. Similar to the `"complementary"` value of method, but can be
-#' added to quadratic.
+#' @param inverse boolean to inverse the transformation function (e.g., quadratic becomes
+#' square root, exponential becomes logarithmic). This affects the shape of the
+#' transformation curve.
+#' @param reverse boolean to reverse the risk scale direction before transformation,
+#' flipping low risk to high risk and vice versa (e.g., a value of 3/12 becomes 9/12).
+#' This is independent of `inverse` and can be combined with it.
 #' @param names_prefix string, prefix `cols` names to have new names for scaled columns.
 #' @param names_to string vector, provide new name for rescaled columns.
 #' @param keep_cols default TRUE, whether to keep `cols` columns after rescaling is done or to remove.
@@ -43,6 +46,7 @@ rescale_risk_scores <- function(
     to = c(0, 100),
     method = c("linear", "quadratic", "exponential", "sigmoid"),
     inverse = FALSE,
+    reverse = FALSE,
     names_prefix = NULL,
     names_to = NULL,
     keep_cols = FALSE
@@ -76,6 +80,7 @@ rescale_risk_scores <- function(
   cli_abort_if_not(
     "{.arg  dataset} should be a data.frame or tibble" = "data.frame" %in% class(dataset),
     "{.arg inverse} should be TRUE or FALSE" = inverse %in% c(TRUE, FALSE),
+    "{.arg reverse} should be TRUE or FALSE" = reverse %in% c(TRUE, FALSE),
     "{.arg from} should have be a vector of length 2" = length(from) == 2,
     "{.arg to} should have be a vector of length 2" = length(from) == 2
   )
@@ -105,6 +110,7 @@ rescale_risk_scores <- function(
     from = from,
     to = to,
     inverse = inverse,
+    reverse = reverse,
     keep_cols = keep_cols
   )
 
@@ -116,6 +122,7 @@ rescale_risk_scores <- function(
       from = from,
       to = to,
       inverse = inverse,
+      reverse = reverse,
       keep_cols = keep_cols
     )
   }
@@ -125,7 +132,7 @@ rescale_risk_scores <- function(
   dataset
 }
 
-rescale_risk <- function(dataset, cols, new_cols, method, from, to, inverse, keep_cols){
+rescale_risk <- function(dataset, cols, new_cols, method, from, to, inverse, reverse, keep_cols){
 
   old_min <- from[[1]] # existing min
   old_max <- from[[2]]
@@ -155,6 +162,12 @@ rescale_risk <- function(dataset, cols, new_cols, method, from, to, inverse, kee
 
   for (i in seq_along(cols)){
     dat <- data.frame(x = dataset[[cols[[i]]]])
+
+    # Reverse the scale if requested (flip low/high risk)
+    if (reverse) {
+      dat$x <- old_max + old_min - dat$x
+    }
+
     dat$normalised <- (dat$x - old_min) / (old_max - old_min)
     dat$transformed <- transformation(dat$normalised)
     dat$rescaled <- dat$transformed * (new_max - new_min) + new_min
@@ -180,6 +193,7 @@ rescale_risk <- function(dataset, cols, new_cols, method, from, to, inverse, kee
 #' @param to New scale range
 #' @param method Scaling method
 #' @param inverse Whether to apply inverse transformation
+#' @param reverse Whether to reverse the risk scale direction
 #' @return Dataset with rescaled secondary datasets as attributes
 #' @noRd
 rescale_secondary_datasets <- function(
@@ -188,6 +202,7 @@ rescale_secondary_datasets <- function(
     from,
     to,
     inverse,
+    reverse,
     keep_cols
 ) {
   if (!is.null(attr(dataset, "borders"))) {
@@ -200,6 +215,7 @@ rescale_secondary_datasets <- function(
       method = method,
       new_cols = attr(borders, "risk_col"),
       inverse = inverse,
+      reverse = reverse,
       keep_cols = FALSE
     )
     attr(borders_rescaled, "scale") <- to
@@ -215,6 +231,7 @@ rescale_secondary_datasets <- function(
       new_cols = attr(points, "risk_col"),
       method = method,
       inverse = inverse,
+      reverse = reverse,
       keep_cols = FALSE
     )
     attr(points_rescaled, "scale") <- to
@@ -230,6 +247,7 @@ rescale_secondary_datasets <- function(
       new_cols = attr(flows, "risk_col"),
       method = method,
       inverse = inverse,
+      reverse = reverse,
       keep_cols = FALSE
     )
     attr(flows_rescaled, "scale") <- to

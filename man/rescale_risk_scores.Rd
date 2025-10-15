@@ -11,6 +11,7 @@ rescale_risk_scores(
   to = c(0, 100),
   method = c("linear", "quadratic", "exponential", "sigmoid"),
   inverse = FALSE,
+  reverse = FALSE,
   names_prefix = NULL,
   names_to = NULL,
   keep_cols = FALSE
@@ -29,9 +30,13 @@ vector, names will be used as the \code{names_to} arg, giving new names to resca
 \item{method}{The scaling method to apply. Options are \code{"linear"}, \code{"quadratic"},
 \code{"exponential"}, \code{"sigmoid"}, or \code{"complementary"}.}
 
-\item{inverse}{boolean to inverse the risk values, i.e. low becomes high, and
-high becomes low. Similar to the \code{"complementary"} value of method, but can be
-added to quadratic.}
+\item{inverse}{boolean to inverse the transformation function (e.g., quadratic becomes
+square root, exponential becomes logarithmic). This affects the shape of the
+transformation curve.}
+
+\item{reverse}{boolean to reverse the risk scale direction before transformation,
+flipping low risk to high risk and vice versa (e.g., a value of 3/12 becomes 9/12).
+This is independent of \code{inverse} and can be combined with it.}
 
 \item{names_prefix}{string, prefix \code{cols} names to have new names for scaled columns.}
 
