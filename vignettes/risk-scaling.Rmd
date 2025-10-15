@@ -28,7 +28,8 @@ library(ggplot2)
 
 1. **Comparing multiple risk sources** - Different risk methods may use different scales (0-12 for emission-based risks, variable ranges for raster-based risks). All must be scaled to a common range (typically 0-100) before they can be compared.
 
-2. **Emphasizing or de-emphasizing risk levels** - Non-linear transformations allow you to adjust the relative importance of high vs. low risk values to match your risk management philosophy. Forward transformations (quadratic, exponential) emphasize high values, while inverse transformations compress high values and expand low values.
+2. **Emphasizing or de-emphasizing risk levels** - Non-linear transformations allow you to adjust the relative importance of high vs. low risk scores to match expert field knowledge.
+Direct transformations such as quadratic of exponential emphasize high scores, while their inverse counterparts compress high score values in favour of the lower end.
 
 This vignette explains:
 
@@ -41,29 +42,29 @@ This vignette explains:
 
 Linear scaling simply stretches or compresses values proportionally. **Non-linear transformations** change the relative spacing between values, allowing you to:
 
-### Emphasize High Risks (Exponential, Quadratic)
+### Emphasize High Scores (Exponential, Quadratic)
 
-When you want to **amplify differences between high-risk areas** while compressing low-risk differences:
+When you want to **amplify differences between high-score areas** while compressing low-score differences:
 
-- **Use case**: Conservative risk management where high-risk areas require immediate attention
-- **Effect**: High values become much higher, creating greater separation at the upper end
-- **Example**: A border with risk 10/12 becomes 83/100 (quadratic) or 93/100 (exponential) instead of 83/100 (linear)
+- **Use case**: Small variations in the low-end of the score scale don't make much difference, while variations in the upper end of the score scale have a larger impact on the risk.
+- **Effect**: Low scores correspond all to a roughly similar low risk while high scores are more spread over the risk scale.
 
-### Balance Extremes (Sigmoid)
+### Emphisize contrast (Sigmoid)
+
+When you want to **strongly separate high and low scores**.
 
 When you want to **moderate extreme values** while preserving middle-range distinctions:
 
-- **Use case**: Avoiding over-reaction to outliers while maintaining sensitivity in the typical range
-- **Effect**: Creates an S-curve that compresses both very low and very high values
-- **Example**: Useful for combining risks where extreme values from one source might otherwise dominate the final assessment
+- **Use case**: Risk is either high or low, with a quick change around an intermediate score value.
+- **Effect**: Creates an S-curve that compresses both very low and very high scores towards the extremes of the risk scale.
 
 ### Expand Low Values (Inverse Transformations)
 
-When you want to **expand differences at the low end while compressing high values**:
+When you want to **expand differences at the low end while compressing high score values**:
 
-- **Use case**: When small differences at the low end are important to distinguish, but differences at the high end don't matter as much
+- **Use case**: When small variations at the low end are important to distinguish, but differences at the high end don't matter as much.
 - **Effect**: Applies the mathematical inverse function (square root for quadratic, logarithm for exponential, inverse sigmoid) to the normalized values
-- **Example**: Scenarios where you need to distinguish between low-risk areas more carefully, while all high-risk areas are treated similarly
+
 
 ## Transformation Functions
 
@@ -81,7 +82,7 @@ $$f_{\text{norm}}(x) = x$$
 
 **When to use**: When the original distribution is appropriate, or when you simply need to change the numerical range without altering relationships.
 
-```{r linear-demo, fig.width=5, fig.height=3}
+```{r linear-demo, fig.width=5, fig.height=3, echo = FALSE}
 x <- seq(0, 1, by = 0.01)
 plot(x, x, type = "l", lwd = 2, col = "blue",
      main = "Linear Transformation",
@@ -96,14 +97,14 @@ $$f(x) = x^2$$
 
 **Effect**: Emphasizes high values. Differences between high values are amplified, while differences between low values are compressed.
 
-**Intuitive interpretation**: "High risks become higher, low risks become lower" - increases polarization of risk scores.
+**Intuitive interpretation**: Risk increases very little initially, and climbs progressively quicker.
 
 **Normalized form** (0 to 1):
 $$f_{\text{norm}}(x) = x^2$$
 
-**When to use**: Conservative risk management where you want high-risk areas to stand out more prominently.
+**When to use**: The underlying risk factor entails interactions or multiplicative effects.
 
-```{r quadratic-demo, fig.width=5, fig.height=3}
+```{r quadratic-demo, fig.width=5, fig.height=3, echo = FALSE}
 plot(x, x^2, type = "l", lwd = 2, col = "red",
      main = "Quadratic Transformation",
      xlab = "Normalized input (0-1)", ylab = "Transformed output (0-1)")
@@ -113,7 +114,7 @@ legend("topleft", legend = c("Quadratic", "Linear (reference)"),
        col = c("red", "grey"), lwd = c(2, 1), lty = c(1, 2))
 ```
 
-**Example**: A value at 50% becomes 25%, a value at 75% becomes 56%, a value at 100% stays at 100%.
+
 
 ### Exponential
 
@@ -122,16 +123,16 @@ $$f(x) = \frac{e^{kx} - 1}{e^{k} - 1}$$
 
 where $k = 1$ is the growth rate parameter.
 
-**Effect**: Strongly emphasizes high values. Even more aggressive than quadratic at amplifying high-risk areas.
+**Effect**: Strongly emphasizes high values. Even more aggressive than quadratic at amplifying high-score areas.
 
-**Intuitive interpretation**: "Extreme polarization" - creates very large differences at the high end while heavily compressing the low end.
+**Intuitive interpretation**: Risk remains low up to some point where it starts to climb progressively quicker.
 
 **Normalized form** (0 to 1):
 $$f_{\text{norm}}(x) = \frac{e^{x} - 1}{e - 1}$$
 
-**When to use**: When you want maximum sensitivity to high-risk areas and minimal distinction among low-risk areas.
+**When to use**: The underlying risk factor entails interactions or multiplicative effects.
 
-```{r exponential-demo, fig.width=5, fig.height=3}
+```{r exponential-demo, fig.width=5, fig.height=3, echo = FALSE}
 exponential_transform <- function(x) (exp(x) - 1) / (exp(1) - 1)
 plot(x, exponential_transform(x), type = "l", lwd = 2, col = "darkred",
      main = "Exponential Transformation",
@@ -144,23 +145,23 @@ legend("topleft",
        col = c("darkred", "red", "grey"), lwd = c(2, 1, 1), lty = c(1, 2, 2))
 ```
 
-**Example**: A value at 50% becomes 21%, a value at 75% becomes 53%, values above 80% expand dramatically.
+
 
 ### Sigmoid
 
 **Formula**:
 $$f(x) = \frac{1}{1 + \left(\frac{1-x}{x}\right)^2}$$
 
-**Effect**: Creates an S-curve that compresses both extremes while expanding the middle range.
+**Effect**: Creates an S-curve that compresses both ends of the score scale towrards extreme risk values while expanding the middle range.
 
-**Intuitive interpretation**: "Moderate extremes" - reduces the influence of outliers (both very high and very low) while preserving distinctions in the typical range.
+**Intuitive interpretation**: Risk is either high or low, with a quick progression from one extreme to the other.
 
 **Alternative formulation** using the logistic function:
 $$f(x) = \frac{1}{1 + e^{-10(x - 0.5)}}$$
 
-**When to use**: When you want to avoid over-reaction to extreme values, or when combining risks where one source has outliers that would otherwise dominate.
+**When to use**: When there are little nuances between score values, and risk becomes serious beyond some threshold.
 
-```{r sigmoid-demo, fig.width=5, fig.height=3}
+```{r sigmoid-demo, fig.width=5, fig.height=3, echo = FALSE}
 sigmoid_transform <- function(x) 1 / (1 + ((1-x)/x)^2)
 # Handle edge cases
 sigmoid_transform <- function(x) {
@@ -178,7 +179,8 @@ legend("topleft", legend = c("Sigmoid", "Linear (reference)"),
        col = c("purple", "grey"), lwd = c(2, 1), lty = c(1, 2))
 ```
 
-**Example**: A value at 10% becomes 19%, a value at 50% stays near 50%, a value at 90% becomes 81%.
+
+
 
 ## Inverse Transformations
 
@@ -191,11 +193,14 @@ Each transformation can be **inverted** by setting `inverse = TRUE`. The inverse
 | Exponential | $\frac{e^x - 1}{e - 1}$ | $\frac{-\log(1 - x(1 - e^{-1}))}{1}$ |
 | Sigmoid | $\frac{1}{1 + (\frac{1-x}{x})^2}$ | $\frac{1}{\sqrt{\frac{1}{x} - 1} + 1}$ |
 
-**Effect**: Inverse transformations expand differences at low values and compress differences at high values. This is useful when you need to carefully distinguish between low-risk areas, while treating all high-risk areas as similarly dangerous.
+**Effect**: Invert the compressive or expansive action on variations of the scores. When a transformation expands some range of scores, the inverse transformation compresses them, and viceversa.
 
-**Important note**: The `inverse` parameter applies the mathematical inverse of the transformation function, but does NOT flip the direction of the mapping (i.e., it does not make high input values produce low output values). Values that are high on the input scale remain high on the output scale, just with a different distribution shape.
+For instance, if risk increases very quickly at the begining of the score range, but it progressively slows down at higher score values, you could use an inverted quadratic or exponential scaling.
 
-```{r inverse-demo, fig.width=7, fig.height=4}
+**Important note**: The `inverse` parameter applies the mathematical inverse of the transformation function, but does NOT __flip__ the direction of the mapping (i.e., it does not make high scores produce low risks). 
+Scores that are high on the input scale remain high on the risk scale, just with a different distribution shape.
+
+```{r inverse-demo, fig.width=7, fig.height=4, echo = FALSE}
 par(mfrow = c(1, 2))
 # Forward quadratic
 plot(x, x^2, type = "l", lwd = 2, col = "red",
@@ -420,39 +425,6 @@ p4 <- create_transformation_plot("Sigmoid", "sigmoid")
 (p1 | p2) / (p3 | p4)
 ```
 
-## Choosing the Right Method
-
-Here's a decision guide for selecting transformation methods:
-
-### Use **Linear** when:
-- Original distribution is appropriate
-- No need to emphasize or de-emphasize any range
-- Simplicity and transparency are priorities
-- Combining risks that are already well-calibrated
-
-### Use **Quadratic** when:
-- You want moderate emphasis on high risks
-- Conservative risk management approach
-- High-risk areas need attention but not extreme separation
-- Balancing sensitivity with stability
-
-### Use **Exponential** when:
-- Maximum sensitivity to high-risk areas is critical
-- Resource allocation prioritizes worst-case scenarios
-- Low-risk distinctions are less important
-- Regulatory requirements demand conservative approaches
-
-### Use **Sigmoid** when:
-- Outliers exist that might skew the analysis
-- You want robust risk assessment resistant to extreme values
-- Combining disparate data sources with different scales
-- Middle-range discrimination is most important
-
-### Use **Inverse** when:
-- You need to distinguish carefully between low-risk areas
-- Differences at the low end of the scale are most important
-- High-risk areas can all be treated as similarly dangerous
-- You want square root, logarithmic, or inverse sigmoid curves
 
 ## Combining Scaled Risks
 
@@ -505,11 +477,11 @@ These attributes enable automatic detection in downstream functions like `plot_r
 Risk scaling is a powerful tool for:
 
 - Standardizing risks to a common scale for combination
-- Adjusting the relative importance of different risk levels
+- Adjusting the relative importance of different score levels
 - Handling diverse data sources with different characteristics
-- Implementing your risk management philosophy through mathematical transformations
+- Making expert knowledge explicit through mathematical transformations
 
-The choice of transformation method should reflect your analytical goals and risk management approach. Linear scaling maintains original relationships, quadratic and exponential amplify high risks, sigmoid moderates extremes, and inverse transformations flip the direction of association.
+The choice of transformation method should reflect your analytical goals and field expertise. 
 
 ## Further Reading
 
