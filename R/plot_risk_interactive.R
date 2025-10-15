@@ -270,7 +270,7 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
       values = scale,
       title = risk_col,
       opacity = 0.7,
-      # layerId = group1,
+      layerId = "legend1",
       group = group1,
       className = paste("info legend", group1)
     )
@@ -301,7 +301,7 @@ plot_road_access_interactive <- function(dataset, scale, risk_col, ll = basemap(
         values = raster_scale,
         title = "Road Access Index",
         opacity = 0.85,
-        # layerId = group2,
+        layerId = "legend2",
         group = group2,
         className = paste("info legend", group2)
       )
