@@ -124,12 +124,13 @@ To combine road access risk with other risk types, you'll need to rescale it. Se
 ## Rescaling to 0-100
 
 Because the original scaling of the raw risk score is from 0 to around 1600, its 
-hard to compare to other score. Here it is simply rescaled linearly to a range from
-1 to 100.
+hard to compare to other score. Here it is simply rescaled linearly to a range from 1 to 100 and reversed. The scale is reversed because the original raster 
+data is based on distance from cities so the higher the number the further the location is from a city - the idea being that the more rural, the harder a place is to access, therefore having a lower risk of introduction of animal disease.
 
 ```{r}
 ri_road_access_scaled <- rescale_risk_scores(
   ri_road_access,
+  reverse = TRUE,
   to = c(0, 100)
 )
 ```
