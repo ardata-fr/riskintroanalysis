@@ -168,7 +168,7 @@ calc_animal_mobility_flows_risk <- function(
     summarise(
       .by = "d_name",
       emission_risk_weighted = sum(.data$emission_risk_weighted),
-      source_label = paste0("<li>", .data$country, " (", fmt_num(.data$emission_risk), "/12)", "</li>", collapse = "")
+      source_label = paste0("<ul>", paste0("<li>", .data$country, " (", fmt_num(.data$emission_risk), "/12)", "</li>", collapse = ""), "</ul>")
     )
 
   # Add geometry

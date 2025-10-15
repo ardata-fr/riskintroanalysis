@@ -209,7 +209,7 @@ plot_animal_mobility_interactive <- function(dataset, scale, risk_col, ll = base
           "<strong>", flows_data$d_name ,"</strong>", "<br>",
           "Animal flow emission risk score: ",
           "<strong>", fmt_num(flows_data$emission_risk_weighted), "/", scale[[2]], "</strong>", "<br>",
-          "Countributing risk sources:", "<br>",
+          "Contributing risk sources:", "<br>",
           flows_data$source_label)
         |> map(HTML)
       )
