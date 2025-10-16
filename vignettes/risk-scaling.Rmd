@@ -383,6 +383,7 @@ create_transformation_plot <- function(method_name, method) {
     cols = "original",
     from = c(0, 12),
     to = c(0, 100),
+    reverse = FALSE,
     method = method,
     names_to = "transformed",
     keep_cols = TRUE

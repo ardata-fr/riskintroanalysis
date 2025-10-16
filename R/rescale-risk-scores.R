@@ -85,10 +85,13 @@ rescale_risk_scores <- function(
     "{.arg to} should have be a vector of length 2" = length(from) == 2
   )
 
-  if (attr(dataset, "table_name") == "road_access" && !reverse) {
-    cli_warn("Rescaling argument {.arg reverse} should be TRUE for
+  if (!is.null(attr(dataset, "table_name"))) {
+    if (attr(dataset, "table_name") == "road_access" && !reverse) {
+      cli_warn("Rescaling argument {.arg reverse} should be TRUE for
     road access risk when using the raster provided by riskintrodata.")
+    }
   }
+
 
   missing_cols <- cols[!cols %in% colnames(dataset)]
   if (length(missing_cols) > 0) {
