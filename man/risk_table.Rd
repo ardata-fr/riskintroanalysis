@@ -9,10 +9,9 @@ risk_table(epi_units, scale = c(0, 100))
 \arguments{
 \item{epi_units}{epidemiological units dataset}
 
-\item{scale}{the scale to use for all risk scores added to the risk table. Each
-new risk added to the table will be checked to ensure the same scale is used. For
-example, a risk table using a scale from 0 to 100 will not accept a risk on a
-scale from -1 to 1. This ensures comparability across risks.}
+\item{scale}{numeric vector of length 2 defining the minimum and maximum possible
+risk values for this risk table (default: \code{c(0, 100)}). This establishes the valid
+range for all risks that will be added to the table.}
 }
 \value{
 \code{sf} table with columns \code{eu_id}, \code{eu_name} and \code{geometry}, these all
@@ -20,7 +19,18 @@ come directly from the \code{epi_units} argument.
 }
 \description{
 Creates the base table of risks where each risk associated with a study can be
-stored. Each risk is checked that its on the same scale.
+stored. The risk_table defines a master scale that all added risks must fit within.
+}
+\details{
+The \code{scale} parameter defines the "universe" of possible risk values for this table.
+When risks are added via \code{\link[=add_risk]{add_risk()}}, their scales must be within this range. For
+example, if you create a risk_table with scale \code{c(0, 100)}, you can add risks with
+scales like \code{c(0, 50)} or \code{c(20, 80)}, but not \code{c(0, 120)}.
+
+All risks added to the table will inherit this scale attribute, allowing risks with
+different original scales to coexist as long as their values fit within the defined
+range. This provides flexibility while maintaining a consistent frame of reference
+for risk comparison and summarization.
 }
 \examples{
 library(riskintrodata)

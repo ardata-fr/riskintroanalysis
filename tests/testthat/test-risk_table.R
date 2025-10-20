@@ -230,13 +230,22 @@ test_that("add_risk validates inputs correctly", {
     "cols.*is NULL"
   )
 
-  # Test with wrong scale
-  risk_data_wrong_scale <- risk_data
-  attr(risk_data_wrong_scale, "scale") <- c(0, 12)
+  # Test with scale exceeding risk_table max
+  risk_data_exceeds_max <- risk_data
+  attr(risk_data_exceeds_max, "scale") <- c(0, 101)
 
   expect_error(
-    add_risk(rt, risk_data_wrong_scale),
-    "risk table expects.*scale.*0.*100"
+    add_risk(rt, risk_data_exceeds_max),
+    "Risk scale must be within the risk_table scale range"
+  )
+
+  # Test with scale below risk_table min
+  risk_data_below_min <- risk_data
+  attr(risk_data_below_min, "scale") <- c(-5, 50)
+
+  expect_error(
+    add_risk(rt, risk_data_below_min),
+    "Risk scale must be within the risk_table scale range"
   )
 
   # Test with missing join column
@@ -310,6 +319,85 @@ test_that("add_risk handles existing columns correctly", {
   rt_updated <- add_risk(rt, risk_data2)
   expect_equal(rt_updated$border_risk, c(60, 80))
   expect_equal(length(attr(rt_updated, "risk_cols")), 1)
+})
+
+test_that("add_risk accepts risks with scales within risk_table range", {
+  library(sf)
+  library(dplyr)
+  library(riskintrodata)
+
+  # Create test setup
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      EU_ID = c("EU1", "EU2", "EU3"),
+      EU_NAME = c("Unit 1", "Unit 2", "Unit 3"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2, byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0),
+          ncol = 2, byrow = TRUE
+        ))),
+        st_polygon(list(matrix(
+          c(2, 0, 3, 0, 3, 1, 2, 1, 2, 0),
+          ncol = 2, byrow = TRUE
+        )))
+      )
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    x = epi_units_raw,
+    table_name = "epi_units",
+    eu_id = "EU_ID",
+    eu_name = "EU_NAME",
+    geometry = "geometry"
+  ) |> extract_dataset()
+
+  rt <- risk_table(epi_units, scale = c(0, 100))
+
+  # Test 1: Risk with scale (0, 50) should be accepted
+  risk_data_50 <- data.frame(
+    eu_id = c("EU1", "EU2", "EU3"),
+    risk_50 = c(10, 25, 40)
+  )
+  attr(risk_data_50, "risk_col") <- "risk_50"
+  attr(risk_data_50, "scale") <- c(0, 50)
+
+  rt <- add_risk(rt, risk_data_50)
+  expect_true("risk_50" %in% colnames(rt))
+  expect_equal(rt$risk_50, c(10, 25, 40))
+
+  # Test 2: Risk with scale (20, 80) should be accepted
+  risk_data_subset <- data.frame(
+    eu_id = c("EU1", "EU2", "EU3"),
+    risk_subset = c(30, 50, 70)
+  )
+  attr(risk_data_subset, "risk_col") <- "risk_subset"
+  attr(risk_data_subset, "scale") <- c(20, 80)
+
+  rt <- add_risk(rt, risk_data_subset)
+  expect_true("risk_subset" %in% colnames(rt))
+  expect_equal(rt$risk_subset, c(30, 50, 70))
+
+  # Test 3: Risk with scale (0, 12) should be accepted
+  risk_data_12 <- data.frame(
+    eu_id = c("EU1", "EU2", "EU3"),
+    risk_12 = c(4, 8, 12)
+  )
+  attr(risk_data_12, "risk_col") <- "risk_12"
+  attr(risk_data_12, "scale") <- c(0, 12)
+
+  rt <- add_risk(rt, risk_data_12)
+  expect_true("risk_12" %in% colnames(rt))
+  expect_equal(rt$risk_12, c(4, 8, 12))
+
+  # Test 4: All risks should inherit risk_table's scale attribute
+  expect_equal(attr(rt, "scale"), c(0, 100))
+  expect_equal(attr(rt, "risk_cols"), c("risk_50", "risk_subset", "risk_12"))
 })
 
 test_that("remove_risk removes columns correctly", {

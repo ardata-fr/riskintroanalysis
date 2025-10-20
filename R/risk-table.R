@@ -1,13 +1,23 @@
 #' Initialise table of risks
 #'
 #' Creates the base table of risks where each risk associated with a study can be
-#' stored. Each risk is checked that its on the same scale.
+#' stored. The risk_table defines a master scale that all added risks must fit within.
+#'
+#' @details
+#' The `scale` parameter defines the "universe" of possible risk values for this table.
+#' When risks are added via [add_risk()], their scales must be within this range. For
+#' example, if you create a risk_table with scale `c(0, 100)`, you can add risks with
+#' scales like `c(0, 50)` or `c(20, 80)`, but not `c(0, 120)`.
+#'
+#' All risks added to the table will inherit this scale attribute, allowing risks with
+#' different original scales to coexist as long as their values fit within the defined
+#' range. This provides flexibility while maintaining a consistent frame of reference
+#' for risk comparison and summarization.
 #'
 #' @param epi_units epidemiological units dataset
-#' @param scale the scale to use for all risk scores added to the risk table. Each
-#' new risk added to the table will be checked to ensure the same scale is used. For
-#' example, a risk table using a scale from 0 to 100 will not accept a risk on a
-#' scale from -1 to 1. This ensures comparability across risks.
+#' @param scale numeric vector of length 2 defining the minimum and maximum possible
+#' risk values for this risk table (default: `c(0, 100)`). This establishes the valid
+#' range for all risks that will be added to the table.
 #'
 #' @returns `sf` table with columns `eu_id`, `eu_name` and `geometry`, these all
 #' come directly from the `epi_units` argument.
@@ -41,13 +51,27 @@ risk_table <- function(
 #' Function to be used with risk table to add risk columns. The risk table
 #' is designed to store all risks associated with a riskintro study.
 #'
+#' @details
+#' The risk being added must have a scale that is within (a subset of) the risk_table's
+#' scale. For example, if the risk_table has a scale of `c(0, 100)`, you can add risks
+#' with scales like `c(0, 50)`, `c(20, 80)`, or `c(0, 100)`. However, you cannot add
+#' a risk with scale `c(0, 120)` or `c(-10, 50)` as these exceed the risk_table's range.
+#'
+#' Once added, the risk column inherits the risk_table's scale attribute, regardless of
+#' its original scale. This allows risks with different scales to coexist in the same
+#' risk_table, as long as their values fit within the risk_table's scale range.
+#'
+#' Users are responsible for using [rescale_risk_scores()] to ensure risk values are
+#' appropriately scaled before adding them to the risk_table.
+#'
 #' @param risk_table a risk table initialised with [risk_table()]
 #' @param risk_data a data.frame or risk analysis table containing the risk column to
 #' be added to the risk table and the joining column (usually `eu_id`).
 #' @param cols risk columns in `risk_data` to add to `risk_table`.
 #' @param scale risk scale for `cols` in `risk_data`, should be a numeric vector of
-#' length 2. For example, `c(0, 100)`.
-#' @param join_by Name of column to be used to join `risk_data` to `risk_table`.#'
+#' length 2 (e.g., `c(0, 50)`). This scale must be within the risk_table's scale range.
+#' If not provided, it will be extracted from the `risk_data` attributes.
+#' @param join_by Name of column to be used to join `risk_data` to `risk_table`.
 #' @returns the intial risk table with the new risk column added.
 #' @export
 #' @family risk-table
@@ -79,12 +103,14 @@ add_risk <- function(
     "{.arg join_by} should have length 1" = length(join_by) == 1L,
     "{.arg join_by} must be in `risk_data`" = join_by %in% colnames(risk_data)
   )
-  if (!all(scale == attr(risk_table, "scale"))) {
+
+  table_scale <- attr(risk_table, "scale")
+  if (scale[1] < table_scale[1] || scale[2] > table_scale[2]) {
     cli_abort(paste(
-      "This risk table expects all new risk scores a scale of {fmt_scale(attr(risk_table, 'scale'))}.",
-      "The provided scale in {.arg risk_data} is {fmt_scale(scale)}.",
-      "Ensure you are using the right arguments for {.fn rescale_risk_score}",
-      "or overwrite the {.arg risk_data} scaling with `scale`"
+      "Risk scale must be within the risk_table scale range.",
+      "Risk scale is {fmt_scale(scale)}, but risk_table scale is {fmt_scale(table_scale)}.",
+      "The risk values must fit within the risk_table's scale.",
+      "Use {.fn rescale_risk_scores} to adjust the risk scale if needed."
     ))
   }
 

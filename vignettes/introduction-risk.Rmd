@@ -223,9 +223,9 @@ ri_road_access <- calc_road_access_risk(
 ```{r fake-road-risk, echo=FALSE}
 # For vignette building, create synthetic road access data
 ri_road_access <- tunisia |>
-  mutate(road_access_risk = runif(n(), 0, 50))
+  mutate(road_access_risk = runif(n(), 0, 1600))
 attr(ri_road_access, "risk_col") <- "road_access_risk"
-attr(ri_road_access, "scale") <- c(0, 50)
+attr(ri_road_access, "scale") <- c(0, 1600)
 attr(ri_road_access, "table_name") <- "road_access"
 ```
 
@@ -264,7 +264,7 @@ ri_animal_mobility_scaled <- rescale_risk_scores(
 ri_road_access_scaled <- rescale_risk_scores(
   dataset = ri_road_access,
   from = c(0, max(ri_road_access$road_access_risk)),
-  to = c(0, 100),
+  to = c(0, 50),
   method = "linear"
 )
 ```
@@ -347,8 +347,8 @@ For detailed exploration, use an interactive map:
 
 ```{r interactive-map}
 library(leaflet)
-
-plot_risk_interactive(risk_max)
+risk_mean <- summarise_scores(rt, method = "mean", keep_cols = TRUE)
+plot_risk_interactive(risk_mean)
 ```
 
 Click on any governorate to see its overall introduction risk score and individual pathway contributions.

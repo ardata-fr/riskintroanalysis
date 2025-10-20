@@ -15,9 +15,10 @@ be added to the risk table and the joining column (usually \code{eu_id}).}
 \item{cols}{risk columns in \code{risk_data} to add to \code{risk_table}.}
 
 \item{scale}{risk scale for \code{cols} in \code{risk_data}, should be a numeric vector of
-length 2. For example, \code{c(0, 100)}.}
+length 2 (e.g., \code{c(0, 50)}). This scale must be within the risk_table's scale range.
+If not provided, it will be extracted from the \code{risk_data} attributes.}
 
-\item{join_by}{Name of column to be used to join \code{risk_data} to \code{risk_table}.#'}
+\item{join_by}{Name of column to be used to join \code{risk_data} to \code{risk_table}.}
 }
 \value{
 the intial risk table with the new risk column added.
@@ -25,6 +26,19 @@ the intial risk table with the new risk column added.
 \description{
 Function to be used with risk table to add risk columns. The risk table
 is designed to store all risks associated with a riskintro study.
+}
+\details{
+The risk being added must have a scale that is within (a subset of) the risk_table's
+scale. For example, if the risk_table has a scale of \code{c(0, 100)}, you can add risks
+with scales like \code{c(0, 50)}, \code{c(20, 80)}, or \code{c(0, 100)}. However, you cannot add
+a risk with scale \code{c(0, 120)} or \code{c(-10, 50)} as these exceed the risk_table's range.
+
+Once added, the risk column inherits the risk_table's scale attribute, regardless of
+its original scale. This allows risks with different scales to coexist in the same
+risk_table, as long as their values fit within the risk_table's scale range.
+
+Users are responsible for using \code{\link[=rescale_risk_scores]{rescale_risk_scores()}} to ensure risk values are
+appropriately scaled before adding them to the risk_table.
 }
 \examples{
 library(riskintrodata)
