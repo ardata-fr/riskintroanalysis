@@ -150,7 +150,7 @@ remove_risk <- function(risk_table, cols) {
   cli_abort_if_not(
     "{.arg risk_table} should be a risk table." = attr(risk_table, "table_name") == "risk_table",
     "{.arg cols} is zero-length" = length(cols) > 0L,
-    "{.arg join_by} must be in `risk_data`" = all(cols %in% colnames(risk_table))
+    "{.arg cols} not found in `risk_table`" = all(cols %in% colnames(risk_table))
   )
   out <- risk_table |> select(-all_of(cols))
   cols_attr <- setdiff(attr(risk_table, "risk_cols"), cols)

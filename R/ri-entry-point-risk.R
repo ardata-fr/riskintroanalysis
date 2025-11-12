@@ -18,15 +18,21 @@
 #' [riskintrodata::validate_dataset()]. This should be an `sf` object with polygons.
 #' @param emission_risk The emission risk dataset as returned by the [calc_emission_risk()]
 #' function.
-#' @param scaling_args list of arguments to pass to [scale_entry_points()]. Accepted
-#' arguments are `illegal_factor`, `coef_legal` and `coef_illegal`. Other arguments
-#' are handled internally.
+#' @param alpha (coef_legal) Numeric value > 0. Scaling factor of legal sources
+#'   in the latent scale. Passed to [scale_controlled()].
+#' @param beta (coef_illegal) Numeric value > 0. Scaling factor of illegal sources
+#'   in the latent scale. Passed to [scale_controlled()].
+#' @param lambda (illegal_factor) Numeric value > 1. Relative risk of an illegal
+#'   entry point with respect to a legal one. Passed to [scale_controlled()].
 #'
 #' @return an `sf` dataset containing the following columns:
 #' -  `eu_id`: epidemiological units id (from `epi_units` dataset)
 #' -  `eu_name`: epidemiological units name (from `epi_units` dataset)
-#' -  `entry_points_risk `: weighted entry point risk score
-#' -  `risk_sources`: informative HTML labels to be used in Leaflet plots
+#' -  `exposure_C`: effective number of controlled entry points per unit
+#' -  `exposure_NC`: effective number of uncontrolled entry points per unit
+#' -  `total_equivalent_uncontrolled_exposure`: total equivalent uncontrolled
+#'    entry points (combines exposure_NC and converted exposure_C). This is the
+#'    risk value that should be rescaled using [rescale_risk_scores()].
 #'
 #' This dataset also has a **number of attributes** that are used in other
 #' functions from `riskintroanalysis` to make passing dataset metadata between
@@ -41,12 +47,12 @@
 #'    - `type`: transport type of the entry point
 #'    - `source`: string of concatenated source countries of entry point
 #'    - `points_label `: HTML label for use in leaflet tooltips
-#'    - Also attributes: `risk_col = "point_emission_risk"` and
-#'     `risk_scale = c(0,12)`
+#'    - Also attributes: `risk_col = "point_exposure"` and
+#'     `risk_scale = c(0, max_observed)`
 #'
-#' 2. `risk_col = "entry_points_risk"` used by [plot_risk()]
-#' 3. `table_name = "entry_points"`used by [plot_risk()]
-#' 4. `scale = c(0, 12)` used by [plot_risk()] and [rescale_risk_scores()]
+#' 2. `risk_col = "total_equivalent_uncontrolled_exposure"` used by [plot_risk()]
+#' 3. `table_name = "entry_points"` used by [plot_risk()]
+#' 4. `scale = c(0, max_observed)` used by [plot_risk()] and [rescale_risk_scores()]
 #'
 #' @export
 #' @importFrom stats na.omit
@@ -57,12 +63,9 @@ calc_entry_point_risk <- function(
     entry_points,
     epi_units,
     emission_risk,
-    scaling_args = list(
-      illegal_factor = 3,
-      coef_legal = 1,
-      coef_illegal = 1,
-      max_risk = 100
-    )
+    alpha = 1,
+    beta = 1,
+    lambda = 3
 ) {
 
   # Check valid data ----
@@ -80,14 +83,9 @@ calc_entry_point_risk <- function(
     dataset$exposure_NC <- 0
     attr(dataset, "risk_col") <- "entry_points_risk"
     attr(dataset, "table_name") <- "entry_points"
-    attr(dataset, "scale") <- c(0,scaling_args$max_risk)
+    attr(dataset, "scale") <- c(0,100)
     return(dataset)
   }
-
-  scaling_args$illegal_factor <- scaling_args$illegal_factor %||% 3
-  scaling_args$coef_legal <- scaling_args$coef_legal %||% 1
-  scaling_args$coef_illegal <- scaling_args$coef_illegal %||% 1
-  scaling_args$max_risk <- scaling_args$max_risk %||% 100
 
   er <- select(emission_risk, all_of(c("iso3", "country", "emission_risk")))
   points_er <- left_join(
@@ -185,7 +183,8 @@ calc_entry_point_risk <- function(
       names_from = all_of("mode"),
       values_from = all_of("total_exposure"),
       names_prefix = 'exposure_'
-    )
+    ) |>
+    select(-all_of("eu_name"))
 
   # pivot_wider will not pivot NC if there are no
   # values of NC in names_from
@@ -196,38 +195,34 @@ calc_entry_point_risk <- function(
     total_exposure$exposure_NC <- 0
   }
 
-  # Step 3: Scaling the risk of introduction -----
-
-  introduction_risk <- total_exposure |>
+  dataset <- left_join(
+    epi_units, total_exposure,
+    by = "eu_id", na_matches = "never",
+    relationship = "one-to-one"
+  ) |>
     tidyr::replace_na(list(
       "exposure_C" = 0,
       "exposure_NC" = 0
-    )) |>
-    mutate(
-      entry_points_risk = scale_entry_points(
-        x_legal = .data$exposure_C,
-        x_illegal = .data$exposure_NC,
-        illegal_factor = scaling_args$illegal_factor,
-        coef_legal = scaling_args$coef_legal,
-        coef_illegal = scaling_args$coef_illegal,
-        max_risk = scaling_args$max_risk
-      )
-    ) |>
-    select(-all_of("eu_name"))
+    ))
 
-  dataset <- left_join(
-    epi_units, introduction_risk,
-    by = "eu_id", na_matches = "never",
-    relationship = "one-to-one"
-  )
+  dataset <- dataset |>
+    mutate(
+      total_equivalent_uncontrolled_exposure =
+        scale_controlled(
+          .data$exposure_C,
+          alpha = alpha,
+          beta = beta,
+          lambda = lambda
+        ) + .data$exposure_NC
+    )
 
   attr(point_exposures, "risk_col") <- "point_exposure"
-  attr(point_exposures, "scale") <- c(0, scaling_args$max_risk)
+  attr(point_exposures, "scale") <- c(0, max(point_exposures$point_exposure))
   attr(dataset, "points") <- point_exposures
 
-  attr(dataset, "risk_col") <- "entry_points_risk"
+  attr(dataset, "risk_col") <- "total_equivalent_uncontrolled_exposure"
   attr(dataset, "table_name") <- "entry_points"
-  attr(dataset, "scale") <- c(0,scaling_args$max_risk)
+  attr(dataset, "scale") <- c(0, max(dataset$total_equivalent_uncontrolled_exposure))
   dataset
 }
 
@@ -250,8 +245,20 @@ n_eff_sources <- function(x, x_max = 12) {
   sum(x) / x_max
 }
 
-# out <- filter(points_er, point_id == "ep-00001")
 
+#' Convert controlled to equivalent non-controlled entry point exposure
+#'
+#' Used for univariate scaling of the entry points dataset.
+#'
+#' @param x numeric vector of controlled entry points
+#' @param lambda (illegal_factor) Number > 1. Relative risk of an illegal entry point with respect
+#'   to a legal one.
+#' @param  alpha (coef_legal) Number > 0. Scaling factor of legal sources in the latent scale.
+#' @param  beta (coef_illegal) Number > 0. Scaling factor of illegal sources in the latent scale.
+#' @export
+scale_controlled <- function(x, alpha = 1, beta = 1, lambda = 3) {
+  inv_sigmoid(sigmoid(beta * x) / lambda) / alpha
+}
 
 #' Scale risk of entry points
 #'

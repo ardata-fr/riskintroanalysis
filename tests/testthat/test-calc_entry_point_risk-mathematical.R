@@ -116,6 +116,84 @@ test_that("TL-002 : Numeric precision", {
 })
 
 
+test_that("TU-001 : scale_controlled returns expected equivalence values", {
+  # From vignette: xc = 2.31 should equal approximately x̂u = 0.56
+  # with alpha = 1, beta = 1, lambda = 3
+  expect_equal(scale_controlled(2.31, alpha = 1, beta = 1, lambda = 3), 0.56, tolerance = 0.01)
+
+  # Test that 0 controlled = 0 equivalent uncontrolled
+  expect_equal(scale_controlled(0, alpha = 1, beta = 1, lambda = 3), 0)
+
+  # Test monotonicity: more controlled points = more equivalent uncontrolled
+  expect_true(scale_controlled(2, alpha = 1, beta = 1, lambda = 3) <
+              scale_controlled(3, alpha = 1, beta = 1, lambda = 3))
+})
+
+
+test_that("TU-002 : Univariate and bivariate methods give same results when alpha = beta", {
+  # Test that the univariate method produces the same risk as bivariate
+  # Note: Mathematical equivalence only holds when alpha = beta
+
+  # Using vignette example: xc = 2.5, xu = 0.25, alpha = beta = 1
+  xc <- 2.5
+  xu <- 0.25
+  alpha <- 1
+  beta <- 1
+  lambda <- 3
+  M <- 100
+
+  # Bivariate approach
+  bivariate_risk <- scale_entry_points(
+    x_legal = xc,
+    x_illegal = xu,
+    coef_legal = alpha,
+    coef_illegal = beta,
+    illegal_factor = lambda,
+    max_risk = M
+  )
+
+  # Univariate approach
+  x_hat_u <- scale_controlled(xc, alpha = alpha, beta = beta, lambda = lambda)
+  x_total <- xu + x_hat_u
+  univariate_risk <- M * sigmoid(alpha * x_total)
+
+  expect_equal(bivariate_risk, univariate_risk, tolerance = 0.0001)
+
+  # Test with different lambda but still alpha = beta
+  xc2 <- 3
+  xu2 <- 1.5
+  alpha2 <- 2
+  beta2 <- 2
+  lambda2 <- 5
+  M2 <- 100
+
+  bivariate_risk2 <- scale_entry_points(xc2, xu2,
+                                        coef_legal = alpha2,
+                                        coef_illegal = beta2,
+                                        illegal_factor = lambda2,
+                                        max_risk = M2)
+
+  x_hat_u2 <- scale_controlled(xc2, alpha = alpha2, beta = beta2, lambda = lambda2)
+  x_total2 <- xu2 + x_hat_u2
+  univariate_risk2 <- M2 * sigmoid(alpha2 * x_total2)
+
+  expect_equal(bivariate_risk2, univariate_risk2, tolerance = 0.0001)
+})
+
+
+test_that("TU-003 : scale_controlled parameter effects", {
+  # Higher lambda (more risky uncontrolled) -> lower equivalent uncontrolled
+  expect_true(scale_controlled(2, alpha = 1, beta = 1, lambda = 5) <
+              scale_controlled(2, alpha = 1, beta = 1, lambda = 3))
+
+  # Higher beta (faster convergence for controlled) -> higher equivalent uncontrolled
+  expect_true(scale_controlled(2, alpha = 1, beta = 2, lambda = 3) >
+              scale_controlled(2, alpha = 1, beta = 1, lambda = 3))
+
+  # Higher alpha (faster convergence) -> lower equivalent uncontrolled
+  expect_true(scale_controlled(2, alpha = 2, beta = 1, lambda = 3) <
+              scale_controlled(2, alpha = 1, beta = 1, lambda = 3))
+})
 
 
 

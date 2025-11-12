@@ -8,8 +8,9 @@ calc_entry_point_risk(
   entry_points,
   epi_units,
   emission_risk,
-  scaling_args = list(illegal_factor = 3, coef_legal = 1, coef_illegal = 1, max_risk =
-    100)
+  alpha = 1,
+  beta = 1,
+  lambda = 3
 )
 }
 \arguments{
@@ -22,17 +23,25 @@ calc_entry_point_risk(
 \item{emission_risk}{The emission risk dataset as returned by the \code{\link[=calc_emission_risk]{calc_emission_risk()}}
 function.}
 
-\item{scaling_args}{list of arguments to pass to \code{\link[=scale_entry_points]{scale_entry_points()}}. Accepted
-arguments are \code{illegal_factor}, \code{coef_legal} and \code{coef_illegal}. Other arguments
-are handled internally.}
+\item{alpha}{(coef_legal) Numeric value > 0. Scaling factor of legal sources
+in the latent scale. Passed to \code{\link[=scale_controlled]{scale_controlled()}}.}
+
+\item{beta}{(coef_illegal) Numeric value > 0. Scaling factor of illegal sources
+in the latent scale. Passed to \code{\link[=scale_controlled]{scale_controlled()}}.}
+
+\item{lambda}{(illegal_factor) Numeric value > 1. Relative risk of an illegal
+entry point with respect to a legal one. Passed to \code{\link[=scale_controlled]{scale_controlled()}}.}
 }
 \value{
 an \code{sf} dataset containing the following columns:
 \itemize{
 \item \code{eu_id}: epidemiological units id (from \code{epi_units} dataset)
 \item \code{eu_name}: epidemiological units name (from \code{epi_units} dataset)
-\item \code{entry_points_risk }: weighted entry point risk score
-\item \code{risk_sources}: informative HTML labels to be used in Leaflet plots
+\item \code{exposure_C}: effective number of controlled entry points per unit
+\item \code{exposure_NC}: effective number of uncontrolled entry points per unit
+\item \code{total_equivalent_uncontrolled_exposure}: total equivalent uncontrolled
+entry points (combines exposure_NC and converted exposure_C). This is the
+risk value that should be rescaled using \code{\link[=rescale_risk_scores]{rescale_risk_scores()}}.
 }
 
 This dataset also has a \strong{number of attributes} that are used in other
@@ -49,12 +58,12 @@ and has the following columns:
 \item \code{type}: transport type of the entry point
 \item \code{source}: string of concatenated source countries of entry point
 \item \code{points_label }: HTML label for use in leaflet tooltips
-\item Also attributes: \code{risk_col = "point_emission_risk"} and
-\code{risk_scale = c(0,12)}
+\item Also attributes: \code{risk_col = "point_exposure"} and
+\code{risk_scale = c(0, max_observed)}
 }
-\item \code{risk_col = "entry_points_risk"} used by \code{\link[=plot_risk]{plot_risk()}}
-\item \code{table_name = "entry_points"}used by \code{\link[=plot_risk]{plot_risk()}}
-\item \code{scale = c(0, 12)} used by \code{\link[=plot_risk]{plot_risk()}} and \code{\link[=rescale_risk_scores]{rescale_risk_scores()}}
+\item \code{risk_col = "total_equivalent_uncontrolled_exposure"} used by \code{\link[=plot_risk]{plot_risk()}}
+\item \code{table_name = "entry_points"} used by \code{\link[=plot_risk]{plot_risk()}}
+\item \code{scale = c(0, max_observed)} used by \code{\link[=plot_risk]{plot_risk()}} and \code{\link[=rescale_risk_scores]{rescale_risk_scores()}}
 }
 }
 \description{

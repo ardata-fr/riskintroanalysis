@@ -104,7 +104,7 @@ ri_entry_points <- calc_entry_point_risk(
 rt <- add_risk(risk_table = rt, risk_data = ri_entry_points)
 rt
 
-rt <- remove_risk(rt, cols = "entry_points_risk")
+rt <- remove_risk(rt, cols = "total_equivalent_uncontrolled_exposure")
 rt
 }
 \seealso{

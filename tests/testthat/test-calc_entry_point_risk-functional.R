@@ -201,12 +201,9 @@ test_that("CU-001: Basic calculation with complete data", {
     entry_points = entry_points,
     epi_units = epi_units,
     emission_risk = emission_scores,
-    scaling_args = list(
-      illegal_factor = 3,  # λ = 3
-      coef_legal = 1,      # α = 1
-      coef_illegal = 1,    # β = 1
-      max_risk = 100       # M = 100
-    )
+    lambda = 3,
+    alpha = 1,
+    beta = 1
   )
 
   points <- extract_point_risk(res)
@@ -216,6 +213,10 @@ test_that("CU-001: Basic calculation with complete data", {
   # EP2: (3 + 9 + 3) / 12 = 1.25
   # EP3: 3 / 12 = 0.25
   expect_equal(points$point_exposure, c(1.25, 1.25, 0.25), tolerance = 0.0001)
+
+  res <- rescale_risk_scores(
+    res
+  )
 
   # Verify effective numbers: xc = 2.5, xu = 0.25
   # Verify equivalent uncontrolled points: x = 0.83
@@ -993,5 +994,259 @@ test_that("CU-010: High exposure variability", {
   expect_equal(ri_entry_points$exposure_C[1], 3.083, tolerance = 0.01)
   expect_equal(ri_entry_points$exposure_NC[1], 2.417, tolerance = 0.01)
   expect_equal(ri_entry_points$entry_points_risk[1], 90.91, tolerance = 0.01)
+})
+
+
+test_that("UV-001: Univariate workflow with default parameters", {
+  library(sf)
+  library(dplyr)
+  library(riskintrodata)
+
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      eu_id = "EU1",
+      eu_name = "Test Unit",
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2, byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    x = epi_units_raw,
+    table_name = "epi_units"
+  ) |>
+    extract_dataset()
+
+  entry_points_raw <- data.frame(
+    POINT_ID = c("EP1", "EP1", "EP2", "EP2", "EP2", "EP3"),
+    POINT_NAME = c("Point 1", "Point 1", "Point 2", "Point 2", "Point 2", "Point 3"),
+    LONGITUDE = c(0.2, 0.2, 0.5, 0.5, 0.5, 0.8),
+    LATITUDE = c(0.2, 0.2, 0.5, 0.5, 0.5, 0.8),
+    MODE = c("C", "C", "C", "C", "C", "NC"),
+    TYPE = c("AIR", "AIR", "SEA", "SEA", "SEA", "BC"),
+    SOURCES = c("SRC_12", "SRC_3", "SRC_3B", "SRC_9", "SRC_3C", "SRC_3D"),
+    stringsAsFactors = FALSE
+  )
+
+  entry_points <- validate_dataset(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
+
+  emission_scores <- tibble::tribble(
+    ~iso3, ~country, ~emission_risk,
+    "SRC_12", "Source 12", 12,
+    "SRC_3", "Source 3", 3,
+    "SRC_3B", "Source 3B", 3,
+    "SRC_9", "Source 9", 9,
+    "SRC_3C", "Source 3C", 3,
+    "SRC_3D", "Source 3D", 3
+  )
+  attr(emission_scores, "risk_col") <- "emission_risk"
+  attr(emission_scores, "table_validated") <- TRUE
+  attr(emission_scores, "table_name") <- "emission_risk_scores"
+  attr(emission_scores, "ri_dataset") <- TRUE
+
+  ri <- calc_entry_point_risk(
+    entry_points = entry_points,
+    epi_units = epi_units,
+    emission_risk = emission_scores,
+    alpha = 1,
+    beta = 1,
+    lambda = 3
+  )
+
+  expect_true("exposure_C" %in% colnames(ri))
+  expect_true("exposure_NC" %in% colnames(ri))
+  expect_true("total_equivalent_uncontrolled_exposure" %in% colnames(ri))
+
+  expect_equal(ri$exposure_C[1], 2.5)
+  expect_equal(ri$exposure_NC[1], 0.25)
+
+  x_hat_u <- scale_controlled(2.5, alpha = 1, beta = 1, lambda = 3)
+  expected_total <- 0.25 + x_hat_u
+
+  expect_equal(ri$total_equivalent_uncontrolled_exposure[1], expected_total, tolerance = 0.0001)
+
+  expect_equal(attr(ri, "risk_col"), "total_equivalent_uncontrolled_exposure")
+  expect_equal(attr(ri, "table_name"), "entry_points")
+  expect_equal(attr(ri, "scale")[1], 0)
+})
+
+
+test_that("UV-002: Univariate workflow with varying parameters", {
+  library(sf)
+  library(dplyr)
+  library(riskintrodata)
+
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      eu_id = "EU1",
+      eu_name = "Test Unit",
+      geometry = st_sfc(
+        st_polygon(list(matrix(
+          c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0),
+          ncol = 2, byrow = TRUE
+        )))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    x = epi_units_raw,
+    table_name = "epi_units"
+  ) |>
+    extract_dataset()
+
+  entry_points_raw <- data.frame(
+    POINT_ID = c("EP1", "EP2"),
+    POINT_NAME = c("Point 1", "Point 2"),
+    LONGITUDE = c(0.3, 0.7),
+    LATITUDE = c(0.3, 0.7),
+    MODE = c("C", "NC"),
+    TYPE = c("AIR", "BC"),
+    SOURCES = c("SRC_12", "SRC_6"),
+    stringsAsFactors = FALSE
+  )
+
+  entry_points <- validate_dataset(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
+
+  emission_scores <- tibble::tribble(
+    ~iso3, ~country, ~emission_risk,
+    "SRC_12", "Source 12", 12,
+    "SRC_6", "Source 6", 6
+  )
+  attr(emission_scores, "risk_col") <- "emission_risk"
+  attr(emission_scores, "table_validated") <- TRUE
+  attr(emission_scores, "table_name") <- "emission_risk_scores"
+  attr(emission_scores, "ri_dataset") <- TRUE
+
+  ri1 <- calc_entry_point_risk(
+    entry_points, epi_units, emission_scores,
+    alpha = 1, beta = 1, lambda = 3
+  )
+
+  ri2 <- calc_entry_point_risk(
+    entry_points, epi_units, emission_scores,
+    alpha = 0.5, beta = 2, lambda = 5
+  )
+
+  expect_false(
+    isTRUE(all.equal(
+      ri1$total_equivalent_uncontrolled_exposure[1],
+      ri2$total_equivalent_uncontrolled_exposure[1]
+    ))
+  )
+
+  expect_equal(ri1$exposure_C[1], ri2$exposure_C[1])
+  expect_equal(ri1$exposure_NC[1], ri2$exposure_NC[1])
+})
+
+
+test_that("UV-003: Integration with rescale_risk_scores", {
+  library(sf)
+  library(dplyr)
+  library(riskintrodata)
+
+  epi_units_raw <- st_as_sf(
+    data.frame(
+      eu_id = c("EU1", "EU2"),
+      eu_name = c("Unit 1", "Unit 2"),
+      geometry = st_sfc(
+        st_polygon(list(matrix(c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))),
+        st_polygon(list(matrix(c(1, 0, 2, 0, 2, 1, 1, 1, 1, 0), ncol = 2, byrow = TRUE)))
+      ),
+      stringsAsFactors = FALSE
+    ),
+    crs = 4326
+  )
+
+  epi_units <- validate_dataset(
+    x = epi_units_raw,
+    table_name = "epi_units"
+  ) |>
+    extract_dataset()
+
+  entry_points_raw <- data.frame(
+    POINT_ID = c("EP1", "EP2", "EP3"),
+    POINT_NAME = c("Point 1", "Point 2", "Point 3"),
+    LONGITUDE = c(0.5, 1.2, 1.8),
+    LATITUDE = c(0.5, 0.3, 0.7),
+    MODE = c("C", "NC", "NC"),
+    TYPE = c("AIR", "BC", "CC"),
+    SOURCES = c("SRC_12", "SRC_9", "SRC_6"),
+    stringsAsFactors = FALSE
+  )
+
+  entry_points <- validate_dataset(
+    x = entry_points_raw,
+    table_name = "entry_points",
+    point_name = "POINT_NAME",
+    lng = "LONGITUDE",
+    lat = "LATITUDE",
+    mode = "MODE",
+    type = "TYPE",
+    sources = "SOURCES"
+  ) |>
+    extract_dataset()
+
+  emission_scores <- tibble::tribble(
+    ~iso3, ~country, ~emission_risk,
+    "SRC_12", "Source 12", 12,
+    "SRC_9", "Source 9", 9,
+    "SRC_6", "Source 6", 6
+  )
+  attr(emission_scores, "risk_col") <- "emission_risk"
+  attr(emission_scores, "table_validated") <- TRUE
+  attr(emission_scores, "table_name") <- "emission_risk_scores"
+  attr(emission_scores, "ri_dataset") <- TRUE
+
+  ri <- calc_entry_point_risk(
+    entry_points = entry_points,
+    epi_units = epi_units,
+    emission_risk = emission_scores,
+    alpha = 1,
+    beta = 1,
+    lambda = 3
+  )
+
+  max_val <- max(ri$total_equivalent_uncontrolled_exposure, na.rm = TRUE)
+
+  ri_scaled <- rescale_risk_scores(
+    ri,
+    from = c(0, max_val),
+    to = c(0, 100),
+    method = "sigmoid"
+  )
+
+  expect_true(all(ri_scaled$total_equivalent_uncontrolled_exposure >= 0, na.rm = TRUE))
+  expect_true(all(ri_scaled$total_equivalent_uncontrolled_exposure <= 100, na.rm = TRUE))
+
+  expect_equal(attr(ri_scaled, "scale"), c(0, 100))
 })
 
