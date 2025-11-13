@@ -126,7 +126,8 @@ test_that("Complete road access risk analysis workflow works", {
       max(ri_road_access$road_access_risk)
     ),
     to = c(0, 100),
-    method = "linear"
+    method = "linear",
+    reverse = TRUE
   )
 
   expect_true(all(
@@ -330,7 +331,8 @@ test_that("Road access risk analysis works with real sample data", {
   ri_scaled <- rescale_risk_scores(
     ri_road_access,
     to = c(0, 100),
-    method = "linear"
+    method = "linear",
+    reverse = TRUE
   )
   expect_true(all(
     ri_scaled$road_access_risk >= 0 & ri_scaled$road_access_risk <= 100

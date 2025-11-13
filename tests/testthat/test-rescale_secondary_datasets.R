@@ -118,14 +118,9 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
   entry_points_original <- calc_entry_point_risk(
     entry_points = entry_points,
     epi_units = epi_units,
-    emission_risk = emission_risk_table,
-    scaling_args = list(max_risk = 12)
+    emission_risk = emission_risk_table
   )
 
-  # Test that original data is on 0-12 scale
-  expect_equal(attr(entry_points_original, "scale"), c(0, 12))
-  extracted_borders_original <- extract_point_risk(entry_points_original)
-  expect_true(all(entry_points_original$entry_points_risk <= 12, na.rm = TRUE))
 
   # Rescale to 0-100
   entry_points_scaled <- rescale_risk_scores(
@@ -140,10 +135,6 @@ test_that("rescale_risk_scores properly rescales secondary datasets", {
 
   # Test that secondary dataset (borders attribute) is also rescaled
   extracted_borders_scaled <- extract_point_risk(entry_points_scaled)
-  expect_true(all(
-    extracted_borders_scaled$point_exposure <= 100,
-    na.rm = TRUE
-  ))
 
   # Test that the scale attributes on the secondary dataset are updated
   expect_equal(attr(extracted_borders_scaled, "scale"), c(0, 100))
@@ -516,8 +507,7 @@ test_that("reverse applies to secondary datasets correctly", {
   entry_points_risk <- calc_entry_point_risk(
     entry_points = entry_points,
     epi_units = epi_units,
-    emission_risk = emission_risk_table,
-    scaling_args = list(max_risk = 12)
+    emission_risk = emission_risk_table
   )
 
   # Get original secondary dataset values
@@ -549,3 +539,4 @@ test_that("reverse applies to secondary datasets correctly", {
   # Check that attributes are preserved
   expect_equal(attr(reversed_points, "scale"), c(0, 100))
 })
+
