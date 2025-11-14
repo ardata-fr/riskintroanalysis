@@ -43,6 +43,7 @@ reference:
   - title: Risk score rescaling
     contents:
     - rescale_risk_scores
+    - scale_controlled
   - title: Risk table building and analysis
     contents:
     - risk_table
